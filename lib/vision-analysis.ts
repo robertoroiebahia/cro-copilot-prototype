@@ -92,29 +92,31 @@ export async function analyzeAboveFold({
     const response = await withRetry(() =>
       openai.responses.create({
         model: MODEL,
-        input: {
-          role: 'user',
-          content: [
-            {
-              type: 'input_text',
-              text: [
-                VISION_ANALYSIS_SYSTEM_PROMPT.trim(),
-                '',
-                VISION_ANALYSIS_USER_TEMPLATE({ context: 'comparison' }),
-              ].join('\n'),
-            },
-            {
-              type: 'input_image',
-              image_url: `data:image/png;base64,${desktopImageBase64}`,
-              detail: 'high',
-            },
-            {
-              type: 'input_image',
-              image_url: `data:image/png;base64,${mobileImageBase64}`,
-              detail: 'high',
-            },
-          ],
-        },
+        input: [
+          {
+            role: 'user',
+            content: [
+              {
+                type: 'input_text',
+                text: [
+                  VISION_ANALYSIS_SYSTEM_PROMPT.trim(),
+                  '',
+                  VISION_ANALYSIS_USER_TEMPLATE({ context: 'comparison' }),
+                ].join('\n'),
+              },
+              {
+                type: 'input_image',
+                image_url: `data:image/png;base64,${desktopImageBase64}`,
+                detail: 'high',
+              },
+              {
+                type: 'input_image',
+                image_url: `data:image/png;base64,${mobileImageBase64}`,
+                detail: 'high',
+              },
+            ],
+          },
+        ],
         max_output_tokens: MAX_OUTPUT_TOKENS,
       }),
     );
