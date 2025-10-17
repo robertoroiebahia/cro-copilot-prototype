@@ -24,7 +24,7 @@ export function FunnelChart({ data, insights }: FunnelChartProps) {
     ];
 
     return values.map((stage, i) => {
-  if (i === 0) return { ...stage, dropOff: 0, rate: 100, severity: 'good' };
+      if (i === 0) return { ...stage, dropOff: 0, rate: 100, severity: 'good' };
       
       const prev = values[i - 1].value;
       const dropOff = prev - stage.value;

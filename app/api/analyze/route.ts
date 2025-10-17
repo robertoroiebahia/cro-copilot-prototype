@@ -2,8 +2,15 @@ import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import * as cheerio from 'cheerio';
 import axios from 'axios';
+import { ScreenshotService } from '../../../lib/screenshot-service';
+import {
+  analyzeAboveFold,
+  VisionAnalysisError,
+  VisionAnalysisResult,
+} from '../../../lib/vision-analysis';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const screenshotService = new ScreenshotService();
 
 async function analyzePage(url: string) {
   try {
@@ -49,6 +56,96 @@ async function analyzePage(url: string) {
   }
 }
 
+function buildVisionNarrative(
+  analysis: VisionAnalysisResult | null,
+  error: string | null,
+): string {
+  if (!analysis) {
+    return `Vision analysis unavailable: ${error || 'No screenshots captured.'}`;
+  }
+
+  if (analysis.status === 'unreadable') {
+    return `Vision model could not interpret the screenshots (confidence ${analysis.confidence}). Please verify captures.`;
+  }
+
+  const lines: string[] = [];
+
+  lines.push(
+    `Confidence: ${analysis.confidence}. Primary hero headline: "${analysis.hero.headline || 'Not detected'}".`,
+  );
+
+  if (analysis.hero.subheadline) {
+    lines.push(`Hero subheadline: "${analysis.hero.subheadline}".`);
+  }
+
+  if (analysis.hero.cta.text) {
+    const styleClues = analysis.hero.cta.styleClues.length
+      ? ` (style clues: ${analysis.hero.cta.styleClues.join(', ')})`
+      : '';
+    lines.push(`Primary CTA: "${analysis.hero.cta.text}"${styleClues}.`);
+  } else {
+    lines.push('Primary CTA not confidently detected.');
+  }
+
+  if (analysis.ctas.length > 0) {
+    const ctaSummary = analysis.ctas
+      .map((cta) => `${cta.text || 'CTA'} [${cta.prominence}] @ ${cta.locationHint}`)
+      .slice(0, 5)
+      .join('; ');
+    lines.push(`CTA inventory: ${ctaSummary}.`);
+  } else {
+    lines.push('No additional CTAs spotted above the fold.');
+  }
+
+  if (analysis.trustSignals.length > 0) {
+    lines.push(`Trust signals visible: ${analysis.trustSignals.join(', ')}.`);
+  } else {
+    lines.push('Trust signals not observed above the fold.');
+  }
+
+  if (analysis.visualHierarchy.length > 0) {
+    lines.push(
+      `Visual hierarchy attention order: ${analysis.visualHierarchy.join(' → ')}.`,
+    );
+  }
+
+  if (analysis.responsiveness.issues.length > 0) {
+    lines.push(
+      `Responsive issues flagged (${analysis.responsiveness.overallRisk} risk): ${analysis.responsiveness.issues.join(
+        '; ',
+      )}.`,
+    );
+  } else {
+    lines.push(
+      `Responsive risk rated ${analysis.responsiveness.overallRisk} with no specific issues noted.`,
+    );
+  }
+
+  lines.push(
+    `Heavy media detected: ${analysis.performanceSignals.heavyMedia ? 'Yes' : 'No'}. ${
+      analysis.performanceSignals.notes || ''
+    }`,
+  );
+
+  if (analysis.differences.flagged && analysis.differences.notes.length > 0) {
+    lines.push(
+      `Desktop vs mobile differences: ${analysis.differences.notes.join('; ')}.`,
+    );
+  } else {
+    lines.push('No major desktop vs mobile differences highlighted.');
+  }
+
+  if (analysis.cost) {
+    lines.push(
+      `Model usage: ${analysis.cost.inputTokens} input tokens, ${analysis.cost.outputTokens} output tokens (≈$${analysis.cost.estimatedUsd.toFixed(
+        4,
+      )}).`,
+    );
+  }
+
+  return lines.join('\n');
+}
+
 export async function POST(req: NextRequest) {
   try {
     const { url, metrics, context } = await req.json();
@@ -57,7 +154,38 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid URL' }, { status: 400 });
     }
 
-    const pageData = await analyzePage(url);
+    const [pageData, screenshots] = await Promise.all([
+      analyzePage(url),
+      screenshotService
+        .capturePageScreenshots(url)
+        .catch((error) => {
+          console.error('Screenshot capture error:', error);
+          return null;
+        }),
+    ]);
+
+    let visionAnalysis: VisionAnalysisResult | null = null;
+    let visionError: string | null = null;
+
+    if (screenshots) {
+      try {
+        visionAnalysis = await analyzeAboveFold({
+          desktopImageBase64: screenshots.desktop.aboveFold,
+          mobileImageBase64: screenshots.mobile.aboveFold,
+        });
+      } catch (error) {
+        if (error instanceof VisionAnalysisError) {
+          visionError = error.message;
+        } else {
+          visionError = 'Vision analysis failed';
+        }
+        console.error('Vision analysis error:', error);
+    }
+  } else {
+    visionError = 'Screenshot capture unavailable';
+  }
+
+  const visionNarrative = buildVisionNarrative(visionAnalysis, visionError);
     
     // Calculate LP metrics
     const lpConversionRate = metrics.visitors && metrics.purchases
@@ -156,56 +284,135 @@ ${pageData.fullText.slice(0, 3000)}
 
 ---
 
+### ABOVE-THE-FOLD VISUAL INSIGHTS
+
+${visionNarrative}
+
+---
+
 ### YOUR TASK
 
-Provide a deep analysis in this JSON format:
+Provide a deep analysis using the 10× Growth-Hacker Landing-Page Audit Framework in this JSON format:
 
 {
-  "landingPageSummary": "One clear sentence about what this LP communicates and how well it does it",
-  "keyIssues": [
-    "Specific issue with conversion impact explained",
-    "Another specific blocker"
-  ],
-  "recommendations": [
+  "summary": {
+    "headline": "One decisive sentence on LP effectiveness rooted in both copy and visuals",
+    "diagnosticTone": "direct | optimistic | urgent",
+    "confidence": "low | medium | high"
+  },
+  "aboveTheFold": {
+    "failsFirstFiveSeconds": true,
+    "findings": [
+      {
+        "element": "Message match",
+        "status": "pass | risk | fail",
+        "evidence": "Quote or describe the relevant hero element",
+        "diagnosticQuestion": "Copy the matching question from the framework",
+        "recommendation": "Specific change referencing headline/visual/CTA",
+        "abTestIdea": "Name a concrete A/B test with success metric"
+      }
+    ],
+    "headlineTest": {
+      "control": "Current hero headline",
+      "variant": "Proposed variant tied to traffic intent",
+      "hypothesis": "If... then... because..."
+    },
+    "ctaTest": {
+      "control": "Current CTA copy or placement",
+      "variant": "Proposed variant",
+      "hypothesis": "Focused on clarity or urgency"
+    },
+    "trustGap": "Fast summary of missing trust cues",
+    "speedReadability": "Assessment of load + readability issues",
+    "priority": "P0 | P1 | P2"
+  },
+  "belowTheFold": {
+    "sequenceAssessment": "Pain → Dream → Solution → Proof → Offer → CTA evaluation",
+    "gaps": [
+      {
+        "layer": "Problem + agitation",
+        "issue": "What is missing or weak",
+        "recommendation": "Concrete next step"
+      }
+    ],
+    "proofOpportunities": [
+      "Specific testimonial/UGC/visual idea aligned to persona"
+    ],
+    "ctaPlacementNotes": "Do CTAs reappear? What to fix.",
+    "priority": "P0 | P1 | P2"
+  },
+  "fullPage": {
+    "messageHierarchy": "Does each scroll level answer What/Why/Proof/Action?",
+    "visualHierarchy": "Benefit → proof → action flow assessment",
+    "mobileParity": "Where mobile diverges from desktop hero and sections",
+    "dataCapture": "Is there a soft conversion? What to add?",
+    "analyticsReadiness": "Events missing or misaligned",
+    "riskLevel": "low | medium | high"
+  },
+  "strategicExtensions": {
+    "audienceSegments": [
+      "Test idea for adjacent intent cluster with angle"
+    ],
+    "acquisitionContinuity": [
+      "How to align hero line with specific UTM/ad set"
+    ],
+    "creativeFeedbackLoop": [
+      "What the next ad iteration should test based on LP findings"
+    ]
+  },
+  "roadmap": [
     {
-      "priority": "High",
-      "title": "Test benefit-focused headline vs current feature-focused one",
-      "description": "Detailed explanation of the experiment and why it will work",
-      "hypothesis": "If we lead with the transformation outcome instead of product features, ATC rate will increase because customers buy outcomes, not features",
-      "expectedLift": "12-18%",
-      "before": "Current headline copy",
-      "after": "Suggested new headline",
-      "difficulty": "Easy",
-      "principle": "Jobs-to-be-done framework - people don't want a drill, they want a hole"
+      "priority": "P0 | P1 | P2",
+      "title": "Name of experiment or fix",
+      "impact": "High | Medium | Low",
+      "effort": "High | Medium | Low",
+      "expectedLift": "X-Y%",
+      "owner": "Growth | Creative | Dev | Analytics",
+      "notes": "One sentence rationale with hero/proof references"
     }
-  ],
-  "messagingOpportunities": [
-    "Alternative angle: Position as [X] instead of [Y] for [audience segment]",
-    "Test messaging for [adjacent audience]"
-  ],
-  "quickWins": [
-    "Specific 1-hour fix with expected impact",
-    "Another immediate change"
-  ],
-  "croChecklist": [
-    "Action item 1",
-    "Action item 2"
   ]
 }
 
-Focus recommendations on improving ATC rate and top-of-funnel conversion. Be brutally specific.`;
+Rules:
+- Every string must be grounded in the supplied landing page content AND the vision insights narrative.
+- Reuse the framework terminology verbatim where helpful, but do not copy the illustrative text.
+- Keep arrays lean (max 4 items) and prioritize highest-impact findings first.
+- If data is missing, use null or empty arrays but keep the keys.
+- Bias toward actionable CRO tests rather than vague advice.
+`;
 
-    const response = await openai.chat.completions.create({
-      model: 'gpt-4-turbo-preview',
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: userPrompt }
+    const response = await openai.responses.create({
+      model: 'gpt-5-mini',
+      input: [
+        {
+          role: 'system',
+          content: [
+            {
+              type: 'input_text',
+              text: systemPrompt,
+            },
+          ],
+        },
+        {
+          role: 'user',
+          content: [
+            {
+              type: 'input_text',
+              text: userPrompt,
+            },
+          ],
+        },
       ],
-      temperature: 0.7,
-      response_format: { type: 'json_object' },
+      reasoning: {
+        effort: 'minimal',
+      },
+      text: {
+        verbosity: 'medium',
+      },
+      max_output_tokens: 1200,
     });
 
-    const insights = JSON.parse(response.choices[0].message.content || '{}');
+    const insights = JSON.parse(response.output_text || '{}');
 
     return NextResponse.json({
       ...insights,
@@ -219,6 +426,27 @@ Focus recommendations on improving ATC rate and top-of-funnel conversion. Be bru
         conversionRate: lpConversionRate,
         atcRate: atcRate,
       },
+      visionAnalysis,
+      visionAnalysisError: visionError,
+      usage: response.usage
+        ? {
+            inputTokens: response.usage.input_tokens ?? 0,
+            outputTokens: response.usage.output_tokens ?? 0,
+          }
+        : undefined,
+      screenshots: screenshots
+        ? {
+            capturedAt: screenshots.capturedAt,
+            desktop: {
+              aboveFold: `data:image/png;base64,${screenshots.desktop.aboveFold}`,
+              fullPage: `data:image/png;base64,${screenshots.desktop.fullPage}`,
+            },
+            mobile: {
+              aboveFold: `data:image/png;base64,${screenshots.mobile.aboveFold}`,
+              fullPage: `data:image/png;base64,${screenshots.mobile.fullPage}`,
+            },
+          }
+        : null,
     });
   } catch (err: any) {
     console.error('Analysis error:', err);
