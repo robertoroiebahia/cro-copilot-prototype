@@ -1,9 +1,6 @@
 import { createMiddlewareClient } from '@supabase/auth-helpers-nextjs';
 import { type NextRequest, NextResponse } from 'next/server';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
 export async function middleware(request: NextRequest) {
   const response = NextResponse.next({
     request: {
@@ -11,24 +8,10 @@ export async function middleware(request: NextRequest) {
     },
   });
 
-  const hasValidUrl =
-    typeof supabaseUrl === 'string' &&
-    (supabaseUrl.startsWith('https://') || supabaseUrl.startsWith('http://'));
-
-  if (!hasValidUrl || !supabaseAnonKey) {
-    return response;
-  }
-
-  const supabase = createMiddlewareClient(
-    {
-      req: request,
-      res: response,
-    },
-    {
-      supabaseUrl,
-      supabaseKey: supabaseAnonKey,
-    },
-  );
+  const supabase = createMiddlewareClient({
+    req: request,
+    res: response,
+  });
 
   try {
     await supabase.auth.getSession();

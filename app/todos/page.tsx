@@ -5,18 +5,6 @@ type Todo = Record<string, unknown>;
 export default async function TodosPage() {
   const supabase = createClient();
 
-  if (!supabase) {
-    return (
-      <main className="mx-auto flex max-w-4xl flex-col gap-4 px-6 py-10">
-        <h1 className="text-2xl font-semibold text-slate-900">Supabase Todos</h1>
-        <p className="text-sm text-red-600">
-          Supabase is not configured. Please set <code>NEXT_PUBLIC_SUPABASE_URL</code> and{' '}
-          <code>NEXT_PUBLIC_SUPABASE_ANON_KEY</code>.
-        </p>
-      </main>
-    );
-  }
-
   const { data: todos, error } = await supabase.from('todos').select('*').limit(50);
 
   if (error) {
