@@ -14,7 +14,32 @@ export async function middleware(request: NextRequest) {
   });
 
   try {
-    await supabase.auth.getSession();
+    const { data: { session } } = await supabase.auth.getSession();
+
+    // Protected routes that require authentication
+    const protectedRoutes = ['/dashboard', '/api/analyze', '/analyze'];
+    const isProtectedRoute = protectedRoutes.some(route =>
+      request.nextUrl.pathname.startsWith(route)
+    );
+
+    // Redirect to login if accessing protected route without session
+    if (isProtectedRoute && !session) {
+      const redirectUrl = new URL('/login', request.url);
+      if (request.nextUrl.pathname !== '/') {
+        redirectUrl.searchParams.set('redirectTo', request.nextUrl.pathname);
+      }
+      return NextResponse.redirect(redirectUrl);
+    }
+
+    // Redirect to dashboard if accessing auth pages with active session
+    const authRoutes = ['/login', '/signup'];
+    const isAuthRoute = authRoutes.some(route =>
+      request.nextUrl.pathname === route
+    );
+
+    if (isAuthRoute && session) {
+      return NextResponse.redirect(new URL('/dashboard', request.url));
+    }
   } catch (error) {
     console.error('Supabase middleware error:', error);
   }

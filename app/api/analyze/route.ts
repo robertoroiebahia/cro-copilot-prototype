@@ -8,6 +8,8 @@ import {
   VisionAnalysisError,
   VisionAnalysisResult,
 } from '../../../lib/vision-analysis';
+import { createClient } from '@/utils/supabase/server';
+import type { InsertAnalysis } from '@/lib/types/database.types';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const screenshotService = new ScreenshotService();
@@ -152,6 +154,14 @@ export async function POST(req: NextRequest) {
 
     if (!url || !url.startsWith('http')) {
       return NextResponse.json({ error: 'Invalid URL' }, { status: 400 });
+    }
+
+    // Get authenticated user
+    const supabase = createClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const [pageData, screenshots] = await Promise.all([
@@ -408,8 +418,56 @@ Rules:
 
     const insights = JSON.parse(response.output_text || '{}');
 
-    return NextResponse.json({
+    // Save analysis to database
+    const analysisData: InsertAnalysis = {
+      user_id: user.id,
+      url,
+      metrics,
+      context,
+      summary: insights.summary || {},
+      above_the_fold: insights.aboveTheFold || null,
+      below_the_fold: insights.belowTheFold || null,
+      full_page: insights.fullPage || null,
+      strategic_extensions: insights.strategicExtensions || null,
+      roadmap: insights.roadmap || null,
+      vision_analysis: visionAnalysis ? JSON.parse(JSON.stringify(visionAnalysis)) : null,
+      screenshots: screenshots
+        ? {
+            desktopAboveFold: screenshots.desktop.aboveFold,
+            desktopFullPage: screenshots.desktop.fullPage,
+            mobileAboveFold: screenshots.mobile.aboveFold,
+            mobileFullPage: screenshots.mobile.fullPage,
+          }
+        : null,
+      usage: {
+        visionInputTokens: visionAnalysis?.cost?.inputTokens,
+        visionOutputTokens: visionAnalysis?.cost?.outputTokens,
+        analysisInputTokens: response.usage?.input_tokens ?? 0,
+        analysisOutputTokens: response.usage?.output_tokens ?? 0,
+        totalTokens:
+          (visionAnalysis?.cost?.inputTokens || 0) +
+          (visionAnalysis?.cost?.outputTokens || 0) +
+          (response.usage?.input_tokens || 0) +
+          (response.usage?.output_tokens || 0),
+        estimatedCost: (visionAnalysis?.cost?.estimatedUsd || 0),
+      },
+      status: 'completed',
+    };
+
+    const { data: savedAnalysis, error: dbError } = await supabase
+      .from('analyses')
+      .insert(analysisData)
+      .select()
+      .single();
+
+    if (dbError) {
+      console.error('Database save error:', dbError);
+      // Continue anyway - don't fail the request if DB save fails
+    }
+
+    const responseData = {
       ...insights,
+      id: savedAnalysis?.id, // Include the analysis ID for reference
       pageData: {
         h1: pageData.h1,
         hasReviews: pageData.hasReviews,
@@ -441,7 +499,9 @@ Rules:
             },
           }
         : null,
-    });
+    };
+
+    return NextResponse.json(responseData);
   } catch (err: any) {
     console.error('Analysis error:', err);
     return NextResponse.json(

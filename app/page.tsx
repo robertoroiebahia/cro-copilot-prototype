@@ -1,786 +1,400 @@
 'use client';
 
-import { useState } from 'react';
+import Link from 'next/link';
+import { useState, useEffect } from 'react';
+import { createClient } from '@/utils/supabase/client';
 
-export default function Home() {
-  const [url, setUrl] = useState('');
-  const [metrics, setMetrics] = useState({
-    visitors: '',
-    addToCarts: '',
-    purchases: '',
-    aov: ''
-  });
-  const [context, setContext] = useState({
-    trafficSource: 'mixed',
-    productType: '',
-    pricePoint: ''
-  });
-  const [insights, setInsights] = useState<any>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const visionAnalysis = insights?.visionAnalysis;
-  const visionError = insights?.visionAnalysisError;
-  const screenshotPreview = insights?.screenshots;
-  const summary = insights?.summary;
-  const aboveTheFold = insights?.aboveTheFold;
-  const belowTheFold = insights?.belowTheFold;
-  const fullPageAudit = insights?.fullPage;
-  const strategicExtensions = insights?.strategicExtensions;
-  const roadmap = Array.isArray(insights?.roadmap) ? insights.roadmap : [];
-  const croUsage = insights?.usage;
+export default function LandingPage() {
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  const analyze = async () => {
-    setLoading(true);
-    setError('');
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 10);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
-    try {
-      const res = await fetch('/api/analyze', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url, metrics, context }),
-      });
-
-      if (!res.ok) throw new Error('Analysis failed');
-
-      const data = await res.json();
-      setInsights(data);
-    } catch (err) {
-      setError('Failed to analyze. Please check the URL and try again.');
-    } finally {
+  useEffect(() => {
+    const checkAuth = async () => {
+      const supabase = createClient();
+      const { data: { session } } = await supabase.auth.getSession();
+      setIsLoggedIn(!!session);
       setLoading(false);
-    }
-  };
-
-  // Calculate conversion metrics
-  const lpConversionRate = metrics.visitors && metrics.purchases 
-    ? ((Number(metrics.purchases) / Number(metrics.visitors)) * 100).toFixed(2)
-    : null;
-
-  const atcRate = metrics.visitors && metrics.addToCarts
-    ? ((Number(metrics.addToCarts) / Number(metrics.visitors)) * 100).toFixed(2)
-    : null;
-
-  const currentRevenue = metrics.purchases && metrics.aov
-    ? Number(metrics.purchases) * Number(metrics.aov)
-    : null;
+    };
+    checkAuth();
+  }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-      {/* Header */}
-      <div className="bg-white border-b border-slate-200">
-        <div className="max-w-5xl mx-auto px-6 py-8">
-          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-slate-900 mb-2">Landing Page Optimizer</h1>
-              <p className="text-slate-600">AI-powered analysis to improve your DTC landing page conversions</p>
+    <div className="min-h-screen bg-white">
+      {/* Navigation */}
+      <nav className={`fixed top-0 w-full z-50 transition-all ${isScrolled ? 'bg-white/90 backdrop-blur-md shadow-sm' : 'bg-transparent'}`}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+              </div>
+              <span className="text-xl font-bold text-gray-900">Smart Nudge Builder</span>
             </div>
-            <a
-              href="/analysis-playground"
-              className="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:border-blue-400 hover:text-blue-600"
-            >
-              Open Analysis Playground →
-            </a>
+            <div className="flex items-center gap-4">
+              {!loading && (
+                <>
+                  {isLoggedIn ? (
+                    <>
+                      <Link href="/analyze" className="text-sm font-medium text-gray-600 hover:text-gray-900">
+                        New Analysis
+                      </Link>
+                      <Link href="/dashboard" className="px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition">
+                        Dashboard
+                      </Link>
+                    </>
+                  ) : (
+                    <>
+                      <Link href="/login" className="text-sm font-medium text-gray-600 hover:text-gray-900">
+                        Sign In
+                      </Link>
+                      <Link href="/signup" className="px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition">
+                        Start Free
+                      </Link>
+                    </>
+                  )}
+                </>
+              )}
+            </div>
           </div>
         </div>
-      </div>
+      </nav>
 
-      {/* Main Content */}
-      <div className="max-w-5xl mx-auto px-6 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          
-          {/* Left Panel - Input */}
-          <div className="lg:col-span-1">
-            <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6 sticky top-8">
-              
-              {/* URL Input */}
-              <div className="mb-6">
-                <label className="block text-sm font-semibold text-slate-700 mb-2">
-                  Landing Page URL
-                </label>
-                <input
-                  type="url"
-                  value={url}
-                  onChange={(e) => setUrl(e.target.value)}
-                  placeholder="https://yourstore.com/product"
-                  className="w-full px-4 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition text-sm"
-                />
-              </div>
-
-              {/* Landing Page Metrics */}
-              <div className="mb-6">
-                <label className="block text-sm font-semibold text-slate-700 mb-3">
-                  Landing Page Performance
-                </label>
-                <div className="space-y-3">
-                  <div>
-                    <label className="block text-xs text-slate-500 mb-1">Visitors (last 30 days)</label>
-                    <input
-                      type="number"
-                      placeholder="10,000"
-                      value={metrics.visitors}
-                      onChange={(e) => setMetrics({ ...metrics, visitors: e.target.value })}
-                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-xs text-slate-500 mb-1">Add to Carts</label>
-                    <input
-                      type="number"
-                      placeholder="800"
-                      value={metrics.addToCarts}
-                      onChange={(e) => setMetrics({ ...metrics, addToCarts: e.target.value })}
-                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs text-slate-500 mb-1">Purchases from this LP</label>
-                    <input
-                      type="number"
-                      placeholder="250"
-                      value={metrics.purchases}
-                      onChange={(e) => setMetrics({ ...metrics, purchases: e.target.value })}
-                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs text-slate-500 mb-1">Average Order Value</label>
-                    <input
-                      type="number"
-                      placeholder="95"
-                      value={metrics.aov}
-                      onChange={(e) => setMetrics({ ...metrics, aov: e.target.value })}
-                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Context */}
-              <div className="mb-6">
-                <label className="block text-sm font-semibold text-slate-700 mb-3">
-                  Context
-                </label>
-                <div className="space-y-3">
-                  <select
-                    value={context.trafficSource}
-                    onChange={(e) => setContext({ ...context, trafficSource: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-                  >
-                    <option value="mixed">Mixed Traffic</option>
-                    <option value="paid_social">Paid Social (FB/IG/TikTok)</option>
-                    <option value="paid_search">Paid Search (Google)</option>
-                    <option value="organic">Organic Search</option>
-                    <option value="email">Email Campaign</option>
-                    <option value="influencer">Influencer/Affiliate</option>
-                  </select>
-
-                  <input
-                    type="text"
-                    placeholder="Product Type (e.g., skincare, supplements)"
-                    value={context.productType}
-                    onChange={(e) => setContext({ ...context, productType: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-                  />
-
-                  <input
-                    type="text"
-                    placeholder="Price Point (e.g., $50-100)"
-                    value={context.pricePoint}
-                    onChange={(e) => setContext({ ...context, pricePoint: e.target.value })}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none"
-                  />
-                </div>
-              </div>
-
-              {/* Quick Stats */}
-              {lpConversionRate && (
-                <div className="mb-6 p-4 bg-slate-50 rounded-lg border border-slate-200">
-                  <div className="text-xs text-slate-500 mb-2">Quick Stats</div>
-                  <div className="space-y-1.5 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-slate-600">LP Conversion:</span>
-                      <span className="font-semibold text-slate-900">{lpConversionRate}%</span>
-                    </div>
-                    {atcRate && (
-                      <div className="flex justify-between">
-                        <span className="text-slate-600">ATC Rate:</span>
-                        <span className="font-semibold text-slate-900">{atcRate}%</span>
-                      </div>
-                    )}
-                    {currentRevenue && (
-                      <div className="flex justify-between">
-                        <span className="text-slate-600">Revenue:</span>
-                        <span className="font-semibold text-slate-900">${currentRevenue.toLocaleString()}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* Error */}
-              {error && (
-                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
-                  {error}
-                </div>
-              )}
-
-              {/* Analyze Button */}
-              <button
-                onClick={analyze}
-                disabled={loading || !url || !metrics.visitors}
-                className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-slate-400 disabled:cursor-not-allowed text-white font-semibold py-3 px-6 rounded-lg transition-colors"
+      {/* Hero Section */}
+      <section className="pt-32 pb-20 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center max-w-4xl mx-auto">
+            <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold text-gray-900 mb-6 leading-tight">
+              Turn Any Landing Page Into a{' '}
+              <span className="text-blue-600">Conversion Machine</span>
+            </h1>
+            <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
+              AI-powered CRO analysis that finds exactly where you're losing customers—and tells you how to fix it with testable experiments.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+              <Link
+                href="/signup"
+                className="px-8 py-4 bg-blue-600 text-white text-lg font-semibold rounded-lg hover:bg-blue-700 transition shadow-lg hover:shadow-xl transform hover:scale-105"
               >
-                {loading ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                    </svg>
-                    Analyzing...
-                  </span>
-                ) : (
-                  'Analyze Landing Page'
-                )}
-              </button>
+                Analyze My Page Free
+              </Link>
+              <a
+                href="#how-it-works"
+                className="px-8 py-4 bg-white border-2 border-gray-300 text-gray-900 text-lg font-semibold rounded-lg hover:border-gray-400 transition"
+              >
+                See How It Works
+              </a>
+            </div>
+            <p className="text-sm text-gray-500 mt-4">No credit card required • 2-minute setup • Real insights</p>
+          </div>
+
+          {/* Hero Visual */}
+          <div className="mt-16 max-w-5xl mx-auto">
+            <div className="relative">
+              <div className="absolute inset-0 bg-gradient-to-t from-white via-transparent to-transparent z-10"></div>
+              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl shadow-2xl border border-gray-200 p-8">
+                <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+                  <div className="bg-gray-100 px-4 py-3 flex items-center gap-2 border-b border-gray-200">
+                    <div className="flex gap-1.5">
+                      <div className="w-3 h-3 bg-red-400 rounded-full"></div>
+                      <div className="w-3 h-3 bg-yellow-400 rounded-full"></div>
+                      <div className="w-3 h-3 bg-green-400 rounded-full"></div>
+                    </div>
+                    <div className="flex-1 text-center text-sm text-gray-600">Analysis Results</div>
+                  </div>
+                  <div className="p-6 space-y-4">
+                    <div className="flex items-start gap-3 p-4 bg-green-50 border border-green-200 rounded-lg">
+                      <div className="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center flex-shrink-0">
+                        <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                      </div>
+                      <div>
+                        <div className="font-semibold text-gray-900 mb-1">High Impact: Hero CTA Test</div>
+                        <div className="text-sm text-gray-600">Change "Learn More" to "See Pricing" • Expected lift: 8-12%</div>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                      <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
+                        <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                        </svg>
+                      </div>
+                      <div>
+                        <div className="font-semibold text-gray-900 mb-1">Quick Win: Add Social Proof</div>
+                        <div className="text-sm text-gray-600">No customer logos above fold • Add trust signals immediately</div>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                      <div className="w-8 h-8 bg-yellow-600 rounded-full flex items-center justify-center flex-shrink-0">
+                        <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                      </div>
+                      <div>
+                        <div className="font-semibold text-gray-900 mb-1">Mobile Issue: Text Too Small</div>
+                        <div className="text-sm text-gray-600">Hero headline 14px on mobile • Bump to 24px minimum</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Social Proof */}
+      <section className="py-12 bg-gray-50 border-y border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <p className="text-center text-sm text-gray-500 mb-8">Trusted by growth teams at</p>
+          <div className="flex flex-wrap justify-center items-center gap-12 opacity-60">
+            <div className="text-2xl font-bold text-gray-400">BRAND A</div>
+            <div className="text-2xl font-bold text-gray-400">BRAND B</div>
+            <div className="text-2xl font-bold text-gray-400">BRAND C</div>
+            <div className="text-2xl font-bold text-gray-400">BRAND D</div>
+            <div className="text-2xl font-bold text-gray-400">BRAND E</div>
+          </div>
+        </div>
+      </section>
+
+      {/* How It Works */}
+      <section id="how-it-works" className="py-20 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-bold text-gray-900 mb-4">
+              From Landing Page to Action Plan in 30 Seconds
+            </h2>
+            <p className="text-xl text-gray-600">No spreadsheets. No guesswork. Just clear CRO experiments.</p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-12">
+            <div className="text-center">
+              <div className="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-3">1. Paste Your Link</h3>
+              <p className="text-gray-600">
+                Drop in your landing page URL and your funnel metrics. That's it.
+              </p>
+            </div>
+
+            <div className="text-center">
+              <div className="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-3">2. AI Finds the Leaks</h3>
+              <p className="text-gray-600">
+                Our vision AI scans your page and pinpoints exactly where visitors drop off.
+              </p>
+            </div>
+
+            <div className="text-center">
+              <div className="w-16 h-16 bg-blue-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-3">3. Get Testable CRO Ideas</h3>
+              <p className="text-gray-600">
+                Receive a prioritized roadmap of experiments with expected lift estimates.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Features */}
+      <section className="py-20 bg-gray-50 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-bold text-gray-900 mb-4">
+              Built for DTC Growth Teams
+            </h2>
+            <p className="text-xl text-gray-600">Stop guessing. Start testing what actually moves the needle.</p>
+          </div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-200">
+              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
+                <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Instant Analysis</h3>
+              <p className="text-gray-600">No setup, no pixel installation. Get insights in seconds, not days.</p>
+            </div>
+
+            <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-200">
+              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
+                <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Measurable Experiments</h3>
+              <p className="text-gray-600">Every recommendation includes expected lift and implementation difficulty.</p>
+            </div>
+
+            <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-200">
+              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
+                <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Vision AI Analysis</h3>
+              <p className="text-gray-600">GPT-5 vision scans your page like a real customer would see it.</p>
+            </div>
+
+            <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-200">
+              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
+                <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Full Funnel Context</h3>
+              <p className="text-gray-600">Analyzes LP → ATC → Checkout flow with your actual metrics.</p>
+            </div>
+
+            <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-200">
+              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
+                <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Privacy First</h3>
+              <p className="text-gray-600">Your data stays yours. We never share or sell customer information.</p>
+            </div>
+
+            <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-200">
+              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
+                <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">ROI Calculator</h3>
+              <p className="text-gray-600">See the revenue impact of each recommended test before you run it.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Results Section */}
+      <section className="py-20 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-5xl mx-auto">
+          <div className="bg-gradient-to-br from-blue-600 to-indigo-600 rounded-2xl p-12 text-white">
+            <div className="text-center mb-12">
+              <h2 className="text-4xl font-bold mb-4">Real Results, Real Revenue</h2>
+              <p className="text-xl text-blue-100">Our customers see measurable lift in 2-4 weeks</p>
+            </div>
+
+            <div className="grid md:grid-cols-3 gap-8">
+              <div className="text-center">
+                <div className="text-5xl font-bold mb-2">+18%</div>
+                <div className="text-blue-100">Average ATC Rate Lift</div>
+              </div>
+              <div className="text-center">
+                <div className="text-5xl font-bold mb-2">2.4x</div>
+                <div className="text-blue-100">ROI on First Test</div>
+              </div>
+              <div className="text-center">
+                <div className="text-5xl font-bold mb-2">30s</div>
+                <div className="text-blue-100">Time to First Insight</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gray-50">
+        <div className="max-w-4xl mx-auto text-center">
+          <h2 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-6">
+            Ready to Stop Guessing and Start Converting?
+          </h2>
+          <p className="text-xl text-gray-600 mb-8">
+            Join growth teams using AI to find and fix conversion leaks—fast.
+          </p>
+          <Link
+            href="/signup"
+            className="inline-block px-8 py-4 bg-blue-600 text-white text-lg font-semibold rounded-lg hover:bg-blue-700 transition shadow-lg hover:shadow-xl transform hover:scale-105"
+          >
+            Analyze My Page Free
+          </Link>
+          <p className="text-sm text-gray-500 mt-4">Free analysis • No credit card • 2-minute setup</p>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="bg-gray-900 text-gray-400 py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid md:grid-cols-4 gap-8 mb-8">
+            <div>
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-6 h-6 bg-blue-600 rounded flex items-center justify-center">
+                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  </svg>
+                </div>
+                <span className="font-bold text-white">Smart Nudge Builder</span>
+              </div>
+              <p className="text-sm">AI-powered CRO for DTC growth teams.</p>
+            </div>
+
+            <div>
+              <h3 className="font-semibold text-white mb-4">Product</h3>
+              <ul className="space-y-2 text-sm">
+                <li><Link href="/signup" className="hover:text-white">Start Free</Link></li>
+                <li><Link href="/dashboard" className="hover:text-white">Dashboard</Link></li>
+                <li><a href="#how-it-works" className="hover:text-white">How It Works</a></li>
+              </ul>
+            </div>
+
+            <div>
+              <h3 className="font-semibold text-white mb-4">Company</h3>
+              <ul className="space-y-2 text-sm">
+                <li><a href="#" className="hover:text-white">About</a></li>
+                <li><a href="#" className="hover:text-white">Privacy</a></li>
+                <li><a href="#" className="hover:text-white">Terms</a></li>
+              </ul>
+            </div>
+
+            <div>
+              <h3 className="font-semibold text-white mb-4">Connect</h3>
+              <div className="flex gap-4">
+                <a href="#" className="hover:text-white">
+                  <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M23 3a10.9 10.9 0 01-3.14 1.53 4.48 4.48 0 00-7.86 3v1A10.66 10.66 0 013 4s-4 9 5 13a11.64 11.64 0 01-7 2c9 5 20 0 20-11.5a4.5 4.5 0 00-.08-.83A7.72 7.72 0 0023 3z"/>
+                  </svg>
+                </a>
+                <a href="#" className="hover:text-white">
+                  <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-2-2 2 2 0 00-2 2v7h-4v-7a6 6 0 016-6zM2 9h4v12H2z"/>
+                    <circle cx="4" cy="4" r="2"/>
+                  </svg>
+                </a>
+              </div>
             </div>
           </div>
 
-          {/* Right Panel - Results */}
-          <div className="lg:col-span-2">
-            {!insights && !loading && (
-              <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-12 flex items-center justify-center min-h-[500px]">
-                <div className="text-center">
-                  <svg className="w-16 h-16 mx-auto mb-4 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
-                  <p className="text-slate-600 font-medium mb-2">Ready to analyze your landing page</p>
-                  <p className="text-sm text-slate-500">Enter your URL and metrics to get started</p>
-                </div>
-              </div>
-            )}
-
-            {loading && (
-              <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-12 flex items-center justify-center min-h-[500px]">
-                <div className="text-center">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                  <p className="text-slate-600 font-medium mb-2">Analyzing your landing page...</p>
-                  <p className="text-sm text-slate-500">This may take 15-20 seconds</p>
-                </div>
-              </div>
-            )}
-
-            {insights && (
-              <div className="space-y-6">
-                {summary && (
-                  <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
-                    <div className="flex flex-col gap-3">
-                      <div>
-                        <h2 className="text-lg font-bold text-slate-900">🧠 Growth-Hacker Summary</h2>
-                        <p className="text-sm text-slate-500">
-                          High-leverage synthesis rooted in copy, visuals, and behavioral hierarchy.
-                        </p>
-                      </div>
-                      <p className="text-slate-800 text-base leading-relaxed">{summary.headline}</p>
-                      <div className="flex flex-wrap gap-3 text-xs text-slate-500">
-                        <span className="inline-flex items-center gap-1 rounded-full border border-slate-300 px-3 py-1 uppercase tracking-wide">
-                          Tone: {summary.diagnosticTone || 'n/a'}
-                        </span>
-                        <span className="inline-flex items-center gap-1 rounded-full border border-slate-300 px-3 py-1 uppercase tracking-wide">
-                          Confidence: {summary.confidence || 'n/a'}
-                        </span>
-                        {croUsage && (
-                          <span className="inline-flex items-center gap-1 rounded-full border border-slate-300 px-3 py-1">
-                            Tokens in/out: {croUsage.inputTokens}/{croUsage.outputTokens}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {(visionAnalysis || visionError) && (
-                  <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6 space-y-5">
-                    <div className="flex items-center justify-between gap-3">
-                      <div>
-                        <h2 className="text-lg font-bold text-slate-900">👀 Above-the-Fold Vision Snapshot</h2>
-                        <p className="text-sm text-slate-500">
-                          GPT-4o vision read of desktop and mobile hero captures.
-                        </p>
-                      </div>
-                      {visionAnalysis?.cost && (
-                        <div className="text-xs text-slate-500 text-right">
-                          <div>Prompt tokens: {visionAnalysis.cost.inputTokens}</div>
-                          <div>Completion tokens: {visionAnalysis.cost.outputTokens}</div>
-                          <div>Est. cost: ${visionAnalysis.cost.estimatedUsd.toFixed(4)}</div>
-                        </div>
-                      )}
-                    </div>
-
-                    {visionError && !visionAnalysis && (
-                      <p className="rounded bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700">
-                        {visionError}
-                      </p>
-                    )}
-
-                    {screenshotPreview && (
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <figure className="border border-slate-200 rounded-lg p-3 bg-slate-50">
-                          <figcaption className="mb-2 text-xs font-semibold text-slate-500 uppercase tracking-wide">
-                            Desktop Above Fold
-                          </figcaption>
-                          <img
-                            src={screenshotPreview.desktop.aboveFold}
-                            alt="Desktop above-the-fold screenshot"
-                            className="w-full rounded shadow-sm"
-                          />
-                        </figure>
-                        <figure className="border border-slate-200 rounded-lg p-3 bg-slate-50">
-                          <figcaption className="mb-2 text-xs font-semibold text-slate-500 uppercase tracking-wide">
-                            Mobile Above Fold
-                          </figcaption>
-                          <img
-                            src={screenshotPreview.mobile.aboveFold}
-                            alt="Mobile above-the-fold screenshot"
-                            className="w-full rounded shadow-sm"
-                          />
-                        </figure>
-                      </div>
-                    )}
-
-                    {visionAnalysis && (
-                      <div className="grid gap-6">
-                        {visionAnalysis.status === 'unreadable' ? (
-                          <p className="text-sm text-slate-600">
-                            Vision model could not confidently interpret the screenshots. Please double-check
-                            the captures or retry.
-                          </p>
-                        ) : (
-                          <>
-                            <section className="grid gap-3">
-                              <h3 className="text-base font-semibold text-slate-900">Hero Summary</h3>
-                              <div className="grid gap-2 text-sm text-slate-700">
-                                <div>
-                                  <span className="font-semibold text-slate-600">Headline:</span>{' '}
-                                  {visionAnalysis.hero.headline || 'Not detected'}
-                                </div>
-                                <div>
-                                  <span className="font-semibold text-slate-600">Subheadline:</span>{' '}
-                                  {visionAnalysis.hero.subheadline || 'Not detected'}
-                                </div>
-                                <div>
-                                  <span className="font-semibold text-slate-600">Primary CTA:</span>{' '}
-                                  {visionAnalysis.hero.cta.text || 'Not detected'}
-                                </div>
-                                {visionAnalysis.hero.cta.styleClues.length > 0 && (
-                                  <div className="text-xs text-slate-500">
-                                    Style clues: {visionAnalysis.hero.cta.styleClues.join(', ')}
-                                  </div>
-                                )}
-                                {visionAnalysis.hero.supportingElements.length > 0 && (
-                                  <div className="text-xs text-slate-500">
-                                    Supporting elements:{' '}
-                                    {visionAnalysis.hero.supportingElements.join(', ')}
-                                  </div>
-                                )}
-                              </div>
-                            </section>
-
-                            <section className="grid gap-3">
-                              <h3 className="text-base font-semibold text-slate-900">CTA Inventory</h3>
-                              {visionAnalysis.ctas.length === 0 ? (
-                                <p className="text-sm text-slate-600">No calls-to-action detected above the fold.</p>
-                              ) : (
-                                <ul className="grid gap-2">
-                                  {visionAnalysis.ctas.map((cta: any, index: number) => (
-                                    <li
-                                      key={`${cta.text}-${index}`}
-                                      className="flex items-start justify-between gap-4 rounded border border-slate-200 px-3 py-2 text-sm text-slate-700"
-                                    >
-                                      <div>
-                                        <div className="font-semibold text-slate-800">{cta.text || 'CTA'}</div>
-                                        <div className="text-xs text-slate-500">{cta.locationHint}</div>
-                                      </div>
-                                      <span className="text-xs font-semibold uppercase tracking-wide text-blue-600">
-                                        {cta.prominence} visibility
-                                      </span>
-                                    </li>
-                                  ))}
-                                </ul>
-                              )}
-                            </section>
-
-                            <section className="grid gap-3">
-                              <h3 className="text-base font-semibold text-slate-900">Trust Signals & Hierarchy</h3>
-                              <div className="grid gap-2 text-sm text-slate-700">
-                                <div>
-                                  <span className="font-semibold text-slate-600">Trust signals:</span>{' '}
-                                  {visionAnalysis.trustSignals.length > 0
-                                    ? visionAnalysis.trustSignals.join(', ')
-                                    : 'None spotted'}
-                                </div>
-                                {visionAnalysis.visualHierarchy.length > 0 && (
-                                  <div>
-                                    <span className="font-semibold text-slate-600">Visual hierarchy:</span>
-                                    <ol className="ml-4 list-decimal text-sm text-slate-700">
-                                      {visionAnalysis.visualHierarchy.map((item: string, i: number) => (
-                                        <li key={i}>{item}</li>
-                                      ))}
-                                    </ol>
-                                  </div>
-                                )}
-                              </div>
-                            </section>
-
-                            <section className="grid gap-3">
-                              <h3 className="text-base font-semibold text-slate-900">Responsiveness & Performance</h3>
-                              <div className="grid gap-2 text-sm text-slate-700">
-                                <div>
-                                  <span className="font-semibold text-slate-600">Responsive risk:</span>{' '}
-                                  <span className="uppercase tracking-wide text-xs font-semibold text-purple-600">
-                                    {visionAnalysis.responsiveness.overallRisk}
-                                  </span>
-                                </div>
-                                {visionAnalysis.responsiveness.issues.length > 0 && (
-                                  <ul className="ml-4 list-disc text-sm text-slate-700">
-                                    {visionAnalysis.responsiveness.issues.map((issue: string, i: number) => (
-                                      <li key={i}>{issue}</li>
-                                    ))}
-                                  </ul>
-                                )}
-                                <div>
-                                  <span className="font-semibold text-slate-600">Heavy media:</span>{' '}
-                                  {visionAnalysis.performanceSignals.heavyMedia ? 'Yes' : 'No'}
-                                </div>
-                                {visionAnalysis.performanceSignals.notes && (
-                                  <p className="text-xs text-slate-500">
-                                    {visionAnalysis.performanceSignals.notes}
-                                  </p>
-                                )}
-                              </div>
-                            </section>
-
-                            <section className="grid gap-3">
-                              <h3 className="text-base font-semibold text-slate-900">Desktop vs Mobile</h3>
-                              {visionAnalysis.differences.flagged ? (
-                                <ul className="ml-4 list-disc text-sm text-slate-700">
-                                  {visionAnalysis.differences.notes.map((note: string, i: number) => (
-                                    <li key={i}>{note}</li>
-                                  ))}
-                                </ul>
-                              ) : (
-                                <p className="text-sm text-slate-600">
-                                  No major differences flagged between desktop and mobile hero sections.
-                                </p>
-                              )}
-                            </section>
-
-                            <div className="text-xs text-slate-500">
-                              Confidence: {visionAnalysis.confidence.toUpperCase()}
-                              {visionAnalysis.status !== 'ok' && (
-                                <span className="ml-2">({visionAnalysis.status})</span>
-                              )}
-                            </div>
-                          </>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {aboveTheFold && (
-                  <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6 space-y-4">
-                    <div className="flex items-center justify-between gap-3">
-                      <div>
-                        <h2 className="text-lg font-bold text-slate-900">1️⃣ Above the Fold — First 5 Seconds</h2>
-                        <p className="text-sm text-slate-500">
-                          Diagnose hook, message match, trust, and CTA strength instantly.
-                        </p>
-                      </div>
-                      <span className="text-xs font-semibold text-red-600 uppercase tracking-wide">
-                        {aboveTheFold.priority || 'P1'}
-                      </span>
-                    </div>
-
-                    <div className="flex flex-wrap gap-3 text-xs text-slate-600">
-                      <span
-                        className={`inline-flex items-center gap-2 rounded-full px-3 py-1 border ${
-                          aboveTheFold.failsFirstFiveSeconds ? 'border-red-300 text-red-600' : 'border-green-300 text-green-700'
-                        }`}
-                      >
-                        <span
-                          className="h-2 w-2 rounded-full"
-                          style={{ backgroundColor: aboveTheFold.failsFirstFiveSeconds ? '#dc2626' : '#16a34a' }}
-                        />
-                        {aboveTheFold.failsFirstFiveSeconds
-                          ? 'Fails initial intent snap-test'
-                          : 'Passes initial intent snap-test'}
-                      </span>
-                    </div>
-
-                    {Array.isArray(aboveTheFold.findings) && aboveTheFold.findings.length > 0 && (
-                      <div className="space-y-3">
-                        {aboveTheFold.findings.map((finding: any, index: number) => (
-                          <div key={`atf-finding-${index}`} className="border border-slate-200 rounded-lg p-4">
-                            <div className="flex flex-wrap items-center justify-between gap-2">
-                              <span className="text-sm font-semibold text-slate-800">{finding.element}</span>
-                              <span
-                                className={`text-xs font-semibold uppercase tracking-wide ${
-                                  finding.status === 'pass'
-                                    ? 'text-green-600'
-                                    : finding.status === 'risk'
-                                    ? 'text-yellow-600'
-                                    : 'text-red-600'
-                                }`}
-                              >
-                                {finding.status}
-                              </span>
-                            </div>
-                            <p className="mt-2 text-sm text-slate-700">
-                              <span className="font-semibold text-slate-600">Evidence:</span> {finding.evidence}
-                            </p>
-                            <p className="mt-1 text-xs text-slate-500 italic">Diagnostic: {finding.diagnosticQuestion}</p>
-                            <p className="mt-2 text-sm text-blue-700">
-                              <span className="font-semibold">Recommendation:</span> {finding.recommendation}
-                            </p>
-                            {finding.abTestIdea && (
-                              <p className="mt-1 text-xs text-blue-500">A/B Idea: {finding.abTestIdea}</p>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    <div className="grid gap-4 md:grid-cols-2">
-                      {aboveTheFold.headlineTest && (
-                        <div className="border border-slate-200 rounded-lg p-4 bg-slate-50">
-                          <h3 className="text-sm font-semibold text-slate-800 mb-2">Headline A/B Test</h3>
-                          <div className="text-xs text-slate-600 space-y-1">
-                            <div>
-                              <span className="font-semibold">Control:</span> {aboveTheFold.headlineTest.control}
-                            </div>
-                            <div>
-                              <span className="font-semibold">Variant:</span> {aboveTheFold.headlineTest.variant}
-                            </div>
-                            <div>
-                              <span className="font-semibold">Hypothesis:</span> {aboveTheFold.headlineTest.hypothesis}
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                      {aboveTheFold.ctaTest && (
-                        <div className="border border-slate-200 rounded-lg p-4 bg-slate-50">
-                          <h3 className="text-sm font-semibold text-slate-800 mb-2">CTA A/B Test</h3>
-                          <div className="text-xs text-slate-600 space-y-1">
-                            <div>
-                              <span className="font-semibold">Control:</span> {aboveTheFold.ctaTest.control}
-                            </div>
-                            <div>
-                              <span className="font-semibold">Variant:</span> {aboveTheFold.ctaTest.variant}
-                            </div>
-                            <div>
-                              <span className="font-semibold">Hypothesis:</span> {aboveTheFold.ctaTest.hypothesis}
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="grid gap-3 text-sm text-slate-700">
-                      <div>
-                        <span className="font-semibold text-slate-600">Trust gap:</span> {aboveTheFold.trustGap}
-                      </div>
-                      <div>
-                        <span className="font-semibold text-slate-600">Speed & readability:</span> {aboveTheFold.speedReadability}
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {belowTheFold && (
-                  <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6 space-y-4">
-                    <div className="flex items-center justify-between gap-3">
-                      <div>
-                        <h2 className="text-lg font-bold text-slate-900">2️⃣ Below the Fold — Persuasion Arc</h2>
-                        <p className="text-sm text-slate-500">
-                          Ensure Pain → Dream → Solution → Proof → Offer → CTA hits in order.
-                        </p>
-                      </div>
-                      <span className="text-xs font-semibold text-orange-600 uppercase tracking-wide">
-                        {belowTheFold.priority || 'P1'}
-                      </span>
-                    </div>
-
-                    <p className="text-sm text-slate-700">{belowTheFold.sequenceAssessment}</p>
-
-                    {Array.isArray(belowTheFold.gaps) && belowTheFold.gaps.length > 0 && (
-                      <div className="space-y-3">
-                        {belowTheFold.gaps.map((gap: any, index: number) => (
-                          <div key={`gap-${index}`} className="border border-slate-200 rounded-lg p-4">
-                            <div className="text-sm font-semibold text-slate-800 mb-1">{gap.layer}</div>
-                            <p className="text-sm text-slate-700">
-                              <span className="font-semibold text-slate-600">Issue:</span> {gap.issue}
-                            </p>
-                            <p className="mt-1 text-sm text-blue-700">
-                              <span className="font-semibold">Recommendation:</span> {gap.recommendation}
-                            </p>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    {Array.isArray(belowTheFold.proofOpportunities) && belowTheFold.proofOpportunities.length > 0 && (
-                      <div className="border border-blue-100 bg-blue-50 rounded-lg p-4">
-                        <h3 className="text-sm font-semibold text-blue-800 mb-2">Proof Opportunities</h3>
-                        <ul className="list-disc pl-5 text-sm text-blue-700 space-y-1">
-                          {belowTheFold.proofOpportunities.map((item: string, i: number) => (
-                            <li key={`proof-${i}`}>{item}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-
-                    <div className="text-sm text-slate-700">
-                      <span className="font-semibold text-slate-600">CTA reinforcement:</span> {belowTheFold.ctaPlacementNotes}
-                    </div>
-                  </div>
-                )}
-
-                {fullPageAudit && (
-                  <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6 space-y-4">
-                    <div className="flex items-center justify-between gap-3">
-                      <div>
-                        <h2 className="text-lg font-bold text-slate-900">3️⃣ Full-Page Message Architecture</h2>
-                        <p className="text-sm text-slate-500">
-                          Check flow, hierarchy, parity, capture, and analytics guardrails.
-                        </p>
-                      </div>
-                      <span className="text-xs font-semibold uppercase tracking-wide text-purple-600">
-                        Risk: {fullPageAudit.riskLevel || 'medium'}
-                      </span>
-                    </div>
-
-                    <div className="grid gap-3 text-sm text-slate-700">
-                      <div>
-                        <span className="font-semibold text-slate-600">Message hierarchy:</span> {fullPageAudit.messageHierarchy}
-                      </div>
-                      <div>
-                        <span className="font-semibold text-slate-600">Visual hierarchy:</span> {fullPageAudit.visualHierarchy}
-                      </div>
-                      <div>
-                        <span className="font-semibold text-slate-600">Mobile parity:</span> {fullPageAudit.mobileParity}
-                      </div>
-                      <div>
-                        <span className="font-semibold text-slate-600">Data capture:</span> {fullPageAudit.dataCapture}
-                      </div>
-                      <div>
-                        <span className="font-semibold text-slate-600">Analytics readiness:</span> {fullPageAudit.analyticsReadiness}
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {strategicExtensions && (
-                  <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6 space-y-4">
-                    <h2 className="text-lg font-bold text-slate-900">4️⃣ Strategic Extensions</h2>
-                    <p className="text-sm text-slate-500">
-                      Keep the growth loop spinning across acquisition, creative, and segmentation.
-                    </p>
-                    <div className="grid gap-4 md:grid-cols-3">
-                      <div>
-                        <h3 className="text-sm font-semibold text-slate-800 mb-2">Audience Segments</h3>
-                        <ul className="space-y-2 text-sm text-slate-700">
-                          {(strategicExtensions.audienceSegments || []).map((item: string, i: number) => (
-                            <li key={`segment-${i}`} className="flex gap-2">
-                              <span className="text-blue-600 font-bold">→</span>
-                              <span>{item}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                      <div>
-                        <h3 className="text-sm font-semibold text-slate-800 mb-2">Acquisition Continuity</h3>
-                        <ul className="space-y-2 text-sm text-slate-700">
-                          {(strategicExtensions.acquisitionContinuity || []).map((item: string, i: number) => (
-                            <li key={`utm-${i}`} className="flex gap-2">
-                              <span className="text-green-600 font-bold">★</span>
-                              <span>{item}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                      <div>
-                        <h3 className="text-sm font-semibold text-slate-800 mb-2">Creative Feedback Loop</h3>
-                        <ul className="space-y-2 text-sm text-slate-700">
-                          {(strategicExtensions.creativeFeedbackLoop || []).map((item: string, i: number) => (
-                            <li key={`creative-${i}`} className="flex gap-2">
-                              <span className="text-purple-600 font-bold">✶</span>
-                              <span>{item}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {roadmap.length > 0 && (
-                  <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6">
-                    <div className="flex items-center justify-between mb-4">
-                      <div>
-                        <h2 className="text-lg font-bold text-slate-900">📈 Prioritized Roadmap</h2>
-                        <p className="text-sm text-slate-500">Sequence the highest leverage tests first.</p>
-                      </div>
-                    </div>
-
-                    <div className="space-y-3">
-                      {roadmap.map((item: any, index: number) => (
-                        <div
-                          key={`roadmap-${index}`}
-                          className="border border-slate-200 rounded-lg p-4 hover:border-slate-300 transition"
-                        >
-                          <div className="flex flex-wrap gap-3 items-center justify-between mb-3">
-                            <div className="flex gap-2 items-center">
-                              <span
-                                className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                                  item.priority === 'P0'
-                                    ? 'bg-red-100 text-red-700'
-                                    : item.priority === 'P1'
-                                    ? 'bg-yellow-100 text-yellow-700'
-                                    : 'bg-slate-100 text-slate-600'
-                                }`}
-                              >
-                                {item.priority}
-                              </span>
-                              <span className="text-xs uppercase tracking-wide text-slate-500">
-                                Owner: {item.owner || 'Growth'}
-                              </span>
-                            </div>
-                            <div className="flex gap-2 text-xs text-slate-500">
-                              <span>Impact: {item.impact}</span>
-                              <span>Effort: {item.effort}</span>
-                              {item.expectedLift && <span>Lift: {item.expectedLift}</span>}
-                            </div>
-                          </div>
-                          <h3 className="text-base font-semibold text-slate-900 mb-2">{item.title}</h3>
-                          <p className="text-sm text-slate-700">{item.notes}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
+          <div className="border-t border-gray-800 pt-8 text-sm text-center">
+            <p>&copy; 2025 Smart Nudge Builder. All rights reserved.</p>
           </div>
         </div>
-
-        {/* Footer */}
-        <div className="text-center mt-12 text-sm text-slate-500">
-          Built for DTC growth teams
-        </div>
-      </div>
+      </footer>
     </div>
   );
 }
