@@ -125,8 +125,9 @@ export async function analyzeAboveFold({
       }),
     );
 
-    if (response.status === 'incomplete') {
-      const reason = response.incomplete_details?.reason || 'unknown';
+    if ('status' in response && response.status === 'incomplete') {
+      const reason =
+        ('incomplete_details' in response && response.incomplete_details?.reason) || 'unknown';
       console.error('GPT-5 vision response incomplete:', response);
       throw new VisionAnalysisError(`Vision model stopped early (reason: ${reason}).`);
     }
