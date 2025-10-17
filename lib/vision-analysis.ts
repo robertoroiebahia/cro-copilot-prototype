@@ -14,7 +14,7 @@ const MAX_RETRIES = 3;
 const BASE_DELAY_MS = 1000;
 const MODEL = 'gpt-5';
 // Capping output tokens encourages concise results and bounds worst-case cost.
-const MAX_OUTPUT_TOKENS = 1500;
+const MAX_OUTPUT_TOKENS = 5000;
 
 export type VisionAnalysisStatus = 'ok' | 'unreadable';
 export type ProminenceLevel = 'high' | 'medium' | 'low';

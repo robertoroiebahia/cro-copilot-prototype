@@ -39,17 +39,27 @@ export default function Home() {
         return;
       }
 
-      if (!res.ok) throw new Error('Analysis failed');
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || errorData.details || 'Analysis failed');
+      }
 
       const data = await res.json();
+
+      // Check if there's an error in the response
+      if (data.error) {
+        throw new Error(data.error + (data.hint ? '\n\n' + data.hint : ''));
+      }
+
       setInsights(data);
 
       // Show success message
       if (data.id) {
         console.log('Analysis saved with ID:', data.id);
       }
-    } catch (err) {
-      setError('Failed to analyze. Please check the URL and try again.');
+    } catch (err: any) {
+      console.error('Analysis error:', err);
+      setError(err.message || 'Failed to analyze. Please check the URL and try again.');
     } finally {
       setLoading(false);
     }
@@ -221,8 +231,15 @@ export default function Home() {
 
               {/* Error Message */}
               {error && (
-                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md text-red-700 text-sm">
-                  {error}
+                <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-md">
+                  <div className="flex items-start gap-2">
+                    <svg className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <div className="text-sm text-red-800 whitespace-pre-line">
+                      {error}
+                    </div>
+                  </div>
                 </div>
               )}
 

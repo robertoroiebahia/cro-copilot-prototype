@@ -413,7 +413,7 @@ Rules:
           ],
         },
       ],
-      max_output_tokens: 1200,
+      max_output_tokens: 5000,
     });
 
     const insights = JSON.parse(response.output_text || '{}');
@@ -462,12 +462,21 @@ Rules:
 
     if (dbError) {
       console.error('Database save error:', dbError);
-      // Continue anyway - don't fail the request if DB save fails
+      console.error('Error details:', JSON.stringify(dbError, null, 2));
+      // Return error to user if database save fails
+      return NextResponse.json(
+        {
+          error: 'Failed to save analysis to database. Please ensure the database migration has been run.',
+          details: dbError.message || 'Unknown database error',
+          hint: 'Check SETUP.md for instructions on running the database migration'
+        },
+        { status: 500 }
+      );
     }
 
     const responseData = {
       ...insights,
-      id: savedAnalysis?.id, // Include the analysis ID for reference
+      id: savedAnalysis.id, // Include the analysis ID for reference
       pageData: {
         h1: pageData.h1,
         hasReviews: pageData.hasReviews,
