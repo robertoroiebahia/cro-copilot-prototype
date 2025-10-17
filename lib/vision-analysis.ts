@@ -335,7 +335,8 @@ function extractResponseText(response: Awaited<ReturnType<typeof openai.response
     return response.output_text;
   }
 
-  const outputArray = Array.isArray(response.output) ? response.output : [];
+  const outputArray =
+    'output' in response && Array.isArray((response as any).output) ? (response as any).output : [];
   for (const item of outputArray) {
     if (!item) continue;
 
