@@ -403,12 +403,6 @@ Rules:
           ],
         },
       ],
-      reasoning: {
-        effort: 'minimal',
-      },
-      text: {
-        verbosity: 'medium',
-      },
       max_output_tokens: 1200,
     });
 
