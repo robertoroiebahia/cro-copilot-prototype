@@ -372,12 +372,11 @@ Provide a deep analysis using the 10× Growth-Hacker Landing-Page Audit Framewor
   },
   "roadmap": [
     {
-      "priority": "P0 | P1 | P2",
+      "focusArea": "Social Proof | Trust | UX/UI | Offer | Messaging | Experiment Ops",
       "title": "Name of experiment or fix",
       "impact": "High | Medium | Low",
       "effort": "High | Medium | Low",
       "expectedLift": "X-Y%",
-      "owner": "Growth | Creative | Dev | Analytics",
       "notes": "One sentence rationale with hero/proof references"
     }
   ]
@@ -385,6 +384,7 @@ Provide a deep analysis using the 10× Growth-Hacker Landing-Page Audit Framewor
 
 Rules:
 - Every string must be grounded in the supplied landing page content AND the vision insights narrative.
+- Tag each roadmap item with a focusArea that reflects the primary pillar impacted (e.g., Trust, Social Proof, UX/UI, Offer).
 - Reuse the framework terminology verbatim where helpful, but do not copy the illustrative text.
 - Keep arrays lean (max 4 items) and prioritize highest-impact findings first.
 - If data is missing, use null or empty arrays but keep the keys.

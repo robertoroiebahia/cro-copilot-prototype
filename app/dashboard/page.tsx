@@ -1,4 +1,4 @@
-import { createClient } from '@/utils/supabase/server';
+import { createClient, createActionClient } from '@/utils/supabase/server';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import type { Analysis } from '@/lib/types/database.types';
@@ -28,7 +28,7 @@ export default async function DashboardPage() {
 
   const handleSignOut = async () => {
     'use server';
-    const supabase = createClient();
+    const supabase = createActionClient();
     await supabase.auth.signOut();
     redirect('/login');
   };
