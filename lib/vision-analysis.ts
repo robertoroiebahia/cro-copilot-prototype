@@ -331,7 +331,7 @@ async function withRetry<T>(fn: () => Promise<T>, attempt = 1): Promise<T> {
 }
 
 function extractResponseText(response: Awaited<ReturnType<typeof openai.responses.create>>): string | null {
-  if (typeof response.output_text === 'string' && response.output_text.trim().length > 0) {
+  if ('output_text' in response && typeof response.output_text === 'string' && response.output_text.trim().length > 0) {
     return response.output_text;
   }
 
