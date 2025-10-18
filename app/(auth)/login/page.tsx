@@ -30,7 +30,14 @@ export default function LoginPage() {
       router.push('/dashboard')
       router.refresh()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred during login')
+      const errorMessage = err instanceof Error ? err.message : 'An error occurred during login'
+
+      // Check for rate limit error
+      if (errorMessage.includes('rate limit') || errorMessage.includes('429')) {
+        setError('Too many login attempts. Please wait a few minutes and try again.')
+      } else {
+        setError(errorMessage)
+      }
     } finally {
       setLoading(false)
     }

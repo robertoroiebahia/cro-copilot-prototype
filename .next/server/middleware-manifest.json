@@ -10,15 +10,34 @@
       "page": "/",
       "matchers": [
         {
-          "regexp": "^/.*$",
-          "originalSource": "/:path*"
+          "regexp": "^(?:\\/(_next\\/data\\/[^/]{1,}))?(?:\\/((?!_next\\/static|_next\\/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|css|js)$).*))(\\.json)?[\\/#\\?]?$",
+          "originalSource": "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|css|js)$).*)"
+        },
+        {
+          "regexp": "^(?:\\/(_next\\/data\\/[^/]{1,}))?\\/dashboard(?:\\/((?:[^\\/#\\?]+?)(?:\\/(?:[^\\/#\\?]+?))*))?(\\.json)?[\\/#\\?]?$",
+          "originalSource": "/dashboard/:path*"
+        },
+        {
+          "regexp": "^(?:\\/(_next\\/data\\/[^/]{1,}))?\\/analyze(?:\\/((?:[^\\/#\\?]+?)(?:\\/(?:[^\\/#\\?]+?))*))?(\\.json)?[\\/#\\?]?$",
+          "originalSource": "/analyze/:path*"
+        },
+        {
+          "regexp": "^(?:\\/(_next\\/data\\/[^/]{1,}))?\\/queue(?:\\/((?:[^\\/#\\?]+?)(?:\\/(?:[^\\/#\\?]+?))*))?(\\.json)?[\\/#\\?]?$",
+          "originalSource": "/queue/:path*"
+        },
+        {
+          "regexp": "^(?:\\/(_next\\/data\\/[^/]{1,}))?\\/api\\/analyze(?:\\/((?:[^\\/#\\?]+?)(?:\\/(?:[^\\/#\\?]+?))*))?(\\.json)?[\\/#\\?]?$",
+          "originalSource": "/api/analyze/:path*"
         }
       ],
       "wasm": [],
       "assets": [],
       "env": {
-        "__NEXT_BUILD_ID": "development",
-        "NEXT_SERVER_ACTIONS_ENCRYPTION_KEY": "n5oxoPnUGIHDvv38+7Hk3lgwUtnGuUH5ADAWTiO13Ro="
+        "__NEXT_BUILD_ID": "14qSKGmISR8SbIs4rgHix",
+        "NEXT_SERVER_ACTIONS_ENCRYPTION_KEY": "3OTr28MiU89h5+d0s1pf5TanDaE8i3cS50/S3aZ5WfU=",
+        "__NEXT_PREVIEW_MODE_ID": "f72d3e1473fc7b883dac2aa602d6ced1",
+        "__NEXT_PREVIEW_MODE_SIGNING_KEY": "0c1f8ddf2685ca4a0ba6025a9e38b745bd8df1bb24e658cf545c52ce7c16213d",
+        "__NEXT_PREVIEW_MODE_ENCRYPTION_KEY": "f1e91f1623262fb5841e246c10c12964ac33eda9ae74a7b4cb0ce09e97eb9a42"
       }
     }
   },

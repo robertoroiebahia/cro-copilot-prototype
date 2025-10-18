@@ -12,6 +12,7 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.67.0",
     "@playwright/test": "^1.56.1",
     "@supabase/auth-helpers-nextjs": "^0.10.0",
     "@supabase/ssr": "^0.7.0",
@@ -20,7 +21,7 @@
     "@vercel/analytics": "^1.5.0",
     "axios": "^1.6.0",
     "cheerio": "^1.0.0-rc.12",
-    "next": "^14.0.0",
+    "next": "^15.0.0",
     "openai": "^4.20.0",
     "playwright": "^1.56.1",
     "react": "^18.2.0",

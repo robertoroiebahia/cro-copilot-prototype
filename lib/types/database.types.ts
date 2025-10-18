@@ -45,7 +45,9 @@ export interface Database {
           url: string
           metrics: AnalysisMetrics
           context: AnalysisContext
+          llm: string | null
           summary: AnalysisSummary
+          recommendations: Json | null
           above_the_fold: Json | null
           below_the_fold: Json | null
           full_page: Json | null
@@ -65,7 +67,9 @@ export interface Database {
           url: string
           metrics: AnalysisMetrics
           context: AnalysisContext
+          llm?: string | null
           summary: AnalysisSummary
+          recommendations?: Json | null
           above_the_fold?: Json | null
           below_the_fold?: Json | null
           full_page?: Json | null
@@ -85,7 +89,9 @@ export interface Database {
           url?: string
           metrics?: AnalysisMetrics
           context?: AnalysisContext
+          llm?: string | null
           summary?: AnalysisSummary
+          recommendations?: Json | null
           above_the_fold?: Json | null
           below_the_fold?: Json | null
           full_page?: Json | null
@@ -122,6 +128,12 @@ export interface AnalysisSummary {
   headline: string
   diagnosticTone: 'direct' | 'optimistic' | 'urgent'
   confidence: 'low' | 'medium' | 'high'
+  heuristics?: {
+    clarity: number
+    trust: number
+    urgency: number
+    friction: number
+  }
 }
 
 export interface AnalysisScreenshots {

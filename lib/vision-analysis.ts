@@ -12,7 +12,7 @@ const openai = new OpenAI({
 // avoiding hard failures on occasional 429s from the Vision API.
 const MAX_RETRIES = 3;
 const BASE_DELAY_MS = 1000;
-const MODEL = 'gpt-5';
+const MODEL = 'gpt-5-nano';
 // Capping output tokens encourages concise results and bounds worst-case cost.
 const MAX_OUTPUT_TOKENS = 5000;
 
@@ -124,14 +124,14 @@ export async function analyzeAboveFold({
     if ('status' in response && response.status === 'incomplete') {
       const reason =
         ('incomplete_details' in response && response.incomplete_details?.reason) || 'unknown';
-      console.error('GPT-5 vision response incomplete:', response);
+      console.error('GPT-5-nano vision response incomplete:', response);
       throw new VisionAnalysisError(`Vision model stopped early (reason: ${reason}).`);
     }
 
     const messageContent = extractResponseText(response);
     if (!messageContent) {
-      console.error('GPT-5 vision response without content:', response);
-      throw new VisionAnalysisError('Empty response from GPT-5');
+      console.error('GPT-5-nano vision response without content:', response);
+      throw new VisionAnalysisError('Empty response from GPT-5-nano');
     }
 
     const parsed = parseVisionResponse(messageContent);
@@ -155,7 +155,7 @@ export async function analyzeAboveFold({
       throw error;
     }
     if (error && typeof error === 'object' && 'response' in error && error.response?.data) {
-      console.error('GPT-5 vision raw error payload:', error.response.data);
+      console.error('GPT-5-nano vision raw error payload:', error.response.data);
     }
     throw new VisionAnalysisError(error?.message || 'Vision analysis failed', error);
   }
@@ -165,18 +165,18 @@ function parseVisionResponse(raw: string) {
   try {
     return JSON.parse(raw);
   } catch (error) {
-    throw new VisionAnalysisError('Failed to parse GPT-5 response as JSON', error);
+    throw new VisionAnalysisError('Failed to parse GPT-5-nano response as JSON', error);
   }
 }
 
 function validateVisionResult(data: any): VisionAnalysisResult {
   if (!data || typeof data !== 'object') {
-    throw new VisionAnalysisError('GPT-5 response is not an object');
+    throw new VisionAnalysisError('GPT-5-nano response is not an object');
   }
 
   const status = data.status;
   if (status !== 'ok' && status !== 'unreadable') {
-    throw new VisionAnalysisError('Invalid status in GPT-5 response');
+    throw new VisionAnalysisError('Invalid status in GPT-5-nano response');
   }
 
   const hero = ensureObject(data.hero, 'hero');
@@ -391,7 +391,7 @@ function extractResponseText(response: Awaited<ReturnType<typeof openai.response
 }
 
 function estimateVisionCostUSD(inputTokens: number, outputTokens: number): number {
-  // Estimated pricing for GPT-5 (subject to change): $0.01 per 1K prompt tokens, $0.03 per 1K completion tokens.
+  // Pricing assumption placeholder for GPT-5-nano; adjust with official rates when available.
   const promptCost = (inputTokens / 1000) * 0.01;
   const completionCost = (outputTokens / 1000) * 0.03;
   const total = promptCost + completionCost;
