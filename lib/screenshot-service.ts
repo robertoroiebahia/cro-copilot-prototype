@@ -142,18 +142,46 @@ export class ScreenshotService {
     const nodeMajorVersion = Number.parseInt(process.versions.node?.split('.')?.[0] ?? '', 10);
 
     let runtime = 'nodejs18.x';
+    let lambdaLibPath = '/tmp/al2/lib';
     if (!Number.isNaN(nodeMajorVersion)) {
       if (nodeMajorVersion >= 22) {
         runtime = 'nodejs22.x';
+        lambdaLibPath = '/tmp/al2023/lib';
       } else if (nodeMajorVersion >= 20) {
         runtime = 'nodejs20.x';
+        lambdaLibPath = '/tmp/al2023/lib';
       } else if (nodeMajorVersion >= 18) {
         runtime = 'nodejs18.x';
+        lambdaLibPath = '/tmp/al2/lib';
       }
     }
 
     process.env.AWS_EXECUTION_ENV ??= `AWS_Lambda_${runtime}`;
     process.env.AWS_LAMBDA_JS_RUNTIME ??= runtime;
+
+    const candidateLibPaths = new Set<string>();
+    candidateLibPaths.add(lambdaLibPath);
+    candidateLibPaths.add('/tmp/al2/lib');
+    candidateLibPaths.add('/tmp/al2023/lib');
+
+    const existingLdPath = process.env.LD_LIBRARY_PATH ?? '';
+    existingLdPath
+      .split(':')
+      .filter(Boolean)
+      .forEach((path) => candidateLibPaths.add(path));
+
+    process.env.LD_LIBRARY_PATH = Array.from(candidateLibPaths).join(':');
+    process.env.FONTCONFIG_PATH ??= '/tmp/fonts';
+    process.env.HOME ??= process.env.HOME && process.env.HOME !== '/' ? process.env.HOME : '/tmp';
+    process.env.TMPDIR ??= '/tmp';
+    const pathEntries = new Set<string>();
+    if (process.env.PATH) {
+      process.env.PATH.split(':')
+        .filter(Boolean)
+        .forEach((entry) => pathEntries.add(entry));
+    }
+    pathEntries.add('/tmp');
+    process.env.PATH = Array.from(pathEntries).join(':');
   }
 
   private async loadChromium(): Promise<typeof import('@sparticuz/chromium')> {
