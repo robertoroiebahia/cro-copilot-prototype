@@ -4,5 +4,10 @@
       "maxDuration": 60,
       "memory": 1024
     }
+  },
+  "build": {
+    "env": {
+      "PLAYWRIGHT_BROWSERS_PATH": "0"
+    }
   }
 }
