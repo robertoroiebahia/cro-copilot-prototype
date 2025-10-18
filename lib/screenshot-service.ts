@@ -129,7 +129,7 @@ export class ScreenshotService {
 
     this.ensureChromiumRuntimeEnv();
 
-    const chromiumModule = (await import('@sparticuz/chromium')) as typeof import('@sparticuz/chromium');
+    const chromiumModule = await this.loadChromium();
 
     return {
       args: chromiumModule.args ?? [],
@@ -154,6 +154,25 @@ export class ScreenshotService {
 
     process.env.AWS_EXECUTION_ENV ??= `AWS_Lambda_${runtime}`;
     process.env.AWS_LAMBDA_JS_RUNTIME ??= runtime;
+  }
+
+  private async loadChromium(): Promise<typeof import('@sparticuz/chromium')> {
+    const rawModule = (await import('@sparticuz/chromium')) as unknown;
+
+    if (
+      rawModule &&
+      typeof rawModule === 'object' &&
+      'default' in rawModule
+    ) {
+      const moduleWithDefault = rawModule as {
+        default?: typeof import('@sparticuz/chromium');
+      };
+      if (moduleWithDefault.default) {
+        return moduleWithDefault.default;
+      }
+    }
+
+    return rawModule as typeof import('@sparticuz/chromium');
   }
 
   private async performCapture(
