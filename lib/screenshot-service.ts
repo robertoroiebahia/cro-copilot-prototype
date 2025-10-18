@@ -412,15 +412,30 @@ export class ScreenshotService {
     try {
       // Step 1: Launch headless browser with anti-bot detection
       console.log(`🚀 Launching browser for ${viewport} capture...`);
+
+      // Use @sparticuz/chromium on Vercel, local Playwright otherwise
+      const isVercel = !!process.env.VERCEL;
+      const executablePath = isVercel
+        ? await chromiumPkg.executablePath()
+        : undefined;
+
       browser = await chromium.launch({
         headless: true,
+        executablePath,
         timeout: 15000, // 15 second timeout
-        args: [
-          '--disable-blink-features=AutomationControlled',
-          '--disable-dev-shm-usage',
-          '--no-sandbox',
-          '--disable-setuid-sandbox',
-        ],
+        args: isVercel
+          ? [
+              ...chromiumPkg.args,
+              '--disable-blink-features=AutomationControlled',
+              '--disable-web-security',
+              '--allow-running-insecure-content',
+            ]
+          : [
+              '--disable-blink-features=AutomationControlled',
+              '--disable-dev-shm-usage',
+              '--no-sandbox',
+              '--disable-setuid-sandbox',
+            ],
       });
 
       // Step 2: Create browser context with realistic settings
