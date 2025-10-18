@@ -134,7 +134,7 @@ export class ScreenshotService {
     return {
       args: chromiumModule.args ?? [],
       executablePath: await chromiumModule.executablePath(),
-      headless: chromiumModule.headless ?? true,
+      headless: chromiumModule.headless === 'shell' ? true : chromiumModule.headless ?? true,
     };
   }
 
