@@ -1,4 +1,5 @@
-import { chromium, devices, type Browser, type Page } from 'playwright';
+import { chromium, devices, type Browser, type Page } from 'playwright-core';
+import chromiumPkg from '@sparticuz/chromium';
 
 export interface ScreenshotCapture {
   fullPage: string;
@@ -108,18 +109,32 @@ export class ScreenshotService {
     url: string,
     options: ScreenshotOptions,
   ): Promise<ScreenshotResult> {
+    // Use @sparticuz/chromium on Vercel, local Playwright otherwise
+    const isVercel = !!process.env.VERCEL;
+    const executablePath = isVercel
+      ? await chromiumPkg.executablePath()
+      : undefined;
+
     const browser = await chromium.launch({
       headless: true,
-      args: [
-        '--disable-blink-features=AutomationControlled', // Hide automation
-        '--disable-dev-shm-usage',
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-web-security',
-        '--disable-features=IsolateOrigins,site-per-process',
-        '--allow-running-insecure-content',
-        '--disable-blink-features=BlockCredentialedSubresources',
-      ],
+      executablePath,
+      args: isVercel
+        ? [
+            ...chromiumPkg.args,
+            '--disable-blink-features=AutomationControlled',
+            '--disable-web-security',
+            '--allow-running-insecure-content',
+          ]
+        : [
+            '--disable-blink-features=AutomationControlled',
+            '--disable-dev-shm-usage',
+            '--no-sandbox',
+            '--disable-setuid-sandbox',
+            '--disable-web-security',
+            '--disable-features=IsolateOrigins,site-per-process',
+            '--allow-running-insecure-content',
+            '--disable-blink-features=BlockCredentialedSubresources',
+          ],
     });
 
     try {
