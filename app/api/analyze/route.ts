@@ -11,6 +11,10 @@ import { generateClaudeRecommendations } from '@/lib/services/ai/claude-recommen
 import { generateGPTRecommendations } from '@/lib/services/ai/gpt-recommendations';
 import type { InsertAnalysis } from '@/lib/types/database.types';
 
+// Force Node.js runtime for Playwright compatibility
+export const runtime = 'nodejs';
+export const maxDuration = 60;
+
 export async function POST(req: NextRequest) {
   try {
     // 1. Parse and validate request

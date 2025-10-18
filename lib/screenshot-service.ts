@@ -1,5 +1,5 @@
-import { chromium, devices, type Browser, type Page } from 'playwright-core';
-import chromiumPkg from '@sparticuz/chromium';
+import { chromium as playwright, devices, type Browser, type Page } from 'playwright-core';
+import chromium from '@sparticuz/chromium';
 
 export interface ScreenshotCapture {
   fullPage: string;
@@ -110,22 +110,14 @@ export class ScreenshotService {
     options: ScreenshotOptions,
   ): Promise<ScreenshotResult> {
     // Use @sparticuz/chromium on Vercel, local Playwright otherwise
-    const isVercel = !!process.env.VERCEL;
-    const executablePath = isVercel
-      ? await chromiumPkg.executablePath()
-      : undefined;
+    const isLocal = !process.env.VERCEL;
+    const executablePath = isLocal
+      ? undefined // Use local Chrome/Chromium
+      : await chromium.executablePath();
 
-    const browser = await chromium.launch({
-      headless: true,
-      executablePath,
-      args: isVercel
+    const browser = await playwright.launch({
+      args: isLocal
         ? [
-            ...chromiumPkg.args,
-            '--disable-blink-features=AutomationControlled',
-            '--disable-web-security',
-            '--allow-running-insecure-content',
-          ]
-        : [
             '--disable-blink-features=AutomationControlled',
             '--disable-dev-shm-usage',
             '--no-sandbox',
@@ -134,7 +126,10 @@ export class ScreenshotService {
             '--disable-features=IsolateOrigins,site-per-process',
             '--allow-running-insecure-content',
             '--disable-blink-features=BlockCredentialedSubresources',
-          ],
+          ]
+        : chromium.args,
+      executablePath,
+      headless: chromium.headless,
     });
 
     try {
@@ -414,28 +409,23 @@ export class ScreenshotService {
       console.log(`🚀 Launching browser for ${viewport} capture...`);
 
       // Use @sparticuz/chromium on Vercel, local Playwright otherwise
-      const isVercel = !!process.env.VERCEL;
-      const executablePath = isVercel
-        ? await chromiumPkg.executablePath()
-        : undefined;
+      const isLocal = !process.env.VERCEL;
+      const executablePath = isLocal
+        ? undefined // Use local Chrome/Chromium
+        : await chromium.executablePath();
 
-      browser = await chromium.launch({
-        headless: true,
-        executablePath,
-        timeout: 15000, // 15 second timeout
-        args: isVercel
+      browser = await playwright.launch({
+        args: isLocal
           ? [
-              ...chromiumPkg.args,
-              '--disable-blink-features=AutomationControlled',
-              '--disable-web-security',
-              '--allow-running-insecure-content',
-            ]
-          : [
               '--disable-blink-features=AutomationControlled',
               '--disable-dev-shm-usage',
               '--no-sandbox',
               '--disable-setuid-sandbox',
-            ],
+            ]
+          : chromium.args,
+        executablePath,
+        headless: chromium.headless,
+        timeout: 15000, // 15 second timeout
       });
 
       // Step 2: Create browser context with realistic settings
