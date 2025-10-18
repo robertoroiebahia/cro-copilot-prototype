@@ -3,8 +3,7 @@
  * Modern browser automation - renders JavaScript and returns clean compressed HTML
  */
 
-import { chromium as playwright } from 'playwright-core';
-import chromium from '@sparticuz/chromium';
+import { chromium } from 'playwright-core';
 
 export interface PageAnalysisResult {
   compressedHTML: string; // Compressed rendered HTML without scripts - ready for AI
@@ -19,17 +18,26 @@ export async function analyzePage(url: string): Promise<PageAnalysisResult> {
   const startTime = Date.now();
 
   try {
-    const isLocal = !process.env.VERCEL;
-    const executablePath = isLocal ? undefined : await chromium.executablePath();
+    const isVercel = !!process.env.VERCEL;
 
-    browser = await playwright.launch({
-      args: isLocal
-        ? [
-            '--no-sandbox',
-            '--disable-setuid-sandbox',
-            '--disable-dev-shm-usage',
-          ]
-        : chromium.args,
+    let executablePath: string | undefined;
+    let args: string[];
+
+    if (isVercel) {
+      const chromiumPkg = await import('@sparticuz/chromium');
+      executablePath = await chromiumPkg.default.executablePath();
+      args = chromiumPkg.default.args;
+    } else {
+      executablePath = undefined;
+      args = [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+      ];
+    }
+
+    browser = await chromium.launch({
+      args,
       executablePath,
       headless: true,
       timeout: 30000,

@@ -3,8 +3,7 @@
  * Extracts content, compressed HTML, and screenshots from web pages using Playwright
  */
 
-import { chromium as playwright, devices } from 'playwright-core';
-import chromium from '@sparticuz/chromium';
+import { chromium, devices } from 'playwright-core';
 
 export interface ScreenshotCapture {
   fullPage: string; // base64
@@ -27,25 +26,34 @@ export interface PageAnalysisResult {
  * Analyzes a web page and returns compressed HTML with screenshots using Playwright
  */
 export async function analyzePage(url: string): Promise<PageAnalysisResult> {
-  let browser: Awaited<ReturnType<typeof playwright.launch>> | undefined;
+  let browser: Awaited<ReturnType<typeof chromium.launch>> | undefined;
   const startTime = Date.now();
 
   try {
     // Use @sparticuz/chromium on Vercel, local Playwright otherwise
-    const isLocal = !process.env.VERCEL;
-    const executablePath = isLocal
-      ? undefined // Use local Chrome/Chromium
-      : await chromium.executablePath();
+    const isVercel = !!process.env.VERCEL;
 
-    browser = await playwright.launch({
-      args: isLocal
-        ? [
-            '--disable-blink-features=AutomationControlled',
-            '--no-sandbox',
-            '--disable-setuid-sandbox',
-            '--disable-dev-shm-usage',
-          ]
-        : chromium.args,
+    let executablePath: string | undefined;
+    let args: string[];
+
+    if (isVercel) {
+      // Dynamic import for Vercel environment
+      const chromiumPkg = await import('@sparticuz/chromium');
+      executablePath = await chromiumPkg.default.executablePath();
+      args = chromiumPkg.default.args;
+    } else {
+      // Local development - use system Playwright
+      executablePath = undefined;
+      args = [
+        '--disable-blink-features=AutomationControlled',
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+      ];
+    }
+
+    browser = await chromium.launch({
+      args,
       executablePath,
       headless: true,
       timeout: 30000,
