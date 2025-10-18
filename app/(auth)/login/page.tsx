@@ -44,18 +44,16 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen flex items-center justify-center bg-white py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full">
         {/* Header */}
         <div className="text-center mb-8">
           <div className="flex justify-center mb-4">
-            <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center">
-              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-              </svg>
+            <div className="w-12 h-12 bg-brand-gold rounded-[4px] flex items-center justify-center">
+              <span className="text-2xl font-black text-brand-black">G</span>
             </div>
           </div>
-          <h2 className="text-3xl font-bold text-gray-900 mb-2">
+          <h2 className="text-3xl font-black text-gray-900 mb-2">
             Welcome back
           </h2>
           <p className="text-sm text-gray-600">
@@ -64,10 +62,10 @@ export default function LoginPage() {
         </div>
 
         {/* Login Card */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+        <div className="bg-brand-surface rounded-[4px] shadow-sm border border-gray-200 p-8">
           <form className="space-y-6" onSubmit={handleLogin}>
             {error && (
-              <div className="rounded-md bg-red-50 border border-red-200 p-4">
+              <div className="rounded-[4px] bg-red-50 border border-red-200 p-4">
                 <div className="flex items-start gap-2">
                   <svg className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -78,7 +76,7 @@ export default function LoginPage() {
             )}
 
             <div>
-              <label htmlFor="email-address" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="email-address" className="block text-sm font-bold text-gray-900 mb-2">
                 Email address
               </label>
               <input
@@ -87,7 +85,7 @@ export default function LoginPage() {
                 type="email"
                 autoComplete="email"
                 required
-                className="appearance-none relative block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent sm:text-sm"
+                className="appearance-none relative block w-full px-3 py-2 border border-gray-300 rounded-[4px] placeholder-gray-400 text-gray-900 bg-white focus:outline-none focus:border-brand-gold transition-all duration-200 sm:text-sm"
                 placeholder="you@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -96,7 +94,7 @@ export default function LoginPage() {
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="password" className="block text-sm font-bold text-gray-900 mb-2">
                 Password
               </label>
               <input
@@ -105,7 +103,7 @@ export default function LoginPage() {
                 type="password"
                 autoComplete="current-password"
                 required
-                className="appearance-none relative block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent sm:text-sm"
+                className="appearance-none relative block w-full px-3 py-2 border border-gray-300 rounded-[4px] placeholder-gray-400 text-gray-900 bg-white focus:outline-none focus:border-brand-gold transition-all duration-200 sm:text-sm"
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -117,7 +115,21 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="group relative w-full flex justify-center items-center gap-2 py-2.5 px-4 border border-transparent text-sm font-semibold rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="group relative w-full flex justify-center items-center gap-2 py-2.5 px-4 text-sm font-black rounded-[4px] text-white bg-black focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-black/20 transition-all duration-300"
+                onMouseEnter={(e) => {
+                  if (!loading) {
+                    e.currentTarget.style.transform = 'translateY(-2px) scale(1.02)';
+                    e.currentTarget.style.backgroundColor = '#1A1A1A';
+                    e.currentTarget.style.boxShadow = '0 20px 50px -10px rgba(212, 165, 116, 0.6), 0 0 0 2px rgba(212, 165, 116, 0.4)';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!loading) {
+                    e.currentTarget.style.transform = 'translateY(0) scale(1)';
+                    e.currentTarget.style.backgroundColor = '#0E0E0E';
+                    e.currentTarget.style.boxShadow = '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)';
+                  }
+                }}
               >
                 {loading ? (
                   <>
@@ -139,7 +151,17 @@ export default function LoginPage() {
         <div className="mt-6 text-center">
           <p className="text-sm text-gray-600">
             Don't have an account?{' '}
-            <Link href="/signup" className="font-semibold text-blue-600 hover:text-blue-700">
+            <Link
+              href="/signup"
+              className="font-bold transition-all duration-200"
+              style={{ color: '#0E0E0E' }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = '#D4A574';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = '#0E0E0E';
+              }}
+            >
               Sign up
             </Link>
           </p>

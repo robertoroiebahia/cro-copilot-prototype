@@ -37,25 +37,34 @@ export default function PrioritySection({
   issues,
   icon,
 }: PrioritySectionProps) {
-  // Color coding based on severity
+  // Color coding based on severity - Light theme
   const severityConfig = {
     critical: {
-      bg: 'bg-red-50',
-      border: 'border-l-red-500',
-      textColor: 'text-red-700',
-      subtitleColor: 'text-red-600',
+      bg: 'bg-white',
+      border: 'border-l-brand-danger',
+      textColor: 'text-black',
+      subtitleColor: 'text-gray-600',
+      badgeBg: 'bg-red-500/20',
+      badgeText: 'text-red-700',
+      badgeBorder: 'border-red-500/30',
     },
     medium: {
-      bg: 'bg-yellow-50',
-      border: 'border-l-yellow-500',
-      textColor: 'text-yellow-700',
-      subtitleColor: 'text-yellow-600',
+      bg: 'bg-white',
+      border: 'border-l-brand-gold',
+      textColor: 'text-black',
+      subtitleColor: 'text-gray-600',
+      badgeBg: 'bg-yellow-400/20',
+      badgeText: 'text-yellow-700',
+      badgeBorder: 'border-yellow-400/30',
     },
     low: {
-      bg: 'bg-green-50',
-      border: 'border-l-green-500',
-      textColor: 'text-green-700',
-      subtitleColor: 'text-green-600',
+      bg: 'bg-white',
+      border: 'border-l-brand-success',
+      textColor: 'text-black',
+      subtitleColor: 'text-gray-600',
+      badgeBg: 'bg-green-500/20',
+      badgeText: 'text-green-700',
+      badgeBorder: 'border-green-500/30',
     },
   };
 
@@ -63,21 +72,21 @@ export default function PrioritySection({
 
   return (
     <section
-      className={`rounded-xl border-l-4 ${config.border} ${config.bg} overflow-hidden`}
+      className={`rounded border-l-4 ${config.border} ${config.bg} overflow-hidden hover:border-brand-gold transition-all duration-200`}
     >
       {/* Section Header */}
-      <div className="px-6 py-5 border-b border-gray-200 bg-white">
+      <div className="px-6 py-5 border-b border-gray-200 bg-gray-50">
         <div className="flex items-start gap-3">
           <span className="text-3xl flex-shrink-0">{icon}</span>
           <div className="flex-1">
-            <h2 className={`text-2xl font-bold ${config.textColor} mb-1`}>
+            <h2 className={`text-2xl font-black ${config.textColor} mb-1`}>
               {title}
             </h2>
             <p className={`text-sm font-medium ${config.subtitleColor}`}>
               {subtitle}
             </p>
           </div>
-          <div className={`px-3 py-1 rounded-full text-sm font-semibold ${config.textColor} bg-white border-2 ${config.border}`}>
+          <div className={`px-3 py-1 rounded text-sm font-semibold ${config.badgeText} ${config.badgeBg} border ${config.badgeBorder}`}>
             {issues.length} {issues.length === 1 ? 'issue' : 'issues'}
           </div>
         </div>
@@ -98,10 +107,10 @@ export default function PrioritySection({
         ) : (
           // Empty state
           <div className="text-center py-12">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-white border-2 border-gray-200 mb-4">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded bg-gray-50 border border-gray-200 mb-4">
               <span className="text-3xl">✓</span>
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+            <h3 className="text-lg font-black text-black mb-2">
               No {severity} issues found
             </h3>
             <p className="text-sm text-gray-600">

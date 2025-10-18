@@ -4,16 +4,12 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { ScreenshotService } from '@/lib/screenshot-service';
-import { analyzeAboveFold, VisionAnalysisError } from '@/lib/vision-analysis';
-import { analyzeSection } from '@/lib/claude-vision';
 import { createClient } from '@/utils/supabase/server';
-import { analyzePage, calculateHeuristicScore } from '@/lib/services';
+import { analyzePage } from '@/lib/services';
 import { AnalysisRepository, ProfileRepository } from '@/lib/services';
-import { generateRecommendations } from '@/lib/services/ai/recommendation-generator';
+import { generateClaudeRecommendations } from '@/lib/services/ai/claude-recommendations';
+import { generateGPTRecommendations } from '@/lib/services/ai/gpt-recommendations';
 import type { InsertAnalysis } from '@/lib/types/database.types';
-
-const screenshotService = new ScreenshotService();
 
 export async function POST(req: NextRequest) {
   try {
@@ -36,96 +32,38 @@ export async function POST(req: NextRequest) {
     const profileRepo = new ProfileRepository(supabase);
     await profileRepo.ensureExists(user.id, user.email || '');
 
-    // 4. Capture page data and screenshots in parallel
-    const [pageData, screenshots] = await Promise.all([
-      analyzePage(url),
-      screenshotService.capturePageScreenshots(url).catch(() => null),
-    ]);
+    // 4. Capture page data with screenshots from Playwright
+    const pageData = await analyzePage(url);
+    const screenshots = pageData.screenshots;
 
-    // 5. Run vision analysis if screenshots available
-    let visionAnalysis: any = null;
-    let visionError: string | null = null;
+    // 5. Generate AI recommendations (Claude or GPT based on user selection)
+    const { insights, usage } = llm === 'claude'
+      ? await generateClaudeRecommendations(pageData, url, context)
+      : await generateGPTRecommendations(pageData, url, context);
 
-    if (screenshots) {
-      try {
-        visionAnalysis = await analyzeAboveFold({
-          desktopImageBase64: screenshots.desktop.aboveFold,
-          mobileImageBase64: screenshots.mobile.aboveFold,
-        });
-      } catch (error) {
-        visionError = error instanceof VisionAnalysisError
-          ? error.message
-          : 'Vision analysis failed';
-        console.error('Vision analysis error:', error);
-      }
-    }
-
-    // 6. Analyze specific page sections (if screenshots available)
-    const visualAnalysis: Record<string, any> = {};
-
-    if (screenshots) {
-      const pageContext = {
-        url,
-        metrics,
-        context,
-      };
-
-      const sections = [
-        { type: 'hero' as const, image: screenshots.desktop.aboveFold },
-        { type: 'social-proof' as const, image: screenshots.desktop.aboveFold },
-        { type: 'cta' as const, image: screenshots.desktop.aboveFold },
-      ];
-
-      await Promise.all(
-        sections.map(async ({ type, image }) => {
-          try {
-            const analysis = await analyzeSection(image, type, pageContext);
-            visualAnalysis[type] = analysis;
-          } catch (error) {
-            console.error(`${type} analysis failed:`, error);
-          }
-        })
-      );
-    }
-
-    // 7. Calculate heuristic score
-    const heuristicScore = calculateHeuristicScore(pageData);
-
-    // 8. Generate AI recommendations
-    const { insights, usage } = await generateRecommendations({
-      pageData,
-      visionAnalysis,
-      visualAnalysis,
-      url,
-      llm,
-    });
-
-    // 9. Prepare analysis data for database
+    // 6. Prepare analysis data for database
     const analysisData: InsertAnalysis = {
       user_id: user.id,
       url,
       metrics: metrics || { visitors: '', addToCarts: '', purchases: '', aov: '' },
       context: context || { trafficSource: 'mixed', productType: '', pricePoint: '' },
-      llm,
+      llm, // Use selected LLM (claude or gpt)
       summary: {
         ...(insights.summary || {}),
-        heuristics: heuristicScore,
       },
       recommendations: insights.recommendations || [],
-      above_the_fold: visionAnalysis?.desktop,
+      above_the_fold: null,
       below_the_fold: null,
       full_page: null,
       strategic_extensions: null,
       roadmap: null,
-      vision_analysis: visionAnalysis,
-      screenshots: screenshots
-        ? {
-            desktopAboveFold: screenshots.desktop.aboveFold,
-            desktopFullPage: screenshots.desktop.fullPage,
-            mobileAboveFold: screenshots.mobile.aboveFold,
-            mobileFullPage: screenshots.mobile.fullPage,
-          }
-        : null,
+      vision_analysis: null,
+      screenshots: {
+        desktopAboveFold: screenshots.desktop.aboveFold,
+        desktopFullPage: screenshots.desktop.fullPage,
+        mobileAboveFold: screenshots.mobile.aboveFold,
+        mobileFullPage: screenshots.mobile.fullPage,
+      },
       usage: {
         totalTokens: (usage.input_tokens || 0) + (usage.output_tokens || 0),
         analysisInputTokens: usage.input_tokens,
@@ -134,7 +72,7 @@ export async function POST(req: NextRequest) {
       status: 'completed',
     };
 
-    // 10. Save to database
+    // 9. Save to database
     const analysisRepo = new AnalysisRepository(supabase);
     const savedAnalysis = await analysisRepo.create(analysisData);
 
@@ -142,38 +80,25 @@ export async function POST(req: NextRequest) {
       throw new Error('Failed to save analysis');
     }
 
-    // 11. Return results
+    // 7. Return results
     return NextResponse.json({
       ...insights,
       id: savedAnalysis.id,
-      screenshots: screenshots
-        ? {
-            capturedAt: screenshots.capturedAt,
-            desktop: {
-              aboveFold: `data:image/png;base64,${screenshots.desktop.aboveFold}`,
-              fullPage: `data:image/png;base64,${screenshots.desktop.fullPage}`,
-            },
-            mobile: {
-              aboveFold: `data:image/png;base64,${screenshots.mobile.aboveFold}`,
-              fullPage: `data:image/png;base64,${screenshots.mobile.fullPage}`,
-            },
-          }
-        : null,
-      visionAnalysis,
-      visionAnalysisError: visionError,
-      visualAnalysis: Object.keys(visualAnalysis).length > 0 ? visualAnalysis : undefined,
-      raw: { pageData },
-      usage: {
-        vision: visionAnalysis?.cost || null,
-        analysis: {
-          inputTokens: usage.input_tokens ?? 0,
-          outputTokens: usage.output_tokens ?? 0,
-          totalTokens:
-            (visionAnalysis?.cost?.inputTokens || 0) +
-            (visionAnalysis?.cost?.outputTokens || 0) +
-            (usage.input_tokens || 0) +
-            (usage.output_tokens || 0),
+      screenshots: {
+        capturedAt: pageData.scrapedAt,
+        desktop: {
+          aboveFold: `data:image/png;base64,${screenshots.desktop.aboveFold}`,
+          fullPage: `data:image/png;base64,${screenshots.desktop.fullPage}`,
         },
+        mobile: {
+          aboveFold: `data:image/png;base64,${screenshots.mobile.aboveFold}`,
+          fullPage: `data:image/png;base64,${screenshots.mobile.fullPage}`,
+        },
+      },
+      usage: {
+        inputTokens: usage.input_tokens ?? 0,
+        outputTokens: usage.output_tokens ?? 0,
+        totalTokens: (usage.input_tokens || 0) + (usage.output_tokens || 0),
       },
     });
   } catch (err: any) {

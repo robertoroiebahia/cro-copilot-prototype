@@ -15,7 +15,7 @@ export default function HeuristicsDisplay({ heuristics }: HeuristicsDisplayProps
       max: 2,
       description: 'Headline & subheadline presence',
       icon: '📝',
-      color: heuristics.clarity >= 2 ? 'green' : heuristics.clarity === 1 ? 'yellow' : 'red',
+      status: heuristics.clarity >= 2 ? 'success' : heuristics.clarity === 1 ? 'warning' : 'danger',
     },
     {
       name: 'Trust',
@@ -23,7 +23,7 @@ export default function HeuristicsDisplay({ heuristics }: HeuristicsDisplayProps
       max: 2,
       description: 'Trust badges & reviews',
       icon: '🛡️',
-      color: heuristics.trust >= 2 ? 'green' : heuristics.trust === 1 ? 'yellow' : 'red',
+      status: heuristics.trust >= 2 ? 'success' : heuristics.trust === 1 ? 'warning' : 'danger',
     },
     {
       name: 'Urgency',
@@ -31,7 +31,7 @@ export default function HeuristicsDisplay({ heuristics }: HeuristicsDisplayProps
       max: 1,
       description: 'Urgency messaging present',
       icon: '⚡',
-      color: heuristics.urgency === 1 ? 'green' : 'red',
+      status: heuristics.urgency === 1 ? 'success' : 'danger',
     },
     {
       name: 'Friction',
@@ -39,42 +39,42 @@ export default function HeuristicsDisplay({ heuristics }: HeuristicsDisplayProps
       max: 1,
       description: 'Form complexity (lower is better)',
       icon: '🚧',
-      color: heuristics.friction === 0 ? 'green' : 'red',
+      status: heuristics.friction === 0 ? 'success' : 'danger',
       inverted: true, // For friction, lower is better
     },
   ];
 
-  const getColorClasses = (color: string) => {
-    switch (color) {
-      case 'green':
-        return 'bg-green-100 border-green-300 text-green-800';
-      case 'yellow':
-        return 'bg-yellow-100 border-yellow-300 text-yellow-800';
-      case 'red':
-        return 'bg-red-100 border-red-300 text-red-800';
+  const getStatusClasses = (status: string) => {
+    switch (status) {
+      case 'success':
+        return 'bg-brand-success/20 border-brand-success/30';
+      case 'warning':
+        return 'bg-brand-gold/20 border-brand-gold/30';
+      case 'danger':
+        return 'bg-brand-danger/20 border-brand-danger/30';
       default:
-        return 'bg-gray-100 border-gray-300 text-gray-800';
+        return 'bg-brand-surface border-brand-gray-border';
     }
   };
 
-  const getBarColorClasses = (color: string) => {
-    switch (color) {
-      case 'green':
-        return 'bg-green-500';
-      case 'yellow':
-        return 'bg-yellow-500';
-      case 'red':
-        return 'bg-red-500';
+  const getBarColorClasses = (status: string) => {
+    switch (status) {
+      case 'success':
+        return 'bg-brand-success';
+      case 'warning':
+        return 'bg-brand-gold';
+      case 'danger':
+        return 'bg-brand-danger';
       default:
-        return 'bg-gray-500';
+        return 'bg-brand-gray-border';
     }
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+    <div className="bg-white rounded border border-gray-200 p-6 mb-6 hover:border-brand-gold transition-all duration-200">
       <div className="flex items-center gap-2 mb-4">
-        <h2 className="text-lg font-semibold text-gray-900">Page Health Metrics</h2>
-        <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+        <h2 className="text-lg font-black text-black">Page Health Metrics</h2>
+        <span className="text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded">
           Heuristic Analysis
         </span>
       </div>
@@ -90,40 +90,40 @@ export default function HeuristicsDisplay({ heuristics }: HeuristicsDisplayProps
           return (
             <div
               key={metric.name}
-              className={`border-2 rounded-lg p-4 ${getColorClasses(metric.color)}`}
+              className={`border rounded p-4 hover:border-brand-gold hover:bg-brand-gold/10 transition-all duration-200 ${getStatusClasses(metric.status)}`}
             >
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
                   <span className="text-2xl">{metric.icon}</span>
                   <div>
-                    <h3 className="font-semibold text-sm">{metric.name}</h3>
-                    <p className="text-xs opacity-75">{metric.description}</p>
+                    <h3 className="font-black text-sm text-black">{metric.name}</h3>
+                    <p className="text-xs text-gray-600">{metric.description}</p>
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="text-2xl font-bold">
+                  <div className="text-2xl font-black text-black">
                     {metric.inverted ? metric.max - metric.value : metric.value}/{metric.max}
                   </div>
                 </div>
               </div>
 
               {/* Progress bar */}
-              <div className="w-full bg-white/50 rounded-full h-2 mt-3">
+              <div className="w-full bg-gray-200 rounded h-2 mt-3">
                 <div
-                  className={`h-2 rounded-full transition-all ${getBarColorClasses(metric.color)}`}
+                  className={`h-2 rounded transition-all ${getBarColorClasses(metric.status)}`}
                   style={{ width: `${displayPercentage}%` }}
                 />
               </div>
 
               {/* Status text */}
-              <div className="mt-2 text-xs font-medium">
-                {metric.color === 'green' && (
+              <div className="mt-2 text-xs font-medium text-black">
+                {metric.status === 'success' && (
                   <span>✓ {metric.inverted ? 'Low friction' : 'Good'}</span>
                 )}
-                {metric.color === 'yellow' && (
+                {metric.status === 'warning' && (
                   <span>⚠ Needs improvement</span>
                 )}
-                {metric.color === 'red' && (
+                {metric.status === 'danger' && (
                   <span>✗ {metric.inverted ? 'High friction' : 'Missing'}</span>
                 )}
               </div>
@@ -132,11 +132,11 @@ export default function HeuristicsDisplay({ heuristics }: HeuristicsDisplayProps
         })}
       </div>
 
-      <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+      <div className="mt-6 p-4 bg-gray-50 border border-gray-200 rounded">
         <div className="flex items-start gap-2">
-          <span className="text-blue-600 text-lg">💡</span>
-          <div className="text-sm text-blue-900">
-            <strong>How to interpret:</strong> These scores are computed from page structure analysis.
+          <span className="text-brand-gold text-lg">💡</span>
+          <div className="text-sm text-gray-600">
+            <strong className="text-black">How to interpret:</strong> These scores are computed from page structure analysis.
             Higher clarity and trust scores indicate stronger foundations. Lower friction scores show
             easier conversion paths. Check recommendations below for specific improvements.
           </div>

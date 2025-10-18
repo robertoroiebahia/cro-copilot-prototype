@@ -221,23 +221,23 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 pt-16">{/* pt-16 accounts for fixed nav */}
+    <div className="min-h-screen bg-white pt-16">{/* pt-16 accounts for fixed nav */}
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid lg:grid-cols-3 gap-6">
           {/* Left Sidebar - Form */}
           <div className="lg:col-span-1">
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 sticky top-6">
+            <div className="bg-gray-50 rounded border border-gray-200 p-6 sticky top-6">
               <div className="flex items-center gap-2 mb-6">
-                <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 h-5 text-brand-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
                 </svg>
-                <h2 className="text-lg font-semibold text-gray-900">New Analysis</h2>
+                <h2 className="text-lg font-black text-gray-900">New Analysis</h2>
               </div>
 
               {/* URL Input */}
               <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-bold text-gray-700 mb-2">
                   Landing Page URL
                 </label>
                 <input
@@ -245,20 +245,20 @@ export default function Home() {
                   value={url}
                   onChange={(e) => setUrl(e.target.value)}
                   placeholder="https://yourstore.com/product"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-sm"
+                  className="w-full px-3 py-2 bg-white border border-gray-300 text-gray-900 rounded focus:border-brand-gold focus:outline-none transition-colors duration-200 text-sm"
                 />
               </div>
 
               {/* Context */}
               <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-3">
+                <label className="block text-sm font-bold text-gray-700 mb-3">
                   Context
                 </label>
                 <div className="space-y-3">
                   <select
                     value={context.trafficSource}
                     onChange={(e) => setContext({ ...context, trafficSource: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                    className="w-full px-3 py-2 bg-white border border-gray-300 text-gray-900 rounded focus:border-brand-gold focus:outline-none transition-colors duration-200 text-sm font-bold"
                   >
                     <option value="mixed">Mixed Traffic</option>
                     <option value="paid_social">Paid Social (FB/IG/TikTok)</option>
@@ -272,21 +272,21 @@ export default function Home() {
                     placeholder="Product Type (e.g., skincare)"
                     value={context.productType}
                     onChange={(e) => setContext({ ...context, productType: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                    className="w-full px-3 py-2 bg-white border border-gray-300 text-gray-900 rounded focus:border-brand-gold focus:outline-none transition-colors duration-200 text-sm"
                   />
                   <input
                     type="text"
                     placeholder="Price Point (e.g., $50-100)"
                     value={context.pricePoint}
                     onChange={(e) => setContext({ ...context, pricePoint: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 outline-none"
+                    className="w-full px-3 py-2 bg-white border border-gray-300 text-gray-900 rounded focus:border-brand-gold focus:outline-none transition-colors duration-200 text-sm"
                   />
                 </div>
               </div>
 
               {/* LLM Selector */}
               <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-3">
+                <label className="block text-sm font-bold text-gray-700 mb-3">
                   Analysis Model
                 </label>
                 <div className="grid grid-cols-2 gap-3">
@@ -294,15 +294,15 @@ export default function Home() {
                     type="button"
                     onClick={() => setLlm('gpt')}
                     className={`
-                      px-4 py-3 rounded-md border-2 text-sm font-medium transition-all
+                      px-4 py-3 rounded border-2 text-sm font-black transition-all duration-200
                       ${llm === 'gpt'
-                        ? 'border-blue-600 bg-blue-50 text-blue-700'
-                        : 'border-gray-300 bg-white text-gray-700 hover:border-gray-400'
+                        ? 'border-brand-gold bg-brand-gold/10 text-brand-gold hover:shadow-[0_0_0_2px_rgba(245,197,66,0.5)]'
+                        : 'border-gray-300 bg-white text-gray-500 hover:border-gray-400'
                       }
                     `}
                   >
                     <div className="flex flex-col items-center gap-1">
-                      <span className="font-semibold">GPT</span>
+                      <span className="font-black">GPT</span>
                       <span className="text-xs opacity-75">OpenAI</span>
                     </div>
                   </button>
@@ -310,15 +310,15 @@ export default function Home() {
                     type="button"
                     onClick={() => setLlm('claude')}
                     className={`
-                      px-4 py-3 rounded-md border-2 text-sm font-medium transition-all
+                      px-4 py-3 rounded border-2 text-sm font-black transition-all duration-200
                       ${llm === 'claude'
-                        ? 'border-blue-600 bg-blue-50 text-blue-700'
-                        : 'border-gray-300 bg-white text-gray-700 hover:border-gray-400'
+                        ? 'border-brand-gold bg-brand-gold/10 text-brand-gold hover:shadow-[0_0_0_2px_rgba(245,197,66,0.5)]'
+                        : 'border-gray-300 bg-white text-gray-500 hover:border-gray-400'
                       }
                     `}
                   >
                     <div className="flex flex-col items-center gap-1">
-                      <span className="font-semibold">Claude</span>
+                      <span className="font-black">Claude</span>
                       <span className="text-xs opacity-75">Anthropic</span>
                     </div>
                   </button>
@@ -327,12 +327,12 @@ export default function Home() {
 
               {/* Error Message */}
               {error && (
-                <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-md">
+                <div className="mb-4 p-4 bg-red-900/20 border border-red-800/40 rounded">
                   <div className="flex items-start gap-2">
-                    <svg className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
-                    <div className="text-sm text-red-800 whitespace-pre-line">
+                    <div className="text-sm text-red-300 whitespace-pre-line font-bold">
                       {error}
                     </div>
                   </div>
@@ -343,11 +343,11 @@ export default function Home() {
               <button
                 onClick={analyze}
                 disabled={loading || !url}
-                className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white font-semibold py-3 px-6 rounded-md transition-colors flex items-center justify-center gap-2"
+                className="w-full bg-black hover:bg-brand-gold disabled:bg-gray-300 disabled:cursor-not-allowed disabled:text-gray-500 text-white hover:text-black font-black py-3 px-6 rounded transition-all duration-200 flex items-center justify-center gap-2"
               >
                 {loading ? (
                   <>
-                    <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                    <svg className="animate-spin h-5 w-5 text-brand-gold" viewBox="0 0 24 24">
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                     </svg>
@@ -367,7 +367,7 @@ export default function Home() {
                 <div className="mt-4 text-center">
                   <Link
                     href={`/dashboard/results/${insights.id}`}
-                    className="text-sm text-blue-600 hover:text-blue-700 hover:underline"
+                    className="text-sm text-brand-gold hover:text-brand-gold/80 hover:underline font-bold transition-colors duration-200"
                   >
                     View full analysis in dashboard →
                   </Link>
@@ -379,29 +379,29 @@ export default function Home() {
           {/* Right Content - Results */}
           <div className="lg:col-span-2">
             {!insights && !loading && (
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 flex flex-col items-center justify-center min-h-[600px]">
-                <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mb-4">
-                  <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="bg-gray-50 rounded border border-gray-200 p-12 flex flex-col items-center justify-center min-h-[600px]">
+                <div className="w-16 h-16 bg-brand-gold/10 rounded-full flex items-center justify-center mb-4">
+                  <svg className="w-8 h-8 text-brand-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                <h3 className="text-lg font-black text-gray-900 mb-2">
                   Ready to Optimize Your Landing Page
                 </h3>
-                <p className="text-sm text-gray-600 text-center max-w-md">
+                <p className="text-sm text-gray-600 text-center max-w-md font-bold">
                   Enter your landing page URL and optional context to get AI-powered insights and CRO recommendations
                 </p>
               </div>
             )}
 
             {loading && (
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+              <div className="bg-gray-50 rounded border border-gray-200 p-8">
                 {/* Header */}
                 <div className="text-center mb-6">
-                  <h3 className="text-xl font-bold text-gray-900 mb-2">
+                  <h3 className="text-xl font-black text-gray-900 mb-2">
                     Analyzing your landing page...
                   </h3>
-                  <p className="text-sm text-gray-600">
+                  <p className="text-sm text-gray-600 font-bold">
                     {analysisProgress.message || 'Starting analysis...'}
                   </p>
                 </div>
@@ -409,14 +409,14 @@ export default function Home() {
                 {/* Progress Bar */}
                 <div className="mb-8">
                   <div className="flex justify-between items-center mb-2">
-                    <span className="text-xs font-medium text-gray-700">Progress</span>
-                    <span className="text-xs font-semibold text-blue-600">
+                    <span className="text-xs font-bold text-gray-700">Progress</span>
+                    <span className="text-xs font-black text-brand-gold">
                       {analysisProgress.progress}%
                     </span>
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
+                  <div className="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden border border-gray-300">
                     <div
-                      className="bg-gradient-to-r from-blue-500 to-blue-600 h-2.5 rounded-full transition-all duration-500 ease-out"
+                      className="bg-brand-gold h-2.5 rounded-full transition-all duration-500 ease-out"
                       style={{ width: `${analysisProgress.progress}%` }}
                     />
                   </div>
@@ -427,15 +427,15 @@ export default function Home() {
                   {/* Scraping Stage */}
                   <div className="flex items-center gap-3">
                     {analysisProgress.stage === 'scraping' ? (
-                      <div className="animate-spin rounded-full h-5 w-5 border-2 border-gray-300 border-t-blue-600 flex-shrink-0" />
+                      <div className="animate-spin rounded-full h-5 w-5 border-2 border-gray-300 border-t-brand-gold flex-shrink-0" />
                     ) : analysisProgress.progress > 10 ? (
-                      <svg className="w-5 h-5 text-green-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-5 h-5 text-brand-gold flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
                     ) : (
                       <div className="w-5 h-5 rounded-full border-2 border-gray-300 flex-shrink-0" />
                     )}
-                    <span className={`text-sm ${analysisProgress.progress > 10 ? 'text-gray-900 font-medium' : 'text-gray-500'}`}>
+                    <span className={`text-sm ${analysisProgress.progress > 10 ? 'text-gray-900 font-black' : 'text-gray-500 font-bold'}`}>
                       Analyzing page content...
                     </span>
                   </div>
@@ -443,15 +443,15 @@ export default function Home() {
                   {/* Screenshots Stage */}
                   <div className="flex items-center gap-3">
                     {analysisProgress.stage === 'screenshots' ? (
-                      <div className="animate-spin rounded-full h-5 w-5 border-2 border-gray-300 border-t-blue-600 flex-shrink-0" />
+                      <div className="animate-spin rounded-full h-5 w-5 border-2 border-gray-300 border-t-brand-gold flex-shrink-0" />
                     ) : analysisProgress.progress > 25 ? (
-                      <svg className="w-5 h-5 text-green-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-5 h-5 text-brand-gold flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
                     ) : (
                       <div className="w-5 h-5 rounded-full border-2 border-gray-300 flex-shrink-0" />
                     )}
-                    <span className={`text-sm ${analysisProgress.progress > 25 ? 'text-gray-900 font-medium' : 'text-gray-500'}`}>
+                    <span className={`text-sm ${analysisProgress.progress > 25 ? 'text-gray-900 font-black' : 'text-gray-500 font-bold'}`}>
                       Capturing screenshots...
                     </span>
                   </div>
@@ -459,15 +459,15 @@ export default function Home() {
                   {/* Hero Analysis Stage */}
                   <div className="flex items-center gap-3">
                     {analysisProgress.stage === 'hero-analysis' ? (
-                      <div className="animate-spin rounded-full h-5 w-5 border-2 border-gray-300 border-t-blue-600 flex-shrink-0" />
+                      <div className="animate-spin rounded-full h-5 w-5 border-2 border-gray-300 border-t-brand-gold flex-shrink-0" />
                     ) : analysisProgress.progress > 40 ? (
-                      <svg className="w-5 h-5 text-green-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-5 h-5 text-brand-gold flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
                     ) : (
                       <div className="w-5 h-5 rounded-full border-2 border-gray-300 flex-shrink-0" />
                     )}
-                    <span className={`text-sm ${analysisProgress.progress > 40 ? 'text-gray-900 font-medium' : 'text-gray-500'}`}>
+                    <span className={`text-sm ${analysisProgress.progress > 40 ? 'text-gray-900 font-black' : 'text-gray-500 font-bold'}`}>
                       Analyzing hero section...
                     </span>
                   </div>
@@ -475,15 +475,15 @@ export default function Home() {
                   {/* Social Proof Analysis Stage */}
                   <div className="flex items-center gap-3">
                     {analysisProgress.stage === 'social-proof-analysis' ? (
-                      <div className="animate-spin rounded-full h-5 w-5 border-2 border-gray-300 border-t-blue-600 flex-shrink-0" />
+                      <div className="animate-spin rounded-full h-5 w-5 border-2 border-gray-300 border-t-brand-gold flex-shrink-0" />
                     ) : analysisProgress.progress > 55 ? (
-                      <svg className="w-5 h-5 text-green-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-5 h-5 text-brand-gold flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
                     ) : (
                       <div className="w-5 h-5 rounded-full border-2 border-gray-300 flex-shrink-0" />
                     )}
-                    <span className={`text-sm ${analysisProgress.progress > 55 ? 'text-gray-900 font-medium' : 'text-gray-500'}`}>
+                    <span className={`text-sm ${analysisProgress.progress > 55 ? 'text-gray-900 font-black' : 'text-gray-500 font-bold'}`}>
                       Analyzing social proof...
                     </span>
                   </div>
@@ -491,15 +491,15 @@ export default function Home() {
                   {/* CTA Analysis Stage */}
                   <div className="flex items-center gap-3">
                     {analysisProgress.stage === 'cta-analysis' ? (
-                      <div className="animate-spin rounded-full h-5 w-5 border-2 border-gray-300 border-t-blue-600 flex-shrink-0" />
+                      <div className="animate-spin rounded-full h-5 w-5 border-2 border-gray-300 border-t-brand-gold flex-shrink-0" />
                     ) : analysisProgress.progress > 70 ? (
-                      <svg className="w-5 h-5 text-green-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-5 h-5 text-brand-gold flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
                     ) : (
                       <div className="w-5 h-5 rounded-full border-2 border-gray-300 flex-shrink-0" />
                     )}
-                    <span className={`text-sm ${analysisProgress.progress > 70 ? 'text-gray-900 font-medium' : 'text-gray-500'}`}>
+                    <span className={`text-sm ${analysisProgress.progress > 70 ? 'text-gray-900 font-black' : 'text-gray-500 font-bold'}`}>
                       Analyzing CTAs...
                     </span>
                   </div>
@@ -507,15 +507,15 @@ export default function Home() {
                   {/* Generating Recommendations Stage */}
                   <div className="flex items-center gap-3">
                     {analysisProgress.stage === 'generating-recommendations' ? (
-                      <div className="animate-spin rounded-full h-5 w-5 border-2 border-gray-300 border-t-blue-600 flex-shrink-0" />
+                      <div className="animate-spin rounded-full h-5 w-5 border-2 border-gray-300 border-t-brand-gold flex-shrink-0" />
                     ) : analysisProgress.progress > 85 ? (
-                      <svg className="w-5 h-5 text-green-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-5 h-5 text-brand-gold flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
                     ) : (
                       <div className="w-5 h-5 rounded-full border-2 border-gray-300 flex-shrink-0" />
                     )}
-                    <span className={`text-sm ${analysisProgress.progress > 85 ? 'text-gray-900 font-medium' : 'text-gray-500'}`}>
+                    <span className={`text-sm ${analysisProgress.progress > 85 ? 'text-gray-900 font-black' : 'text-gray-500 font-bold'}`}>
                       Generating recommendations...
                     </span>
                   </div>
@@ -525,7 +525,7 @@ export default function Home() {
                 <div className="flex justify-center">
                   <button
                     onClick={cancelAnalysis}
-                    className="inline-flex items-center gap-2 px-6 py-2.5 bg-white hover:bg-gray-50 text-gray-700 text-sm font-medium rounded-lg border border-gray-300 transition-colors shadow-sm hover:shadow"
+                    className="inline-flex items-center gap-2 px-6 py-2.5 bg-transparent hover:bg-brand-gold text-black text-sm font-black rounded border-2 border-black hover:border-brand-gold transition-all duration-200"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -539,16 +539,16 @@ export default function Home() {
             {insights && (
               <div className="space-y-6">
                 {/* Success Banner */}
-                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                <div className="bg-brand-gold/10 border border-brand-gold/40 rounded p-4">
                   <div className="flex items-start gap-3">
-                    <svg className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-5 h-5 text-brand-gold flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                     <div className="flex-1">
-                      <h3 className="text-sm font-medium text-green-900">Analysis Complete!</h3>
-                      <p className="text-sm text-green-700 mt-1">
+                      <h3 className="text-sm font-black text-brand-gold">Analysis Complete!</h3>
+                      <p className="text-sm text-gray-700 mt-1 font-bold">
                         Your analysis has been saved.{' '}
-                        <Link href={`/dashboard/results/${insights.id}`} className="underline font-semibold">
+                        <Link href={`/dashboard/results/${insights.id}`} className="underline font-black text-brand-gold hover:text-brand-gold/80 transition-colors duration-200">
                           View full details in dashboard
                         </Link>
                       </p>
@@ -558,20 +558,20 @@ export default function Home() {
 
                 {/* Warnings Banner */}
                 {warnings.length > 0 && (
-                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                  <div className="bg-yellow-900/20 border border-yellow-800/40 rounded p-4">
                     <div className="flex items-start gap-3">
-                      <svg className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-5 h-5 text-yellow-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                       </svg>
                       <div className="flex-1">
-                        <h3 className="text-sm font-medium text-yellow-900">Partial Analysis</h3>
-                        <p className="text-sm text-yellow-700 mt-1">
+                        <h3 className="text-sm font-black text-yellow-400">Partial Analysis</h3>
+                        <p className="text-sm text-yellow-300 mt-1 font-bold">
                           Analysis completed with some limitations:
                         </p>
                         <ul className="mt-2 space-y-1">
                           {warnings.map((warning, index) => (
-                            <li key={index} className="text-sm text-yellow-700 flex items-start gap-2">
-                              <span className="text-yellow-600">•</span>
+                            <li key={index} className="text-sm text-yellow-300 flex items-start gap-2 font-bold">
+                              <span className="text-yellow-400">•</span>
                               <span>{warning}</span>
                             </li>
                           ))}
@@ -583,18 +583,18 @@ export default function Home() {
 
                 {/* Summary Preview */}
                 {insights.summary && (
-                  <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg shadow-sm p-6 border border-blue-100">
+                  <div className="bg-gray-50 rounded border border-gray-200 p-6">
                     <div className="flex items-start gap-3">
                       <div className="flex-shrink-0">
-                        <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center">
-                          <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div className="w-10 h-10 bg-brand-gold rounded-full flex items-center justify-center">
+                          <svg className="w-5 h-5 text-brand-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
                           </svg>
                         </div>
                       </div>
                       <div className="flex-1">
-                        <h2 className="text-base font-semibold text-gray-900 mb-2">Quick Summary</h2>
-                        <p className="text-gray-800 text-sm leading-relaxed">
+                        <h2 className="text-base font-black text-gray-900 mb-2">Quick Summary</h2>
+                        <p className="text-gray-700 text-sm leading-relaxed font-bold">
                           {insights.summary.headline}
                         </p>
                       </div>
@@ -603,16 +603,16 @@ export default function Home() {
                 )}
 
                 {/* CTA to view full analysis */}
-                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                <div className="bg-gray-50 rounded border border-gray-200 p-8 text-center">
+                  <h3 className="text-lg font-black text-gray-900 mb-2">
                     Want to see the full analysis?
                   </h3>
-                  <p className="text-sm text-gray-600 mb-4">
+                  <p className="text-sm text-gray-600 mb-4 font-bold">
                     View detailed insights, screenshots, roadmap, and actionable recommendations
                   </p>
                   <Link
                     href={`/dashboard/results/${insights.id}`}
-                    className="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700 transition"
+                    className="inline-flex items-center gap-2 px-6 py-3 bg-brand-gold text-brand-black font-black rounded hover:shadow-[0_0_0_2px_rgba(245,197,66,0.5)] transition-all duration-200"
                   >
                     View Full Analysis
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

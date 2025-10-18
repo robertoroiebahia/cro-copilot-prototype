@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { ScreenshotService } from '../../../lib/screenshot-service';
+import { analyzePage } from '@/lib/services';
 import {
   analyzeAboveFold,
   VisionAnalysisError,
@@ -8,8 +8,6 @@ import {
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
-
-const screenshotService = new ScreenshotService();
 
 type RequestBody = {
   url?: string;
@@ -54,22 +52,19 @@ export async function POST(req: NextRequest) {
       | null = null;
 
     if (url) {
-      const capture = await screenshotService.capturePageScreenshots(url, {
-        blockPatterns,
-        waitForNetworkIdle,
-      });
+      const pageData = await analyzePage(url);
 
-      desktop = capture.desktop.aboveFold;
-      mobile = capture.mobile.aboveFold;
+      desktop = pageData.screenshots.desktop.aboveFold;
+      mobile = pageData.screenshots.mobile.aboveFold;
       screenshots = {
-        capturedAt: capture.capturedAt,
+        capturedAt: pageData.scrapedAt,
         desktop: {
-          aboveFold: `data:image/png;base64,${capture.desktop.aboveFold}`,
-          fullPage: `data:image/png;base64,${capture.desktop.fullPage}`,
+          aboveFold: `data:image/png;base64,${pageData.screenshots.desktop.aboveFold}`,
+          fullPage: `data:image/png;base64,${pageData.screenshots.desktop.fullPage}`,
         },
         mobile: {
-          aboveFold: `data:image/png;base64,${capture.mobile.aboveFold}`,
-          fullPage: `data:image/png;base64,${capture.mobile.fullPage}`,
+          aboveFold: `data:image/png;base64,${pageData.screenshots.mobile.aboveFold}`,
+          fullPage: `data:image/png;base64,${pageData.screenshots.mobile.fullPage}`,
         },
       };
     }

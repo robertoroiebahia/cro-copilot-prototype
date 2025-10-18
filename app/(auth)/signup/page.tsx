@@ -49,18 +49,18 @@ export default function SignupPage() {
 
   if (success) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="min-h-screen flex items-center justify-center bg-white py-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-md w-full">
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+          <div className="bg-brand-surface rounded-[4px] border border-gray-200 p-8">
             <div className="text-center">
               <div className="flex justify-center mb-4">
-                <div className="w-12 h-12 bg-green-600 rounded-full flex items-center justify-center">
-                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="w-12 h-12 bg-brand-gold rounded-[4px] flex items-center justify-center">
+                  <svg className="w-6 h-6 text-brand-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
                 </div>
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">Account Created!</h3>
+              <h3 className="text-xl font-black text-gray-900 mb-2">Account Created!</h3>
               <p className="text-sm text-gray-600">
                 Redirecting to your dashboard...
               </p>
@@ -72,18 +72,16 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen flex items-center justify-center bg-white py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full">
         {/* Header */}
         <div className="text-center mb-8">
           <div className="flex justify-center mb-4">
-            <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center">
-              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-              </svg>
+            <div className="w-12 h-12 bg-brand-gold rounded-[4px] flex items-center justify-center">
+              <span className="text-2xl font-black text-brand-black">G</span>
             </div>
           </div>
-          <h2 className="text-3xl font-bold text-gray-900 mb-2">
+          <h2 className="text-3xl font-black text-gray-900 mb-2">
             Create your account
           </h2>
           <p className="text-sm text-gray-600">
@@ -92,10 +90,10 @@ export default function SignupPage() {
         </div>
 
         {/* Signup Card */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
+        <div className="bg-brand-surface rounded-[4px] border border-gray-200 p-8">
           <form className="space-y-6" onSubmit={handleSignup}>
             {error && (
-              <div className="rounded-md bg-red-50 border border-red-200 p-4">
+              <div className="rounded-[4px] bg-red-50 border border-red-200 p-4">
                 <div className="flex items-start gap-2">
                   <svg className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -106,7 +104,7 @@ export default function SignupPage() {
             )}
 
             <div>
-              <label htmlFor="full-name" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="full-name" className="block text-sm font-bold text-gray-900 mb-2">
                 Full name
               </label>
               <input
@@ -114,7 +112,7 @@ export default function SignupPage() {
                 name="fullName"
                 type="text"
                 required
-                className="appearance-none relative block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent sm:text-sm"
+                className="appearance-none relative block w-full px-3 py-2 border border-gray-300 rounded-[4px] placeholder-gray-400 bg-white text-gray-900 focus:outline-none focus:border-brand-gold transition-all duration-200 sm:text-sm"
                 placeholder="John Doe"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
@@ -123,7 +121,7 @@ export default function SignupPage() {
             </div>
 
             <div>
-              <label htmlFor="email-address" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="email-address" className="block text-sm font-bold text-gray-900 mb-2">
                 Email address
               </label>
               <input
@@ -132,7 +130,7 @@ export default function SignupPage() {
                 type="email"
                 autoComplete="email"
                 required
-                className="appearance-none relative block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent sm:text-sm"
+                className="appearance-none relative block w-full px-3 py-2 border border-gray-300 rounded-[4px] placeholder-gray-400 bg-white text-gray-900 focus:outline-none focus:border-brand-gold transition-all duration-200 sm:text-sm"
                 placeholder="you@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -141,7 +139,7 @@ export default function SignupPage() {
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+              <label htmlFor="password" className="block text-sm font-bold text-gray-900 mb-2">
                 Password
               </label>
               <input
@@ -151,20 +149,34 @@ export default function SignupPage() {
                 autoComplete="new-password"
                 required
                 minLength={6}
-                className="appearance-none relative block w-full px-3 py-2 border border-gray-300 rounded-md placeholder-gray-400 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent sm:text-sm"
+                className="appearance-none relative block w-full px-3 py-2 border border-gray-300 rounded-[4px] placeholder-gray-400 bg-white text-gray-900 focus:outline-none focus:border-brand-gold transition-all duration-200 sm:text-sm"
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 disabled={loading}
               />
-              <p className="mt-1 text-xs text-gray-500">Must be at least 6 characters</p>
+              <p className="mt-1 text-xs text-gray-600">Must be at least 6 characters</p>
             </div>
 
             <div>
               <button
                 type="submit"
                 disabled={loading}
-                className="group relative w-full flex justify-center items-center gap-2 py-2.5 px-4 border border-transparent text-sm font-semibold rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="group relative w-full flex justify-center items-center gap-2 py-2.5 px-4 text-sm font-black rounded-[4px] text-white bg-black focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-black/20 transition-all duration-300"
+                onMouseEnter={(e) => {
+                  if (!loading) {
+                    e.currentTarget.style.transform = 'translateY(-2px) scale(1.02)';
+                    e.currentTarget.style.backgroundColor = '#1A1A1A';
+                    e.currentTarget.style.boxShadow = '0 20px 50px -10px rgba(212, 165, 116, 0.6), 0 0 0 2px rgba(212, 165, 116, 0.4)';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!loading) {
+                    e.currentTarget.style.transform = 'translateY(0) scale(1)';
+                    e.currentTarget.style.backgroundColor = '#0E0E0E';
+                    e.currentTarget.style.boxShadow = '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)';
+                  }
+                }}
               >
                 {loading ? (
                   <>
@@ -186,7 +198,17 @@ export default function SignupPage() {
         <div className="mt-6 text-center">
           <p className="text-sm text-gray-600">
             Already have an account?{' '}
-            <Link href="/login" className="font-semibold text-blue-600 hover:text-blue-700">
+            <Link
+              href="/login"
+              className="font-bold transition-all duration-200"
+              style={{ color: '#0E0E0E' }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = '#D4A574';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = '#0E0E0E';
+              }}
+            >
               Sign in
             </Link>
           </p>

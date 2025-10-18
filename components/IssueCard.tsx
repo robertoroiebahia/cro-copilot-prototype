@@ -125,50 +125,50 @@ export default function IssueCard({
     setIsAdding(false);
   };
 
-  // Color coding based on severity
+  // Color coding based on severity - Light theme
   const severityConfig = {
     critical: {
-      badge: 'bg-red-100 text-red-800 border-red-200',
-      border: 'border-l-red-500',
+      badge: 'bg-red-500/20 text-red-700 border-red-500/30',
+      border: 'border-l-brand-danger',
       icon: '🔴',
     },
     medium: {
-      badge: 'bg-yellow-100 text-yellow-800 border-yellow-200',
-      border: 'border-l-yellow-500',
+      badge: 'bg-yellow-400/20 text-yellow-700 border-yellow-400/30',
+      border: 'border-l-brand-gold',
       icon: '🟡',
     },
     low: {
-      badge: 'bg-green-100 text-green-800 border-green-200',
-      border: 'border-l-green-500',
+      badge: 'bg-green-500/20 text-green-700 border-green-500/30',
+      border: 'border-l-brand-success',
       icon: '🟢',
     },
   };
 
   const config = severityConfig[severity];
 
-  // Confidence color coding
+  // Confidence color coding - Light theme
   const confidenceColors = {
-    High: 'bg-green-100 text-green-800 border-green-200',
-    Medium: 'bg-yellow-100 text-yellow-800 border-yellow-200',
-    Low: 'bg-gray-100 text-gray-700 border-gray-200',
+    High: 'bg-green-500/20 text-green-700 border-green-500/30',
+    Medium: 'bg-yellow-400/20 text-yellow-700 border-yellow-400/30',
+    Low: 'bg-gray-200 text-gray-700 border-gray-300',
   };
 
-  // Effort color coding (reverse: low effort = green)
+  // Effort color coding (reverse: low effort = success) - Light theme
   const effortColors = {
-    Low: 'bg-green-100 text-green-800 border-green-200',
-    Medium: 'bg-yellow-100 text-yellow-800 border-yellow-200',
-    High: 'bg-red-100 text-red-800 border-red-200',
+    Low: 'bg-green-500/20 text-green-700 border-green-500/30',
+    Medium: 'bg-yellow-400/20 text-yellow-700 border-yellow-400/30',
+    High: 'bg-red-500/20 text-red-700 border-red-500/30',
   };
 
   return (
     <div
-      className={`bg-white rounded-lg shadow-md border-l-4 ${config.border} overflow-hidden transition-shadow hover:shadow-lg`}
+      className={`bg-white rounded border-l-4 ${config.border} overflow-hidden transition-all hover:shadow-lg hover:border-brand-gold border border-gray-200`}
     >
       {/* Header with badges */}
       <div className="px-6 py-4 border-b border-gray-200 bg-gray-50">
         <div className="flex flex-wrap items-center gap-2 mb-2">
           {/* Section badge */}
-          <span className="inline-flex items-center gap-1 px-3 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800 border border-blue-200">
+          <span className="inline-flex items-center gap-1 px-3 py-1 text-xs font-semibold rounded bg-brand-gold/20 text-brand-gold border border-brand-gold/30">
             <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
             </svg>
@@ -176,13 +176,13 @@ export default function IssueCard({
           </span>
 
           {/* Severity badge */}
-          <span className={`inline-flex items-center gap-1 px-3 py-1 text-xs font-semibold rounded-full border ${config.badge}`}>
+          <span className={`inline-flex items-center gap-1 px-3 py-1 text-xs font-semibold rounded border ${config.badge}`}>
             <span>{config.icon}</span>
             {severity.charAt(0).toUpperCase() + severity.slice(1)} Priority
           </span>
 
           {/* Confidence badge */}
-          <span className={`inline-flex items-center gap-1 px-3 py-1 text-xs font-semibold rounded-full border ${confidenceColors[confidence as keyof typeof confidenceColors] || confidenceColors.Medium}`}>
+          <span className={`inline-flex items-center gap-1 px-3 py-1 text-xs font-semibold rounded border ${confidenceColors[confidence as keyof typeof confidenceColors] || confidenceColors.Medium}`}>
             <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
@@ -190,7 +190,7 @@ export default function IssueCard({
           </span>
 
           {/* Effort badge */}
-          <span className={`inline-flex items-center gap-1 px-3 py-1 text-xs font-semibold rounded-full border ${effortColors[effort as keyof typeof effortColors] || effortColors.Medium}`}>
+          <span className={`inline-flex items-center gap-1 px-3 py-1 text-xs font-semibold rounded border ${effortColors[effort as keyof typeof effortColors] || effortColors.Medium}`}>
             <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
             </svg>
@@ -199,27 +199,27 @@ export default function IssueCard({
         </div>
 
         {/* Issue title */}
-        <h3 className="text-xl font-bold text-gray-900 mt-2">
+        <h3 className="text-xl font-black text-black mt-2">
           {issue}
         </h3>
 
         {/* Principle tag */}
         <p className="text-sm text-gray-600 mt-1 italic">
-          Principle: <span className="font-medium text-gray-800">{principle}</span>
+          Principle: <span className="font-medium text-brand-gold">{principle}</span>
         </p>
       </div>
 
       {/* Explanation box */}
-      <div className="px-6 py-4 bg-blue-50 border-b border-blue-100">
+      <div className="px-6 py-4 bg-gray-50 border-b border-gray-200">
         <div className="flex items-start gap-3">
           <div className="flex-shrink-0 mt-1">
-            <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-5 h-5 text-brand-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </div>
           <div className="flex-1">
-            <h4 className="text-sm font-semibold text-blue-900 mb-1">Why this matters</h4>
-            <p className="text-sm text-blue-800 leading-relaxed">
+            <h4 className="text-sm font-black text-brand-gold mb-1">Why this matters</h4>
+            <p className="text-sm text-black leading-relaxed">
               {explanation}
             </p>
           </div>
@@ -227,17 +227,17 @@ export default function IssueCard({
       </div>
 
       {/* Before/After comparison */}
-      <div className="px-6 py-6">
+      <div className="px-6 py-6 bg-white">
         <div className="grid md:grid-cols-2 gap-6">
             {/* Current (Before) */}
             <div className="space-y-3">
               <div className="flex items-center gap-2">
                 <span className="text-2xl">❌</span>
-                <h4 className="text-base font-bold text-gray-900">Current</h4>
+                <h4 className="text-base font-black text-black">Current</h4>
               </div>
 
               {/* Current screenshot */}
-              <div className="relative rounded-lg border-2 border-red-200 overflow-hidden bg-gray-50">
+              <div className="relative rounded border border-red-500/30 overflow-hidden bg-gray-50">
                 {!imageError ? (
                   <img
                     src={`data:image/png;base64,${currentScreenshot}`}
@@ -246,7 +246,7 @@ export default function IssueCard({
                     onError={() => setImageError(true)}
                   />
                 ) : (
-                  <div className="w-full h-48 flex items-center justify-center text-sm text-gray-500">
+                  <div className="w-full h-48 flex items-center justify-center text-sm text-gray-600">
                     Screenshot unavailable
                   </div>
                 )}
@@ -254,11 +254,11 @@ export default function IssueCard({
 
               {/* Current copy */}
               {currentCopy && (
-                <div className="p-3 bg-gray-50 border border-gray-200 rounded-md">
-                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
+                <div className="p-3 bg-gray-50 border border-gray-200 rounded">
+                  <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">
                     Copy
                   </p>
-                  <p className="text-sm text-gray-700 font-medium">
+                  <p className="text-sm text-black font-medium">
                     "{currentCopy}"
                   </p>
                 </div>
@@ -269,11 +269,11 @@ export default function IssueCard({
             <div className="space-y-3">
               <div className="flex items-center gap-2">
                 <span className="text-2xl">✅</span>
-                <h4 className="text-base font-bold text-gray-900">Suggested</h4>
+                <h4 className="text-base font-black text-black">Suggested</h4>
               </div>
 
               {/* Suggested screenshot or mockup */}
-              <div className="relative rounded-lg border-2 border-green-200 overflow-hidden bg-gray-50">
+              <div className="relative rounded border border-green-500/30 overflow-hidden bg-gray-50">
                 {mockupScreenshot ? (
                   <img
                     src={`data:image/png;base64,${mockupScreenshot}`}
@@ -281,12 +281,12 @@ export default function IssueCard({
                     className="w-full h-auto"
                   />
                 ) : (
-                  <div className="w-full h-48 flex items-center justify-center bg-gradient-to-br from-green-50 to-emerald-50">
+                  <div className="w-full h-48 flex items-center justify-center bg-gray-50">
                     <div className="text-center p-4">
-                      <svg className="w-12 h-12 mx-auto text-green-600 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-12 h-12 mx-auto text-brand-success mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
-                      <p className="text-sm text-green-700 font-medium">
+                      <p className="text-sm text-brand-success font-medium">
                         Mockup preview coming soon
                       </p>
                     </div>
@@ -296,11 +296,11 @@ export default function IssueCard({
 
               {/* Suggested copy */}
               {suggestedCopy && (
-                <div className="p-3 bg-green-50 border border-green-200 rounded-md">
+                <div className="p-3 bg-green-500/20 border border-green-500/30 rounded">
                   <p className="text-xs font-semibold text-green-700 uppercase tracking-wide mb-1">
                     Improved Copy
                   </p>
-                  <p className="text-sm text-gray-900 font-medium">
+                  <p className="text-sm text-black font-medium">
                     "{suggestedCopy}"
                   </p>
                 </div>
@@ -310,30 +310,30 @@ export default function IssueCard({
       </div>
 
       {/* Impact metrics */}
-      <div className="px-6 py-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-t border-blue-100">
+      <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">
         <div className="flex items-center justify-center gap-2">
-          <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="w-5 h-5 text-brand-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
           </svg>
-          <span className="text-sm font-semibold text-blue-900">
+          <span className="text-sm font-black text-black">
             Expected Impact:
           </span>
-          <span className="text-lg font-bold text-blue-600">
+          <span className="text-lg font-black text-brand-gold">
             {expectedImpact} lift
           </span>
         </div>
       </div>
 
       {/* Action buttons */}
-      <div className="px-6 py-4 bg-gray-50 border-t border-gray-200">
+      <div className="px-6 py-4 bg-white border-t border-gray-200">
         <div className="flex flex-col sm:flex-row gap-3">
           <button
             onClick={handleAddToQueue}
             disabled={isAdding || added}
-            className={`flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 font-semibold rounded-lg transition-colors shadow-sm hover:shadow-md ${
+            className={`flex-1 inline-flex items-center justify-center gap-2 px-4 py-3 font-black rounded transition-all duration-200 ${
               added
-                ? 'bg-green-600 text-white'
-                : 'bg-blue-600 hover:bg-blue-700 text-white'
+                ? 'bg-green-500/20 text-green-700 border border-green-500/30'
+                : 'bg-black text-white hover:bg-brand-gold hover:text-brand-black'
             } disabled:opacity-50 disabled:cursor-not-allowed`}
           >
             {isAdding ? (
@@ -363,7 +363,7 @@ export default function IssueCard({
           {onSkip && (
             <button
               onClick={onSkip}
-              className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-6 py-3 bg-white hover:bg-gray-50 text-gray-700 font-medium rounded-lg border border-gray-300 transition-colors"
+              className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 px-6 py-3 bg-white text-brand-black font-black rounded border-2 border-black hover:bg-brand-gold hover:border-brand-gold transition-all duration-200"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />

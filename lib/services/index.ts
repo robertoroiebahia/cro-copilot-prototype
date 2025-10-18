@@ -7,7 +7,8 @@
 export * from './analysis/page-analyzer';
 
 // AI Services
-export * from './ai/recommendation-generator';
+export * from './ai/claude-recommendations';
+export * from './ai/gpt-recommendations';
 
 // Database Repositories
 export { AnalysisRepository } from './database/analysis-repository';

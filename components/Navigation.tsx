@@ -14,6 +14,8 @@ export default function Navigation() {
   const [loading, setLoading] = useState(true);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [hoveredNavLink, setHoveredNavLink] = useState<string | null>(null);
+  const [hoveredButton, setHoveredButton] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
   // Handle scroll effect
@@ -25,11 +27,10 @@ export default function Navigation() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Check authentication - use auth state change listener instead of polling
+  // Check authentication
   useEffect(() => {
     const supabase = createClient();
 
-    // Initial check
     const checkAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       setIsLoggedIn(!!session);
@@ -38,7 +39,6 @@ export default function Navigation() {
     };
     checkAuth();
 
-    // Listen for auth changes (login, logout, etc.)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setIsLoggedIn(!!session);
       setUserEmail(session?.user?.email || null);
@@ -48,7 +48,7 @@ export default function Navigation() {
     return () => {
       subscription.unsubscribe();
     };
-  }, []); // Only run once on mount
+  }, []);
 
   // Close user menu when clicking outside
   useEffect(() => {
@@ -85,44 +85,34 @@ export default function Navigation() {
 
   const isActive = (path: string) => pathname === path;
 
-  // Don't show nav on login/signup pages
-  if (pathname?.startsWith('/login') || pathname?.startsWith('/signup')) {
+  // Don't show nav on login/signup/playground pages
+  if (pathname?.startsWith('/login') || pathname?.startsWith('/signup') || pathname?.startsWith('/playground')) {
     return null;
   }
 
   return (
     <nav
-      className={`fixed top-0 w-full z-50 transition-all duration-200 ${
-        isScrolled || pathname !== '/'
-          ? 'bg-white shadow-md'
-          : 'bg-white/95 backdrop-blur-sm'
+      className={`fixed top-0 w-full z-50 transition-all duration-200 border-b ${
+        isScrolled
+          ? 'bg-white/95 backdrop-blur-md border-gray-200 shadow-sm'
+          : 'bg-white border-gray-200'
       }`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2 group">
-            <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center shadow-sm group-hover:shadow-md transition-shadow">
-              <svg
-                className="w-5 h-5 text-white"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M13 10V3L4 14h7v7l9-11h-7z"
-                />
-              </svg>
+            <div className="w-8 h-8 bg-brand-gold rounded flex items-center justify-center transition-all duration-200 group-hover:shadow-[0_0_0_2px_rgba(245,197,66,0.5)]">
+              <span className="text-lg font-black text-brand-black">G</span>
             </div>
-            <span className="text-xl font-bold text-gray-900 hidden sm:block">
-              Smart Nudge Builder
-            </span>
-            <span className="text-xl font-bold text-gray-900 sm:hidden">
-              SNB
-            </span>
+            <div>
+              <span className="text-lg font-black text-brand-black hidden sm:block">
+                Galo
+              </span>
+              <span className="text-lg font-black text-brand-black sm:hidden">
+                G
+              </span>
+            </div>
           </Link>
 
           {/* Desktop Navigation */}
@@ -136,11 +126,13 @@ export default function Navigation() {
                       <Link
                         key={link.href}
                         href={link.href}
-                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                          isActive(link.href)
-                            ? 'bg-blue-50 text-blue-700'
-                            : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-                        }`}
+                        className="px-4 py-2 text-sm font-bold rounded transition-all duration-200"
+                        style={{
+                          color: isActive(link.href) ? '#F5C542' : '#0E0E0E',
+                          backgroundColor: hoveredNavLink === link.href && !isActive(link.href) ? '#FEF3C7' : '#FFFFFF'
+                        }}
+                        onMouseEnter={() => setHoveredNavLink(link.href)}
+                        onMouseLeave={() => setHoveredNavLink(null)}
                       >
                         {link.label}
                       </Link>
@@ -150,13 +142,19 @@ export default function Navigation() {
                     <div className="relative ml-2" ref={menuRef}>
                       <button
                         onClick={() => setShowUserMenu(!showUserMenu)}
-                        className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                        className="flex items-center gap-2 px-3 py-2 rounded text-sm font-bold transition-all duration-200"
+                        style={{
+                          color: '#0E0E0E',
+                          backgroundColor: hoveredButton === 'user-menu' ? '#FEF3C7' : '#FFFFFF'
+                        }}
+                        onMouseEnter={() => setHoveredButton('user-menu')}
+                        onMouseLeave={() => setHoveredButton(null)}
                       >
-                        <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white text-sm font-semibold shadow-sm">
+                        <div className="w-8 h-8 bg-black rounded flex items-center justify-center text-white text-sm font-black">
                           {userEmail?.[0]?.toUpperCase() || 'U'}
                         </div>
                         <svg
-                          className={`w-4 h-4 text-gray-500 transition-transform ${
+                          className={`w-4 h-4 transition-transform duration-200 ${
                             showUserMenu ? 'rotate-180' : ''
                           }`}
                           fill="none"
@@ -174,22 +172,22 @@ export default function Navigation() {
 
                       {/* Dropdown Menu */}
                       {showUserMenu && (
-                        <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 py-1 animate-in fade-in slide-in-from-top-2 duration-200">
-                          <div className="px-4 py-3 border-b border-gray-100">
-                            <p className="text-sm font-medium text-gray-900 truncate">
+                        <div className="absolute right-0 mt-2 w-64 bg-white rounded border border-gray-200 py-1 animate-slide-up shadow-lg">
+                          <div className="px-4 py-3 border-b border-gray-200">
+                            <p className="text-sm font-bold text-brand-black truncate">
                               {userEmail}
                             </p>
-                            <p className="text-xs text-gray-500 mt-0.5">
-                              Account settings
+                            <p className="text-xs text-gray-500 mt-0.5 font-medium">
+                              Account
                             </p>
                           </div>
                           <Link
                             href="/dashboard"
                             onClick={() => setShowUserMenu(false)}
-                            className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                            className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-600 hover:bg-brand-gray-light hover:text-brand-black transition-all duration-200 font-medium"
                           >
                             <svg
-                              className="w-4 h-4 text-gray-400"
+                              className="w-4 h-4"
                               fill="none"
                               stroke="currentColor"
                               viewBox="0 0 24 24"
@@ -206,10 +204,10 @@ export default function Navigation() {
                           <Link
                             href="/queue"
                             onClick={() => setShowUserMenu(false)}
-                            className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                            className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-600 hover:bg-brand-gray-light hover:text-brand-black transition-all duration-200 font-medium"
                           >
                             <svg
-                              className="w-4 h-4 text-gray-400"
+                              className="w-4 h-4"
                               fill="none"
                               stroke="currentColor"
                               viewBox="0 0 24 24"
@@ -226,10 +224,10 @@ export default function Navigation() {
                           <Link
                             href="/analyze"
                             onClick={() => setShowUserMenu(false)}
-                            className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                            className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-600 hover:bg-brand-gray-light hover:text-brand-black transition-all duration-200 font-medium"
                           >
                             <svg
-                              className="w-4 h-4 text-gray-400"
+                              className="w-4 h-4"
                               fill="none"
                               stroke="currentColor"
                               viewBox="0 0 24 24"
@@ -243,10 +241,30 @@ export default function Navigation() {
                             </svg>
                             New Analysis
                           </Link>
-                          <div className="border-t border-gray-100 my-1" />
+                          <Link
+                            href="/playground"
+                            onClick={() => setShowUserMenu(false)}
+                            className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-600 hover:bg-brand-gray-light hover:text-brand-black transition-all duration-200 font-medium"
+                          >
+                            <svg
+                              className="w-4 h-4"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"
+                              />
+                            </svg>
+                            Playground
+                          </Link>
+                          <div className="border-t border-gray-200 my-1" />
                           <button
                             onClick={handleSignOut}
-                            className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                            className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-brand-danger hover:bg-brand-danger/10 transition-all duration-200 font-bold"
                           >
                             <svg
                               className="w-4 h-4"
@@ -272,13 +290,28 @@ export default function Navigation() {
                     {/* Not logged in */}
                     <Link
                       href="/login"
-                      className="px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors"
+                      className="px-4 py-2 text-sm font-bold rounded transition-all duration-200"
+                      style={{
+                        color: '#0E0E0E',
+                        backgroundColor: hoveredButton === 'sign-in' ? '#FEF3C7' : '#FFFFFF'
+                      }}
+                      onMouseEnter={() => setHoveredButton('sign-in')}
+                      onMouseLeave={() => setHoveredButton(null)}
                     >
                       Sign In
                     </Link>
                     <Link
                       href="/signup"
-                      className="px-5 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition-all shadow-sm hover:shadow-md"
+                      className="px-5 py-2.5 text-white text-sm font-black rounded transition-all duration-300"
+                      style={{
+                        backgroundColor: hoveredButton === 'start-free' ? '#1A1A1A' : '#0E0E0E',
+                        transform: hoveredButton === 'start-free' ? 'translateY(-1px) scale(1.02)' : 'translateY(0) scale(1)',
+                        boxShadow: hoveredButton === 'start-free'
+                          ? '0 12px 35px -8px rgba(212, 165, 116, 0.5), 0 0 0 2px rgba(212, 165, 116, 0.4)'
+                          : '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
+                      }}
+                      onMouseEnter={() => setHoveredButton('start-free')}
+                      onMouseLeave={() => setHoveredButton(null)}
                     >
                       Start Free
                     </Link>
@@ -292,7 +325,7 @@ export default function Navigation() {
           <div className="md:hidden">
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="p-2 rounded-lg text-gray-600 hover:bg-gray-50 transition-colors"
+              className="p-2 rounded text-gray-600 hover:bg-brand-gray-light transition-all duration-200"
             >
               <svg
                 className="w-6 h-6"
@@ -322,14 +355,14 @@ export default function Navigation() {
 
         {/* Mobile Menu */}
         {isMobileMenuOpen && (
-          <div className="md:hidden border-t border-gray-200 py-4 animate-in slide-in-from-top-2 duration-200">
+          <div className="md:hidden border-t border-gray-200 py-4 animate-slide-up">
             {!loading && (
               <>
                 {isLoggedIn ? (
                   <div className="space-y-2">
                     {/* User Info */}
-                    <div className="px-3 py-2 bg-gray-50 rounded-lg mb-3">
-                      <p className="text-sm font-medium text-gray-900 truncate">
+                    <div className="px-3 py-2 bg-gray-50 rounded mb-3 border border-gray-200">
+                      <p className="text-sm font-bold text-brand-black truncate">
                         {userEmail}
                       </p>
                     </div>
@@ -339,12 +372,17 @@ export default function Navigation() {
                       <Link
                         key={link.href}
                         href={link.href}
-                        onClick={() => setIsMobileMenuOpen(false)}
-                        className={`flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                          isActive(link.href)
-                            ? 'bg-blue-50 text-blue-700'
-                            : 'text-gray-700 hover:bg-gray-50'
-                        }`}
+                        onClick={() => {
+                          setIsMobileMenuOpen(false);
+                          setHoveredNavLink(null);
+                        }}
+                        className="flex items-center gap-2 px-3 py-2.5 rounded text-sm font-bold transition-all duration-200"
+                        style={{
+                          color: isActive(link.href) ? '#F5C542' : '#0E0E0E',
+                          backgroundColor: hoveredNavLink === `mobile-${link.href}` && !isActive(link.href) ? '#FEF3C7' : '#FFFFFF'
+                        }}
+                        onMouseEnter={() => setHoveredNavLink(`mobile-${link.href}`)}
+                        onMouseLeave={() => setHoveredNavLink(null)}
                       >
                         {link.href === '/dashboard' && (
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -371,7 +409,7 @@ export default function Navigation() {
                         handleSignOut();
                         setIsMobileMenuOpen(false);
                       }}
-                      className="w-full text-left px-3 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                      className="w-full text-left px-3 py-2.5 text-sm font-bold text-brand-danger hover:bg-brand-danger/10 rounded transition-all duration-200"
                     >
                       Sign Out
                     </button>
@@ -381,14 +419,14 @@ export default function Navigation() {
                     <Link
                       href="/login"
                       onClick={() => setIsMobileMenuOpen(false)}
-                      className="block px-3 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
+                      className="block px-3 py-2.5 text-sm font-bold text-gray-600 hover:bg-brand-gray-light hover:text-brand-black rounded transition-all duration-200"
                     >
                       Sign In
                     </Link>
                     <Link
                       href="/signup"
                       onClick={() => setIsMobileMenuOpen(false)}
-                      className="block px-3 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition-colors text-center"
+                      className="block px-3 py-2.5 bg-brand-gold text-brand-black text-sm font-black rounded transition-all duration-200 text-center hover:shadow-[0_0_0_2px_rgba(245,197,66,0.5)]"
                     >
                       Start Free
                     </Link>

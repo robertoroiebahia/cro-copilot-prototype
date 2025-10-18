@@ -25,11 +25,11 @@ export function FunnelChart({ data, insights }: FunnelChartProps) {
 
     return values.map((stage, i) => {
       if (i === 0) return { ...stage, dropOff: 0, rate: 100, severity: 'good' };
-      
+
       const prev = values[i - 1].value;
       const dropOff = prev - stage.value;
       const rate = (stage.value / prev * 100).toFixed(1);
-      
+
       return {
         ...stage,
         dropOff,
@@ -43,9 +43,14 @@ export function FunnelChart({ data, insights }: FunnelChartProps) {
     switch (severity) {
       case 'critical': return 'bg-red-500';
       case 'high': return 'bg-orange-500';
-      case 'medium': return 'bg-yellow-500';
+      case 'medium': return 'bg-[#F5C542]';
       default: return 'bg-green-500';
     }
+  };
+
+  const getBarColor = (index: number) => {
+    // Alternate between brand-gold and brand-blue for visual variety
+    return index % 2 === 0 ? 'bg-[#F5C542]' : 'bg-[#3E6DF4]';
   };
 
   return (
@@ -53,25 +58,28 @@ export function FunnelChart({ data, insights }: FunnelChartProps) {
       {stages.map((stage, i) => (
         <div key={i} className="relative">
           <div className="flex items-center gap-3">
-            <div 
-              className="h-12 bg-blue-600 rounded-r-lg relative transition-all"
-              style={{ width: `${(stage.value / stages[0].value) * 100}%` }}
+            <div
+              className={`h-12 ${getBarColor(i)} relative transition-all duration-200`}
+              style={{
+                width: `${(stage.value / stages[0].value) * 100}%`,
+                borderRadius: '4px'
+              }}
             >
-              <div className="absolute inset-0 flex items-center justify-between px-4 text-white text-sm font-medium">
+              <div className="absolute inset-0 flex items-center justify-between px-4 text-white text-sm font-bold">
                 <span>{stage.name}</span>
-                <span>{stage.value.toLocaleString()}</span>
+                <span className="font-black">{stage.value.toLocaleString()}</span>
               </div>
             </div>
             {i > 0 && (
               <div className="flex items-center gap-2">
                 <div className={`w-2 h-2 rounded-full ${getSeverityColor(stage.severity)}`} />
-                <span className="text-xs text-gray-600">{stage.rate}%</span>
+                <span className="text-xs text-white font-bold">{stage.rate}%</span>
               </div>
             )}
           </div>
-          
+
           {i > 0 && stage.dropOff > 0 && (
-            <div className="text-xs text-gray-500 mt-1 ml-2">
+            <div className="text-xs text-brand-text-secondary mt-1 ml-2">
               ↓ {stage.dropOff.toLocaleString()} users lost ({(100 - stage.rate).toFixed(1)}% drop-off)
             </div>
           )}
