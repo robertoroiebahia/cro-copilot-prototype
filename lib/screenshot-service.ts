@@ -129,7 +129,7 @@ export class ScreenshotService {
           ]
         : chromium.args,
       executablePath,
-      headless: chromium.headless,
+      headless: true,
     });
 
     try {
@@ -424,7 +424,7 @@ export class ScreenshotService {
             ]
           : chromium.args,
         executablePath,
-        headless: chromium.headless,
+        headless: true,
         timeout: 15000, // 15 second timeout
       });
 
