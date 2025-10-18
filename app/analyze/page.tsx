@@ -504,15 +504,17 @@ export default function Home() {
                   {/* Screenshots Stage */}
                   <div className="flex items-center gap-3">
                     {analysisProgress.stage === 'screenshots' ? (
-                      <div className="animate-spin rounded-full h-5 w-5 border-2 border-gray-300 border-t-brand-gold flex-shrink-0" />
+                      <div className="animate-spin rounded-full h-6 w-6 border-2 border-gray-200 border-t-brand-gold flex-shrink-0" />
                     ) : analysisProgress.progress > 25 ? (
-                      <svg className="w-5 h-5 text-brand-gold flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
+                      <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
+                        <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                      </div>
                     ) : (
-                      <div className="w-5 h-5 rounded-full border-2 border-gray-300 flex-shrink-0" />
+                      <div className="w-6 h-6 rounded-full border-2 border-gray-200 flex-shrink-0" />
                     )}
-                    <span className={`text-sm ${analysisProgress.progress > 25 ? 'text-gray-900 font-black' : 'text-gray-500 font-bold'}`}>
+                    <span className={`text-sm ${analysisProgress.progress > 25 ? 'text-brand-black font-bold' : 'text-brand-text-tertiary font-medium'}`}>
                       Capturing screenshots...
                     </span>
                   </div>
@@ -520,15 +522,17 @@ export default function Home() {
                   {/* Hero Analysis Stage */}
                   <div className="flex items-center gap-3">
                     {analysisProgress.stage === 'hero-analysis' ? (
-                      <div className="animate-spin rounded-full h-5 w-5 border-2 border-gray-300 border-t-brand-gold flex-shrink-0" />
+                      <div className="animate-spin rounded-full h-6 w-6 border-2 border-gray-200 border-t-brand-gold flex-shrink-0" />
                     ) : analysisProgress.progress > 40 ? (
-                      <svg className="w-5 h-5 text-brand-gold flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
+                      <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
+                        <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                      </div>
                     ) : (
-                      <div className="w-5 h-5 rounded-full border-2 border-gray-300 flex-shrink-0" />
+                      <div className="w-6 h-6 rounded-full border-2 border-gray-200 flex-shrink-0" />
                     )}
-                    <span className={`text-sm ${analysisProgress.progress > 40 ? 'text-gray-900 font-black' : 'text-gray-500 font-bold'}`}>
+                    <span className={`text-sm ${analysisProgress.progress > 40 ? 'text-brand-black font-bold' : 'text-brand-text-tertiary font-medium'}`}>
                       Analyzing hero section...
                     </span>
                   </div>
@@ -536,15 +540,17 @@ export default function Home() {
                   {/* Social Proof Analysis Stage */}
                   <div className="flex items-center gap-3">
                     {analysisProgress.stage === 'social-proof-analysis' ? (
-                      <div className="animate-spin rounded-full h-5 w-5 border-2 border-gray-300 border-t-brand-gold flex-shrink-0" />
+                      <div className="animate-spin rounded-full h-6 w-6 border-2 border-gray-200 border-t-brand-gold flex-shrink-0" />
                     ) : analysisProgress.progress > 55 ? (
-                      <svg className="w-5 h-5 text-brand-gold flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
+                      <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
+                        <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                      </div>
                     ) : (
-                      <div className="w-5 h-5 rounded-full border-2 border-gray-300 flex-shrink-0" />
+                      <div className="w-6 h-6 rounded-full border-2 border-gray-200 flex-shrink-0" />
                     )}
-                    <span className={`text-sm ${analysisProgress.progress > 55 ? 'text-gray-900 font-black' : 'text-gray-500 font-bold'}`}>
+                    <span className={`text-sm ${analysisProgress.progress > 55 ? 'text-brand-black font-bold' : 'text-brand-text-tertiary font-medium'}`}>
                       Analyzing social proof...
                     </span>
                   </div>
@@ -552,15 +558,17 @@ export default function Home() {
                   {/* CTA Analysis Stage */}
                   <div className="flex items-center gap-3">
                     {analysisProgress.stage === 'cta-analysis' ? (
-                      <div className="animate-spin rounded-full h-5 w-5 border-2 border-gray-300 border-t-brand-gold flex-shrink-0" />
+                      <div className="animate-spin rounded-full h-6 w-6 border-2 border-gray-200 border-t-brand-gold flex-shrink-0" />
                     ) : analysisProgress.progress > 70 ? (
-                      <svg className="w-5 h-5 text-brand-gold flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
+                      <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
+                        <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                      </div>
                     ) : (
-                      <div className="w-5 h-5 rounded-full border-2 border-gray-300 flex-shrink-0" />
+                      <div className="w-6 h-6 rounded-full border-2 border-gray-200 flex-shrink-0" />
                     )}
-                    <span className={`text-sm ${analysisProgress.progress > 70 ? 'text-gray-900 font-black' : 'text-gray-500 font-bold'}`}>
+                    <span className={`text-sm ${analysisProgress.progress > 70 ? 'text-brand-black font-bold' : 'text-brand-text-tertiary font-medium'}`}>
                       Analyzing CTAs...
                     </span>
                   </div>
@@ -568,15 +576,17 @@ export default function Home() {
                   {/* Generating Recommendations Stage */}
                   <div className="flex items-center gap-3">
                     {analysisProgress.stage === 'generating-recommendations' ? (
-                      <div className="animate-spin rounded-full h-5 w-5 border-2 border-gray-300 border-t-brand-gold flex-shrink-0" />
+                      <div className="animate-spin rounded-full h-6 w-6 border-2 border-gray-200 border-t-brand-gold flex-shrink-0" />
                     ) : analysisProgress.progress > 85 ? (
-                      <svg className="w-5 h-5 text-brand-gold flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
+                      <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
+                        <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                      </div>
                     ) : (
-                      <div className="w-5 h-5 rounded-full border-2 border-gray-300 flex-shrink-0" />
+                      <div className="w-6 h-6 rounded-full border-2 border-gray-200 flex-shrink-0" />
                     )}
-                    <span className={`text-sm ${analysisProgress.progress > 85 ? 'text-gray-900 font-black' : 'text-gray-500 font-bold'}`}>
+                    <span className={`text-sm ${analysisProgress.progress > 85 ? 'text-brand-black font-bold' : 'text-brand-text-tertiary font-medium'}`}>
                       Generating recommendations...
                     </span>
                   </div>
@@ -600,16 +610,18 @@ export default function Home() {
             {insights && (
               <div className="space-y-6">
                 {/* Success Banner */}
-                <div className="bg-brand-gold/10 border border-brand-gold/40 rounded p-4">
-                  <div className="flex items-start gap-3">
-                    <svg className="w-5 h-5 text-brand-gold flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
+                <div className="bg-white border border-green-200 rounded-lg p-5 shadow-sm">
+                  <div className="flex items-start gap-4">
+                    <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
                     <div className="flex-1">
-                      <h3 className="text-sm font-black text-brand-gold">Analysis Complete!</h3>
-                      <p className="text-sm text-gray-700 mt-1 font-bold">
+                      <h3 className="text-base font-black text-brand-black">Analysis Complete!</h3>
+                      <p className="text-sm text-brand-text-secondary mt-1 font-medium">
                         Your analysis has been saved.{' '}
-                        <Link href={`/dashboard/results/${insights.id}`} className="underline font-black text-brand-gold hover:text-brand-gold/80 transition-colors duration-200">
+                        <Link href={`/dashboard/results/${insights.id}`} className="text-brand-gold hover:text-brand-gold/80 transition-colors duration-200 font-bold underline">
                           View full details in dashboard
                         </Link>
                       </p>
@@ -619,20 +631,22 @@ export default function Home() {
 
                 {/* Warnings Banner */}
                 {warnings.length > 0 && (
-                  <div className="bg-yellow-900/20 border border-yellow-800/40 rounded p-4">
-                    <div className="flex items-start gap-3">
-                      <svg className="w-5 h-5 text-yellow-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                      </svg>
+                  <div className="bg-white border border-yellow-200 rounded-lg p-5 shadow-sm">
+                    <div className="flex items-start gap-4">
+                      <div className="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                        <svg className="w-5 h-5 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                      </div>
                       <div className="flex-1">
-                        <h3 className="text-sm font-black text-yellow-400">Partial Analysis</h3>
-                        <p className="text-sm text-yellow-300 mt-1 font-bold">
+                        <h3 className="text-base font-black text-brand-black">Partial Analysis</h3>
+                        <p className="text-sm text-brand-text-secondary mt-1 font-medium">
                           Analysis completed with some limitations:
                         </p>
-                        <ul className="mt-2 space-y-1">
+                        <ul className="mt-3 space-y-2">
                           {warnings.map((warning, index) => (
-                            <li key={index} className="text-sm text-yellow-300 flex items-start gap-2 font-bold">
-                              <span className="text-yellow-400">•</span>
+                            <li key={index} className="text-sm text-brand-text-secondary flex items-start gap-2 font-medium">
+                              <span className="text-yellow-600 font-bold">•</span>
                               <span>{warning}</span>
                             </li>
                           ))}
@@ -644,18 +658,18 @@ export default function Home() {
 
                 {/* Summary Preview */}
                 {insights.summary && (
-                  <div className="bg-gray-50 rounded border border-gray-200 p-6">
-                    <div className="flex items-start gap-3">
+                  <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
+                    <div className="flex items-start gap-4">
                       <div className="flex-shrink-0">
-                        <div className="w-10 h-10 bg-brand-gold rounded-full flex items-center justify-center">
-                          <svg className="w-5 h-5 text-brand-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div className="w-12 h-12 bg-brand-gold rounded-lg flex items-center justify-center">
+                          <svg className="w-6 h-6 text-brand-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
                           </svg>
                         </div>
                       </div>
                       <div className="flex-1">
-                        <h2 className="text-base font-black text-gray-900 mb-2">Quick Summary</h2>
-                        <p className="text-gray-700 text-sm leading-relaxed font-bold">
+                        <h2 className="text-lg font-black text-brand-black mb-2">Quick Summary</h2>
+                        <p className="text-brand-text-secondary text-sm leading-relaxed font-medium">
                           {insights.summary.headline}
                         </p>
                       </div>
@@ -664,22 +678,29 @@ export default function Home() {
                 )}
 
                 {/* CTA to view full analysis */}
-                <div className="bg-gray-50 rounded border border-gray-200 p-8 text-center">
-                  <h3 className="text-lg font-black text-gray-900 mb-2">
-                    Want to see the full analysis?
-                  </h3>
-                  <p className="text-sm text-gray-600 mb-4 font-bold">
-                    View detailed insights, screenshots, roadmap, and actionable recommendations
-                  </p>
-                  <Link
-                    href={`/dashboard/results/${insights.id}`}
-                    className="inline-flex items-center gap-2 px-6 py-3 bg-brand-gold text-brand-black font-black rounded hover:shadow-[0_0_0_2px_rgba(245,197,66,0.5)] transition-all duration-200"
-                  >
-                    View Full Analysis
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                    </svg>
-                  </Link>
+                <div className="bg-gradient-to-br from-brand-gold/10 to-yellow-50 rounded-lg border border-brand-gold/30 p-8 text-center">
+                  <div className="max-w-md mx-auto">
+                    <div className="w-16 h-16 bg-brand-gold rounded-lg flex items-center justify-center mx-auto mb-4">
+                      <svg className="w-8 h-8 text-brand-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                    </div>
+                    <h3 className="text-xl font-black text-brand-black mb-2">
+                      Ready to see the full analysis?
+                    </h3>
+                    <p className="text-sm text-brand-text-secondary mb-6 font-medium">
+                      View detailed insights, screenshots, roadmap, and actionable recommendations to boost your conversion rates
+                    </p>
+                    <Link
+                      href={`/dashboard/results/${insights.id}`}
+                      className="inline-flex items-center gap-2 px-8 py-4 bg-brand-gold text-brand-black font-black rounded-lg hover:bg-brand-gold/90 transition-all duration-200 shadow-[0_4px_12px_rgba(0,0,0,0.2),0_2px_6px_rgba(0,0,0,0.15)] hover:shadow-[0_6px_16px_rgba(0,0,0,0.25),0_3px_8px_rgba(0,0,0,0.18)]"
+                    >
+                      View Full Analysis
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                      </svg>
+                    </Link>
+                  </div>
                 </div>
               </div>
             )}
