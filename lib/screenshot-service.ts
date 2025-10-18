@@ -1,5 +1,8 @@
 import { chromium, devices, type Browser, type Page } from 'playwright-core';
 
+type PlaywrightLaunchOptions = NonNullable<Parameters<typeof chromium.launch>[0]>;
+type ChromiumLaunchConfig = Pick<PlaywrightLaunchOptions, 'args' | 'executablePath' | 'headless'>;
+
 export interface ScreenshotCapture {
   fullPage: string;
   aboveFold: string;
@@ -104,39 +107,61 @@ export class ScreenshotService {
     return `${url}|${blocked}|${waitIdle}`;
   }
 
+  private async getChromiumLaunchConfig(): Promise<ChromiumLaunchConfig> {
+    const isVercel = Boolean(process.env.VERCEL);
+
+    if (!isVercel) {
+      return {
+        args: [
+          '--disable-blink-features=AutomationControlled',
+          '--disable-dev-shm-usage',
+          '--no-sandbox',
+          '--disable-setuid-sandbox',
+          '--disable-web-security',
+          '--disable-features=IsolateOrigins,site-per-process',
+          '--allow-running-insecure-content',
+          '--disable-blink-features=BlockCredentialedSubresources',
+        ],
+        executablePath: undefined,
+        headless: true,
+      };
+    }
+
+    this.ensureChromiumRuntimeEnv();
+
+    const chromiumModule = (await import('@sparticuz/chromium')) as typeof import('@sparticuz/chromium');
+
+    return {
+      args: chromiumModule.args ?? [],
+      executablePath: await chromiumModule.executablePath(),
+      headless: chromiumModule.headless ?? true,
+    };
+  }
+
+  private ensureChromiumRuntimeEnv(): void {
+    const nodeMajorVersion = Number.parseInt(process.versions.node?.split('.')?.[0] ?? '', 10);
+
+    let runtime = 'nodejs18.x';
+    if (!Number.isNaN(nodeMajorVersion)) {
+      if (nodeMajorVersion >= 22) {
+        runtime = 'nodejs22.x';
+      } else if (nodeMajorVersion >= 20) {
+        runtime = 'nodejs20.x';
+      } else if (nodeMajorVersion >= 18) {
+        runtime = 'nodejs18.x';
+      }
+    }
+
+    process.env.AWS_EXECUTION_ENV ??= `AWS_Lambda_${runtime}`;
+    process.env.AWS_LAMBDA_JS_RUNTIME ??= runtime;
+  }
+
   private async performCapture(
     url: string,
     options: ScreenshotOptions,
   ): Promise<ScreenshotResult> {
-    // Use @sparticuz/chromium on Vercel, local Playwright otherwise
-    const isVercel = !!process.env.VERCEL;
-
-    let executablePath: string | undefined;
-    let args: string[];
-
-    if (isVercel) {
-      const chromiumPkg = await import('@sparticuz/chromium');
-      executablePath = await chromiumPkg.default.executablePath();
-      args = chromiumPkg.default.args;
-    } else {
-      executablePath = undefined;
-      args = [
-        '--disable-blink-features=AutomationControlled',
-        '--disable-dev-shm-usage',
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-web-security',
-        '--disable-features=IsolateOrigins,site-per-process',
-        '--allow-running-insecure-content',
-        '--disable-blink-features=BlockCredentialedSubresources',
-      ];
-    }
-
-    const browser = await chromium.launch({
-      args,
-      executablePath,
-      headless: true,
-    });
+    const launchConfig = await this.getChromiumLaunchConfig();
+    const browser = await chromium.launch(launchConfig);
 
     try {
       const desktop = await this.captureWithContext(
@@ -414,30 +439,9 @@ export class ScreenshotService {
       // Step 1: Launch headless browser with anti-bot detection
       console.log(`🚀 Launching browser for ${viewport} capture...`);
 
-      // Use @sparticuz/chromium on Vercel, local Playwright otherwise
-      const isVercel = !!process.env.VERCEL;
-
-      let executablePath: string | undefined;
-      let args: string[];
-
-      if (isVercel) {
-        const chromiumPkg = await import('@sparticuz/chromium');
-        executablePath = await chromiumPkg.default.executablePath();
-        args = chromiumPkg.default.args;
-      } else {
-        executablePath = undefined;
-        args = [
-          '--disable-blink-features=AutomationControlled',
-          '--disable-dev-shm-usage',
-          '--no-sandbox',
-          '--disable-setuid-sandbox',
-        ];
-      }
-
+      const launchConfig = await this.getChromiumLaunchConfig();
       browser = await chromium.launch({
-        args,
-        executablePath,
-        headless: true,
+        ...launchConfig,
         timeout: 15000, // 15 second timeout
       });
 
