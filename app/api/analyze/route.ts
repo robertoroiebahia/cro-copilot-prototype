@@ -48,21 +48,34 @@ export async function POST(req: NextRequest) {
     // Initialize progress tracker and create initial DB record
     const progress = new ProgressTracker(analysisId, supabase);
 
-    // Create initial analysis record with progress tracking
-    const { error: initError } = await supabase
-      .from('analyses')
-      .insert({
-        id: analysisId,
-        user_id: user.id,
-        url,
-        status: 'processing',
-        progress: 0,
-        progress_stage: 'initializing',
-        progress_message: 'Starting analysis...',
-      });
+    // Create initial analysis record with progress tracking (gracefully handle if columns don't exist)
+    try {
+      const { error: initError } = await supabase
+        .from('analyses')
+        .insert({
+          id: analysisId,
+          user_id: user.id,
+          url,
+          status: 'processing',
+          progress: 0,
+          progress_stage: 'initializing',
+          progress_message: 'Starting analysis...',
+        });
 
-    if (initError) {
-      console.error('Failed to initialize analysis:', initError);
+      if (initError) {
+        console.error('Failed to initialize analysis with progress:', initError);
+        // Try without progress columns (backward compatibility)
+        await supabase
+          .from('analyses')
+          .insert({
+            id: analysisId,
+            user_id: user.id,
+            url,
+            status: 'processing',
+          });
+      }
+    } catch (error) {
+      console.error('Failed to initialize analysis:', error);
       // Continue anyway, progress tracking is not critical
     }
 

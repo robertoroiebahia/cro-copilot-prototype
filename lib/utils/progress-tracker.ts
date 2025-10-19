@@ -38,7 +38,7 @@ export class ProgressTracker {
   }
 
   /**
-   * Update progress in database
+   * Update progress in database (with graceful degradation)
    */
   async update(update: Partial<ProgressUpdate>): Promise<void> {
     if (update.progress !== undefined) {
@@ -62,7 +62,13 @@ export class ProgressTracker {
         .eq('id', this.analysisId);
 
       if (error) {
-        console.error('Failed to update progress:', error);
+        // Silently fail if progress columns don't exist yet (migration not applied)
+        // This allows the app to work without progress tracking until migration is run
+        if (error.message?.includes('column') || error.message?.includes('progress')) {
+          console.warn('Progress tracking columns not available yet. Run the database migration.');
+        } else {
+          console.error('Failed to update progress:', error);
+        }
       }
     } catch (err) {
       console.error('Progress update error:', err);
