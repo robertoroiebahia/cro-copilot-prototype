@@ -56,13 +56,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       url,
       capturedAt: result.capturedAt,
-      desktop: {
-        fullPage: `data:image/png;base64,${result.desktop.fullPage}`,
-        aboveFold: `data:image/png;base64,${result.desktop.aboveFold}`,
-      },
       mobile: {
         fullPage: `data:image/png;base64,${result.mobile.fullPage}`,
-        aboveFold: `data:image/png;base64,${result.mobile.aboveFold}`,
       },
     });
   } catch (error: any) {

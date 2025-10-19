@@ -24,8 +24,8 @@ export async function generateGPTRecommendations(
   url: string,
   context?: { trafficSource?: string; productType?: string; pricePoint?: string }
 ): Promise<RecommendationResult> {
-  const desktopImageUrl = buildOpenAIImageRef(pageData.screenshots.desktop.fullPage);
   const mobileImageUrl = buildOpenAIImageRef(pageData.screenshots.mobile.fullPage);
+  const desktopImageUrl = buildOpenAIImageRef(pageData.screenshots.desktop.fullPage, true);
 
   const response = await openai.responses.create({
     model: 'gpt-5-nano',
@@ -39,14 +39,18 @@ export async function generateGPTRecommendations(
           },
           {
             type: 'input_image',
-            image_url: desktopImageUrl,
-            detail: 'high',
-          },
-          {
-            type: 'input_image',
             image_url: mobileImageUrl,
             detail: 'high',
           },
+          ...(desktopImageUrl
+            ? [
+                {
+                  type: 'input_image' as const,
+                  image_url: desktopImageUrl,
+                  detail: 'high' as const,
+                },
+              ]
+            : []),
           {
             type: 'input_text',
             text: buildHTMLSection(pageData.compressedHTML),
@@ -70,7 +74,14 @@ export async function generateGPTRecommendations(
   };
 }
 
-function buildOpenAIImageRef(source: string): string {
+function buildOpenAIImageRef(source: string | undefined | null, optional = false): string | undefined {
+  if (!source) {
+    if (optional) {
+      return undefined;
+    }
+    throw new Error('OpenAI image source not provided');
+  }
+
   if (source.startsWith('http://') || source.startsWith('https://')) {
     return source;
   }

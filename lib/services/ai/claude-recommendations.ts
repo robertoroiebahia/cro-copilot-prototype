@@ -31,8 +31,8 @@ export async function generateClaudeRecommendations(
   context?: { trafficSource?: string; productType?: string; pricePoint?: string }
 ): Promise<RecommendationResult> {
   const anthropic = getAnthropicClient();
-  const desktopImage = buildClaudeImageSource(pageData.screenshots.desktop.fullPage);
   const mobileImage = buildClaudeImageSource(pageData.screenshots.mobile.fullPage);
+  const desktopContent = buildClaudeImageContent(pageData.screenshots.desktop.fullPage);
 
   const response = await anthropic.messages.create({
     model: 'claude-sonnet-4-5-20250929',
@@ -46,10 +46,7 @@ export async function generateClaudeRecommendations(
             type: 'text',
             text: buildSystemPrompt(url, context),
           },
-          {
-            type: 'image',
-            source: desktopImage,
-          },
+          ...(desktopContent ? [desktopContent] : []),
           {
             type: 'image',
             source: mobileImage,
@@ -83,7 +80,11 @@ type ClaudeImageSource =
   | { type: 'url'; url: string }
   | { type: 'base64'; media_type: ClaudeSupportedMime; data: string };
 
-function buildClaudeImageSource(source: string): ClaudeImageSource {
+function buildClaudeImageSource(source: string | undefined | null): ClaudeImageSource {
+  if (!source) {
+    throw new Error('Claude image source not provided');
+  }
+
   if (source.startsWith('http://') || source.startsWith('https://')) {
     return { type: 'url', url: source };
   }
@@ -105,6 +106,21 @@ function buildClaudeImageSource(source: string): ClaudeImageSource {
     media_type: mediaType,
     data: base64Data,
   };
+}
+
+function buildClaudeImageContent(source: string | undefined | null) {
+  if (!source) {
+    return null;
+  }
+
+  try {
+    return {
+      type: 'image' as const,
+      source: buildClaudeImageSource(source),
+    };
+  } catch {
+    return null;
+  }
 }
 
 /**
