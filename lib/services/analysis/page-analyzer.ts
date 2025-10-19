@@ -39,18 +39,18 @@ export async function analyzePage(url: string): Promise<PageAnalysisResult> {
     await new Promise((r) => setTimeout(r, 200));
 
     // Capture desktop version
-    let desktopContext = await browser.newContext({
-      viewport: { width: 1920, height: 1080 },
-      userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
-      ignoreHTTPSErrors: true,
-    });
+    let desktopContext;
     try {
-      // no-op to keep try/catch structure aligned
+      desktopContext = await browser.newContext({
+        viewport: { width: 1920, height: 1080 },
+        userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+        ignoreHTTPSErrors: true,
+      });
     } catch (e: any) {
       if (String(e?.message || e).includes('Target page, context or browser has been closed')) {
         try { await browser.close(); } catch {}
         browser = await chromium.launch(await getChromiumLaunchConfig());
-        await new Promise((r) => setTimeout(r, 200));
+        await wait(200);
         desktopContext = await browser.newContext({
           viewport: { width: 1366, height: 900 }, // slightly smaller fallback
           userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
@@ -61,7 +61,25 @@ export async function analyzePage(url: string): Promise<PageAnalysisResult> {
       }
     }
 
-    const desktopPage = await desktopContext.newPage();
+    let desktopPage;
+    try {
+      desktopPage = await desktopContext.newPage();
+    } catch (e: any) {
+      if (String(e?.message || e).includes('Target page, context or browser has been closed')) {
+        try { await desktopContext.close(); } catch {}
+        try { await browser.close(); } catch {}
+        browser = await chromium.launch(await getChromiumLaunchConfig());
+        await wait(200);
+        desktopContext = await browser.newContext({
+          viewport: { width: 1366, height: 900 },
+          userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+          ignoreHTTPSErrors: true,
+        });
+        desktopPage = await desktopContext.newPage();
+      } else {
+        throw e;
+      }
+    }
 
     // Navigate with fallback
     try {
@@ -125,17 +143,17 @@ export async function analyzePage(url: string): Promise<PageAnalysisResult> {
 
     // Capture mobile version
     const mobileDevice = devices['iPhone 13'];
-    let mobileContext = await browser.newContext({
-      ...mobileDevice,
-      ignoreHTTPSErrors: true,
-    });
+    let mobileContext;
     try {
-      // no-op to keep try/catch structure aligned
+      mobileContext = await browser.newContext({
+        ...mobileDevice,
+        ignoreHTTPSErrors: true,
+      });
     } catch (e: any) {
       if (String(e?.message || e).includes('Target page, context or browser has been closed')) {
         try { await browser.close(); } catch {}
         browser = await chromium.launch(await getChromiumLaunchConfig());
-        await new Promise((r) => setTimeout(r, 200));
+        await wait(200);
         mobileContext = await browser.newContext({
           ...devices['iPhone 13'],
           ignoreHTTPSErrors: true,
@@ -145,7 +163,24 @@ export async function analyzePage(url: string): Promise<PageAnalysisResult> {
       }
     }
 
-    const mobilePage = await mobileContext.newPage();
+    let mobilePage;
+    try {
+      mobilePage = await mobileContext.newPage();
+    } catch (e: any) {
+      if (String(e?.message || e).includes('Target page, context or browser has been closed')) {
+        try { await mobileContext.close(); } catch {}
+        try { await browser.close(); } catch {}
+        browser = await chromium.launch(await getChromiumLaunchConfig());
+        await wait(200);
+        mobileContext = await browser.newContext({
+          ...devices['iPhone 13'],
+          ignoreHTTPSErrors: true,
+        });
+        mobilePage = await mobileContext.newPage();
+      } else {
+        throw e;
+      }
+    }
 
     try {
       await mobilePage.goto(url, { waitUntil: 'networkidle', timeout: 20000 });
@@ -281,4 +316,8 @@ async function loadChromium(): Promise<typeof import('@sparticuz/chromium')> {
     if (moduleWithDefault.default) return moduleWithDefault.default;
   }
   return rawModule as typeof import('@sparticuz/chromium');
+}
+
+function wait(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
