@@ -4,7 +4,7 @@
  */
 
 import { chromium, devices } from 'playwright-core';
-import type { Page } from 'playwright-core';
+import type { Page, BrowserContext } from 'playwright-core';
 
 type PlaywrightLaunchOptions = NonNullable<Parameters<typeof chromium.launch>[0]>;
 type ChromiumLaunchConfig = Pick<PlaywrightLaunchOptions, 'args' | 'executablePath' | 'headless' | 'timeout' | 'ignoreDefaultArgs'>;
@@ -396,7 +396,7 @@ async function safeScreenshot(
   }
 }
 
-async function enableLightweightRouting(context: Parameters<typeof chromium['launch']>[0] extends any ? any : never) {
+async function enableLightweightRouting(context: BrowserContext) {
   try {
     await context.route('**/*', (route) => {
       const req = route.request();

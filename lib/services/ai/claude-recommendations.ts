@@ -24,6 +24,9 @@ export async function generateClaudeRecommendations(
   url: string,
   context?: { trafficSource?: string; productType?: string; pricePoint?: string }
 ): Promise<RecommendationResult> {
+  const desktopImage = buildClaudeImageSource(pageData.screenshots.desktop.fullPage);
+  const mobileImage = buildClaudeImageSource(pageData.screenshots.mobile.fullPage);
+
   const response = await anthropic.messages.create({
     model: 'claude-sonnet-4-5-20250929',
     max_tokens: 16000,
@@ -38,19 +41,11 @@ export async function generateClaudeRecommendations(
           },
           {
             type: 'image',
-            source: {
-              type: 'base64',
-              media_type: 'image/png',
-              data: pageData.screenshots.desktop.fullPage,
-            },
+            source: desktopImage,
           },
           {
             type: 'image',
-            source: {
-              type: 'base64',
-              media_type: 'image/png',
-              data: pageData.screenshots.mobile.fullPage,
-            },
+            source: mobileImage,
           },
           {
             type: 'text',
@@ -72,6 +67,36 @@ export async function generateClaudeRecommendations(
       input_tokens: response.usage.input_tokens,
       output_tokens: response.usage.output_tokens,
     },
+  };
+}
+
+type ClaudeSupportedMime = 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp';
+
+type ClaudeImageSource =
+  | { type: 'url'; url: string }
+  | { type: 'base64'; media_type: ClaudeSupportedMime; data: string };
+
+function buildClaudeImageSource(source: string): ClaudeImageSource {
+  if (source.startsWith('http://') || source.startsWith('https://')) {
+    return { type: 'url', url: source };
+  }
+
+  let mediaType: ClaudeSupportedMime = 'image/jpeg';
+  let base64Data = source;
+
+  if (source.startsWith('data:image')) {
+    const [metadata, data = ''] = source.split(',', 2);
+    const match = metadata.match(/^data:(image\/(?:jpeg|png|gif|webp))/i);
+    if (match) {
+      mediaType = match[1].toLowerCase() as ClaudeSupportedMime;
+    }
+    base64Data = data;
+  }
+
+  return {
+    type: 'base64',
+    media_type: mediaType,
+    data: base64Data,
   };
 }
 

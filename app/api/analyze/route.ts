@@ -4,16 +4,25 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { randomUUID } from 'node:crypto';
+import { Buffer } from 'node:buffer';
 import { createClient } from '@/utils/supabase/server';
+import { createAdminClient } from '@/utils/supabase/admin';
+import { uploadScreenshot } from '@/lib/storage/screenshot-storage';
 import { analyzePage } from '@/lib/services';
 import { AnalysisRepository, ProfileRepository } from '@/lib/services';
 import { generateClaudeRecommendations } from '@/lib/services/ai/claude-recommendations';
 import { generateGPTRecommendations } from '@/lib/services/ai/gpt-recommendations';
-import type { InsertAnalysis } from '@/lib/types/database.types';
+import type { InsertAnalysis, AnalysisScreenshots } from '@/lib/types/database.types';
 
 // Force Node.js runtime for Playwright compatibility
 export const runtime = 'nodejs';
 export const maxDuration = 60;
+
+const toImageBuffer = (source: string): Buffer => {
+  const base64 = source.startsWith('data:image') ? source.split(',')[1] ?? '' : source;
+  return Buffer.from(base64, 'base64');
+};
 
 export async function POST(req: NextRequest) {
   try {
@@ -38,15 +47,63 @@ export async function POST(req: NextRequest) {
 
     // 4. Capture page data with screenshots from Playwright
     const pageData = await analyzePage(url);
-    const screenshots = pageData.screenshots;
+
+    const analysisId = randomUUID();
+    const admin = createAdminClient();
+
+    const screenshotUrls: Required<AnalysisScreenshots> = {
+      desktopAboveFold: await uploadScreenshot({
+        client: admin,
+        buffer: toImageBuffer(pageData.screenshots.desktop.aboveFold),
+        userId: user.id,
+        analysisId,
+        variant: 'desktop-above-fold',
+      }),
+      desktopFullPage: await uploadScreenshot({
+        client: admin,
+        buffer: toImageBuffer(pageData.screenshots.desktop.fullPage),
+        userId: user.id,
+        analysisId,
+        variant: 'desktop-full-page',
+      }),
+      mobileAboveFold: await uploadScreenshot({
+        client: admin,
+        buffer: toImageBuffer(pageData.screenshots.mobile.aboveFold),
+        userId: user.id,
+        analysisId,
+        variant: 'mobile-above-fold',
+      }),
+      mobileFullPage: await uploadScreenshot({
+        client: admin,
+        buffer: toImageBuffer(pageData.screenshots.mobile.fullPage),
+        userId: user.id,
+        analysisId,
+        variant: 'mobile-full-page',
+      }),
+    };
+
+    const pageDataForLLM = {
+      ...pageData,
+      screenshots: {
+        desktop: {
+          aboveFold: screenshotUrls.desktopAboveFold,
+          fullPage: screenshotUrls.desktopFullPage,
+        },
+        mobile: {
+          aboveFold: screenshotUrls.mobileAboveFold,
+          fullPage: screenshotUrls.mobileFullPage,
+        },
+      },
+    };
 
     // 5. Generate AI recommendations (Claude or GPT based on user selection)
     const { insights, usage } = llm === 'claude'
-      ? await generateClaudeRecommendations(pageData, url, context)
-      : await generateGPTRecommendations(pageData, url, context);
+      ? await generateClaudeRecommendations(pageDataForLLM, url, context)
+      : await generateGPTRecommendations(pageDataForLLM, url, context);
 
     // 6. Prepare analysis data for database
     const analysisData: InsertAnalysis = {
+      id: analysisId,
       user_id: user.id,
       url,
       metrics: metrics || { visitors: '', addToCarts: '', purchases: '', aov: '' },
@@ -62,12 +119,7 @@ export async function POST(req: NextRequest) {
       strategic_extensions: null,
       roadmap: null,
       vision_analysis: null,
-      screenshots: {
-        desktopAboveFold: screenshots.desktop.aboveFold,
-        desktopFullPage: screenshots.desktop.fullPage,
-        mobileAboveFold: screenshots.mobile.aboveFold,
-        mobileFullPage: screenshots.mobile.fullPage,
-      },
+      screenshots: screenshotUrls,
       usage: {
         totalTokens: (usage.input_tokens || 0) + (usage.output_tokens || 0),
         analysisInputTokens: usage.input_tokens,
@@ -91,12 +143,12 @@ export async function POST(req: NextRequest) {
       screenshots: {
         capturedAt: pageData.scrapedAt,
         desktop: {
-          aboveFold: `data:image/png;base64,${screenshots.desktop.aboveFold}`,
-          fullPage: `data:image/png;base64,${screenshots.desktop.fullPage}`,
+          aboveFold: screenshotUrls.desktopAboveFold,
+          fullPage: screenshotUrls.desktopFullPage,
         },
         mobile: {
-          aboveFold: `data:image/png;base64,${screenshots.mobile.aboveFold}`,
-          fullPage: `data:image/png;base64,${screenshots.mobile.fullPage}`,
+          aboveFold: screenshotUrls.mobileAboveFold,
+          fullPage: screenshotUrls.mobileFullPage,
         },
       },
       usage: {

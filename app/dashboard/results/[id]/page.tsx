@@ -172,7 +172,16 @@ export default function AnalysisDetailPage() {
     if (!value) {
       return null;
     }
-    return value.startsWith('data:image') ? value : `data:image/png;base64,${value}`;
+
+    if (value.startsWith('data:image')) {
+      return value;
+    }
+
+    if (/^https?:\/\//i.test(value)) {
+      return value;
+    }
+
+    return `data:image/jpeg;base64,${value}`;
   };
 
   const desktopFullPageSrc = formatScreenshotSrc(analysis.screenshots?.desktopFullPage);

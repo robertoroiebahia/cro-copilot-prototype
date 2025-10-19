@@ -10,35 +10,13 @@
       "page": "/",
       "matchers": [
         {
-          "regexp": "^(?:\\/(_next\\/data\\/[^/]{1,}))?(?:\\/((?!_next\\/static|_next\\/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|css|js)$).*))(\\.json)?[\\/#\\?]?$",
-          "originalSource": "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|css|js)$).*)"
-        },
-        {
-          "regexp": "^(?:\\/(_next\\/data\\/[^/]{1,}))?\\/dashboard(?:\\/((?:[^\\/#\\?]+?)(?:\\/(?:[^\\/#\\?]+?))*))?(\\.json)?[\\/#\\?]?$",
-          "originalSource": "/dashboard/:path*"
-        },
-        {
-          "regexp": "^(?:\\/(_next\\/data\\/[^/]{1,}))?\\/analyze(?:\\/((?:[^\\/#\\?]+?)(?:\\/(?:[^\\/#\\?]+?))*))?(\\.json)?[\\/#\\?]?$",
-          "originalSource": "/analyze/:path*"
-        },
-        {
-          "regexp": "^(?:\\/(_next\\/data\\/[^/]{1,}))?\\/queue(?:\\/((?:[^\\/#\\?]+?)(?:\\/(?:[^\\/#\\?]+?))*))?(\\.json)?[\\/#\\?]?$",
-          "originalSource": "/queue/:path*"
-        },
-        {
-          "regexp": "^(?:\\/(_next\\/data\\/[^/]{1,}))?\\/api\\/analyze(?:\\/((?:[^\\/#\\?]+?)(?:\\/(?:[^\\/#\\?]+?))*))?(\\.json)?[\\/#\\?]?$",
-          "originalSource": "/api/analyze/:path*"
+          "regexp": "^/.*$",
+          "originalSource": "/:path*"
         }
       ],
       "wasm": [],
       "assets": [],
-      "env": {
-        "__NEXT_BUILD_ID": "Zv830ll7yAiG6CR1mUngt",
-        "NEXT_SERVER_ACTIONS_ENCRYPTION_KEY": "dM59gRM5h67nKqZxPLOLiDawoCm4wBCAeC/2ZnEU5/M=",
-        "__NEXT_PREVIEW_MODE_ID": "bbe62c611fdf11659b6697eb623cc211",
-        "__NEXT_PREVIEW_MODE_SIGNING_KEY": "bf53d064a2e1b9b9382a097ebc8ab62c2152e281c5329efe0ba4a9c14364647a",
-        "__NEXT_PREVIEW_MODE_ENCRYPTION_KEY": "255abc6b48b90c608d544b1f3c8713cfc50553dfb168e08af626d39216556f21"
-      }
+      "environments": {}
     }
   },
   "functions": {},

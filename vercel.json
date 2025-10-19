@@ -11,6 +11,18 @@
     "app/playground/tools/scraper/api/route.ts": {
       "maxDuration": 120,
       "memory": 1536
+    },
+    "app/api/inngest/route.ts": {
+      "maxDuration": 60,
+      "memory": 1536
+    },
+    "app/api/analysis/queue/route.ts": {
+      "maxDuration": 60,
+      "memory": 1536
+    },
+    "app/api/analysis/status/route.ts": {
+      "maxDuration": 30,
+      "memory": 1024
     }
   },
   "build": {
