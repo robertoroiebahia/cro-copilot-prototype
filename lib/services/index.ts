@@ -6,6 +6,13 @@
 // Analysis Services
 export * from './analysis/page-analyzer';
 
+// Firecrawl Client (replaces Playwright)
+export { FirecrawlClient, getFirecrawlClient } from './firecrawl-client';
+export type {
+  FirecrawlScrapeResponse,
+  FirecrawlScrapeOptions,
+} from './firecrawl-client';
+
 // AI Services - Export with specific names to avoid conflicts
 export {
   generateClaudeRecommendations,

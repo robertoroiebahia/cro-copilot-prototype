@@ -1,362 +1,231 @@
 /**
- * Page Analysis Service
- * Extracts content, compressed HTML, and screenshots from web pages using Playwright
+ * Page Analysis Service (REFACTORED for Firecrawl)
+ * Extracts content and screenshots from web pages using Firecrawl API
  */
 
-import { chromium, devices } from 'playwright-core';
-import type { Page, BrowserContext } from 'playwright-core';
 import { startTimer } from '@/lib/utils/timing';
-
-type PlaywrightLaunchOptions = NonNullable<Parameters<typeof chromium.launch>[0]>;
-type ChromiumLaunchConfig = Pick<PlaywrightLaunchOptions, 'args' | 'executablePath' | 'headless' | 'timeout' | 'ignoreDefaultArgs'>;
+import { getFirecrawlClient } from '@/lib/services/firecrawl-client';
 
 export interface PageAnalysisResult {
-  compressedHTML: string; // Compressed rendered HTML without scripts - ready for AI
+  compressedHTML: string; // Markdown content from Firecrawl - ready for AI
   url: string;
   scrapedAt: string;
-  method: 'playwright-browser';
+  method: 'firecrawl-api';
   pageLoadTime: number;
-  screenshots: {
-    mobile: {
-      fullPage: string; // base64
-    };
+  screenshots?: {
+    mobileFullPage?: string; // base64 PNG from Firecrawl
+  };
+  metadata?: {
+    title?: string;
+    description?: string;
+    language?: string;
   };
 }
 
 /**
- * Analyzes a web page and returns compressed HTML with screenshots using Playwright
+ * Analyzes a web page and returns markdown content with screenshots using Firecrawl
+ *
+ * This function now uses Firecrawl API instead of Playwright for:
+ * - Better reliability with automatic proxy rotation
+ * - Built-in JavaScript rendering
+ * - Automatic retry logic
+ * - Cloud-based scraping (no browser management)
  */
 export async function analyzePage(url: string): Promise<PageAnalysisResult> {
-  let browser: Awaited<ReturnType<typeof chromium.launch>> | undefined;
   const startTime = Date.now();
   const overallTimerStop = startTimer('analysis.scraper.total');
-  let timerMeta: Record<string, unknown> = { url };
+  let timerMeta: Record<string, unknown> = { url, method: 'firecrawl-api' };
+
+  console.log(`🌐 Starting Firecrawl analysis for: ${url}`);
 
   try {
-    const launchConfig = await getChromiumLaunchConfig();
-    browser = await chromium.launch(launchConfig);
-    await wait(200);
+    const firecrawl = getFirecrawlClient();
 
-    const createMobileContext = async () => {
-      const ctx = await browser!.newContext({
-        ...devices['iPhone 13'],
-        ignoreHTTPSErrors: true,
-      });
-      await installBlockers(ctx);
-      return ctx;
+    // Configure Firecrawl for optimal e-commerce scraping
+    const scrapeOptions = {
+      formats: ['markdown', 'screenshot'] as const,
+      onlyMainContent: true,
+      waitFor: 2000,
+      mobile: true, // Mobile-first for CRO analysis
+      removeBase64Images: true, // Remove embedded images to reduce markdown size
+      excludeTags: [
+        'nav',
+        'footer',
+        'header[class*="nav"]',
+        'div[class*="cookie"]',
+        'div[class*="popup"]',
+        'script',
+        'style',
+        'noscript',
+      ],
+      includeTags: [
+        'main',
+        'article',
+        'section',
+        'div[class*="content"]',
+        'div[class*="product"]',
+        'div[class*="hero"]',
+      ],
     };
 
-    let mobileContext = await createMobileContext();
-    let mobilePage = await mobileContext.newPage();
-
-    const navigate = async (page: Page, waitUntil: 'networkidle' | 'domcontentloaded', timeout: number) => {
-      page.setDefaultNavigationTimeout(timeout + 5000);
-      await page.goto(url, { waitUntil, timeout });
-    };
-
-    try {
-      await navigate(mobilePage, 'networkidle', 20000);
-    } catch (e: any) {
-      const msg = String(e?.message || e);
-      if (msg.includes('ERR_INSUFFICIENT_RESOURCES') || msg.includes('Target page, context or browser has been closed')) {
-        try { await mobileContext.close(); } catch {}
-        try { await browser.close(); } catch {}
-        browser = await chromium.launch(await getChromiumLaunchConfig());
-        await wait(200);
-        mobileContext = await createMobileContext();
-        mobilePage = await mobileContext.newPage();
-        await enableLightweightRouting(mobileContext);
-        await navigate(mobilePage, 'domcontentloaded', 15000);
-      } else {
-        console.log('Page analyzer: networkidle timeout, trying domcontentloaded...');
-        await navigate(mobilePage, 'domcontentloaded', 15000);
-      }
-    }
-
-    await mobilePage.waitForTimeout(1500);
-
-    const compressedHTML = await mobilePage.evaluate(() => {
-      const clone = document.documentElement.cloneNode(true) as HTMLElement;
-      clone.querySelectorAll('script').forEach(el => el.remove());
-      clone.querySelectorAll('noscript').forEach(el => el.remove());
-
-      const removeComments = (node: Node) => {
-        const children = Array.from(node.childNodes);
-        children.forEach(child => {
-          if (child.nodeType === 8) {
-            child.remove();
-          } else if (child.hasChildNodes()) {
-            removeComments(child);
-          }
-        });
-      };
-      removeComments(clone);
-
-      clone.querySelectorAll('*').forEach(el => {
-        const attributes = (el as HTMLElement).attributes;
-        for (let i = attributes.length - 1; i >= 0; i--) {
-          const attr = attributes[i];
-          if (attr.name.startsWith('on')) {
-            (el as HTMLElement).removeAttribute(attr.name);
-          }
-        }
-      });
-
-      const html = clone.outerHTML;
-      return html
-        .replace(/>\s+</g, '><')
-        .replace(/^\s+|\s+$/gm, '')
-        .replace(/\s+/g, ' ')
-        .replace(/\s*=\s*/g, '=')
-        .trim();
+    console.log(`📝 Scraping with options:`, {
+      formats: scrapeOptions.formats,
+      mobile: scrapeOptions.mobile,
+      onlyMainContent: scrapeOptions.onlyMainContent,
     });
 
-    await hideStickyBeforeFullPage(mobilePage);
-    let mobileFullPage: Buffer;
-    try {
-      mobileFullPage = await safeScreenshot(mobilePage, {
-        type: 'jpeg',
-        quality: 60,
-        fullPage: true,
-      });
-    } catch {
-      mobileFullPage = await safeScreenshot(mobilePage, {
-        type: 'jpeg',
-        quality: 60,
-        fullPage: false,
-      });
+    // Scrape the page using Firecrawl
+    const result = await firecrawl.scrape(url, scrapeOptions);
+
+    if (!result.success || !result.data) {
+      throw new Error(`Firecrawl returned unsuccessful result: ${result.error || 'No data'}`);
     }
 
-    await mobileContext.close();
+    const { markdown, screenshot, metadata } = result.data;
 
+    // Calculate page load time
     const pageLoadTime = Date.now() - startTime;
-    timerMeta = { ...timerMeta, pageLoadTime };
 
-    return {
-      compressedHTML,
-      url,
+    // Log results
+    console.log(`✅ Firecrawl scrape completed in ${pageLoadTime}ms`);
+    console.log(`📄 Markdown length: ${markdown?.length || 0} characters`);
+    console.log(`📸 Screenshot available: ${!!screenshot}`);
+    console.log(`📋 Metadata:`, {
+      title: metadata?.title,
+      statusCode: metadata?.statusCode,
+      language: metadata?.language,
+    });
+
+    // Construct the result in the expected format
+    const analysisResult: PageAnalysisResult = {
+      compressedHTML: markdown || '',
+      url: metadata?.url || url,
       scrapedAt: new Date().toISOString(),
-      method: 'playwright-browser',
+      method: 'firecrawl-api',
       pageLoadTime,
-      screenshots: {
-        mobile: {
-          fullPage: mobileFullPage.toString('base64'),
-        },
-      },
+      screenshots: screenshot
+        ? {
+            mobileFullPage: screenshot,
+          }
+        : undefined,
+      metadata: metadata
+        ? {
+            title: metadata.title,
+            description: metadata.description,
+            language: metadata.language,
+          }
+        : undefined,
     };
 
+    timerMeta = {
+      ...timerMeta,
+      pageLoadTime,
+      markdownLength: markdown?.length || 0,
+      hasScreenshot: !!screenshot,
+    };
+    overallTimerStop(timerMeta);
+
+    return analysisResult;
   } catch (error) {
     timerMeta = {
       ...timerMeta,
       error: error instanceof Error ? error.message : String(error),
     };
-    console.error('Playwright analyzer error:', error);
-    throw new Error(`Failed to analyze page: ${error instanceof Error ? error.message : 'Unknown error'}`);
-  } finally {
-    if (!('pageLoadTime' in timerMeta)) {
-      timerMeta = {
-        ...timerMeta,
-        durationFallbackMs: Date.now() - startTime,
-      };
-    }
+    console.error('❌ Firecrawl analysis error:', error);
     overallTimerStop(timerMeta);
-    if (browser) {
-      await browser.close();
-    }
+
+    throw new Error(
+      `Failed to analyze page with Firecrawl: ${error instanceof Error ? error.message : 'Unknown error'}`
+    );
   }
 }
 
-async function getChromiumLaunchConfig(): Promise<ChromiumLaunchConfig> {
-  const isVercel = Boolean(process.env.VERCEL);
+/**
+ * Batch analyze multiple URLs using Firecrawl
+ * More efficient than calling analyzePage multiple times due to parallel processing
+ */
+export async function analyzePagesBatch(
+  urls: string[]
+): Promise<PageAnalysisResult[]> {
+  const overallTimerStop = startTimer('analysis.scraper.batch');
+  console.log(`🌐 Starting Firecrawl batch analysis for ${urls.length} URLs`);
 
-  if (!isVercel) {
-    return {
-      args: [
-        '--disable-blink-features=AutomationControlled',
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
+  try {
+    const firecrawl = getFirecrawlClient();
+
+    const scrapeOptions = {
+      formats: ['markdown', 'screenshot'] as const,
+      onlyMainContent: true,
+      waitFor: 2000,
+      mobile: true,
+      removeBase64Images: true,
+      excludeTags: [
+        'nav',
+        'footer',
+        'header[class*="nav"]',
+        'div[class*="cookie"]',
+        'div[class*="popup"]',
       ],
-      executablePath: undefined,
-      headless: true,
-      timeout: 30000,
-      ignoreDefaultArgs: ['--disable-extensions'],
     };
-  }
 
-  ensureChromiumRuntimeEnv();
-  const chromiumModule = await loadChromium();
+    // Scrape all URLs in parallel
+    const results = await firecrawl.scrapeMultiple(urls, scrapeOptions);
 
-  const baseArgs = chromiumModule.args ?? [];
-  const extraArgs = ['--enable-unsafe-swiftshader', '--disable-webgl', '--disable-gpu-program-cache'];
-  const args = Array.from(new Set([...baseArgs, ...extraArgs]));
+    // Transform results into PageAnalysisResult format
+    const analysisResults: PageAnalysisResult[] = results.map((result, index) => {
+      const url = urls[index];
 
-  return {
-    args,
-    executablePath: await chromiumModule.executablePath(),
-    headless: chromiumModule.headless === 'shell' ? true : chromiumModule.headless ?? true,
-    timeout: 30000,
-    ignoreDefaultArgs: ['--disable-extensions'],
-  };
-}
-
-function ensureChromiumRuntimeEnv(): void {
-  const nodeMajorVersion = Number.parseInt(process.versions.node?.split('.')?.[0] ?? '', 10);
-
-  let runtime = 'nodejs18.x';
-  let lambdaLibPath = '/tmp/al2/lib';
-  if (!Number.isNaN(nodeMajorVersion)) {
-    if (nodeMajorVersion >= 22) {
-      runtime = 'nodejs22.x';
-      lambdaLibPath = '/tmp/al2023/lib';
-    } else if (nodeMajorVersion >= 20) {
-      runtime = 'nodejs20.x';
-      lambdaLibPath = '/tmp/al2023/lib';
-    } else if (nodeMajorVersion >= 18) {
-      runtime = 'nodejs18.x';
-      lambdaLibPath = '/tmp/al2/lib';
-    }
-  }
-
-  process.env.AWS_EXECUTION_ENV ??= `AWS_Lambda_${runtime}`;
-  process.env.AWS_LAMBDA_JS_RUNTIME ??= runtime;
-
-  const candidateLibPaths = new Set<string>();
-  candidateLibPaths.add(lambdaLibPath);
-  candidateLibPaths.add('/tmp/al2/lib');
-  candidateLibPaths.add('/tmp/al2023/lib');
-
-  const existingLdPath = process.env.LD_LIBRARY_PATH ?? '';
-  existingLdPath
-    .split(':')
-    .filter(Boolean)
-    .forEach((p) => candidateLibPaths.add(p));
-
-  process.env.LD_LIBRARY_PATH = Array.from(candidateLibPaths).join(':');
-  process.env.FONTCONFIG_PATH ??= '/tmp/fonts';
-  process.env.HOME ??= process.env.HOME && process.env.HOME !== '/' ? process.env.HOME : '/tmp';
-  process.env.TMPDIR ??= '/tmp';
-
-  const pathEntries = new Set<string>();
-  if (process.env.PATH) {
-    process.env.PATH.split(':')
-      .filter(Boolean)
-      .forEach((entry) => pathEntries.add(entry));
-  }
-  pathEntries.add('/tmp');
-  process.env.PATH = Array.from(pathEntries).join(':');
-}
-
-async function loadChromium(): Promise<typeof import('@sparticuz/chromium')> {
-  const rawModule = (await import('@sparticuz/chromium')) as unknown;
-  if (rawModule && typeof rawModule === 'object' && 'default' in rawModule) {
-    const moduleWithDefault = rawModule as { default?: typeof import('@sparticuz/chromium') };
-    if (moduleWithDefault.default) return moduleWithDefault.default;
-  }
-  return rawModule as typeof import('@sparticuz/chromium');
-}
-
-function wait(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-async function safeScreenshot(
-  page: Page,
-  options: Parameters<Page['screenshot']>[0]
-): Promise<Buffer> {
-  try {
-    return await page.screenshot({ animations: 'disabled', timeout: 10000, ...options });
-  } catch {
-    await wait(300);
-    return await page.screenshot({ animations: 'disabled', timeout: 10000, ...options });
-  }
-}
-
-async function installBlockers(context: BrowserContext) {
-  const ANALYTICS_RE = /(google-analytics|googletagmanager|doubleclick|facebook|fbcdn|meta\.com|hotjar|segment|amplitude|optimizely|fullstory|sentry|clarity|intercom|hubspot|widget|analytics|alia-cloudflare|cloudflare\.com\/public\/launcher\.js|cdnjs\.cloudflare\.com|gsap\.min\.js)/i;
-
-  await context.route('**/*', (route) => {
-    const req = route.request();
-    const type = req.resourceType();
-    const url = req.url();
-
-    if (
-      type === 'font' ||
-      type === 'media' ||
-      type === 'websocket' ||
-      type === 'eventsource'
-    ) {
-      return route.abort();
-    }
-
-    if (ANALYTICS_RE.test(url)) {
-      return route.abort();
-    }
-
-    return route.continue();
-  });
-
-  // Disable animations and force system fonts very early
-  await context.addInitScript(() => {
-    try {
-      const style = document.createElement('style');
-      style.id = '__capture_overrides';
-      style.textContent = `
-        *, *::before, *::after { 
-          animation: none !important; 
-          transition: none !important; 
-        }
-        html, body, * { 
-          font-family: system-ui, -apple-system, Segoe UI, Roboto, 'Helvetica Neue', Arial, 'Noto Sans', 'Liberation Sans', sans-serif !important; 
-        }
-      `;
-      document.documentElement.appendChild(style);
-    } catch {}
-  });
-}
-
-async function hideStickyBeforeFullPage(page: Page) {
-  try {
-    await page.addStyleTag({
-      content: `
-        *[data-__stashed-fixed] { position: static !important; top: auto !important; bottom: auto !important; z-index: auto !important; }
-      `,
-    });
-    await page.evaluate(() => {
-      const nodes = Array.from(document.querySelectorAll<HTMLElement>('body *'));
-      for (const el of nodes) {
-        const cs = window.getComputedStyle(el);
-        if (cs.position === 'fixed' || cs.position === 'sticky') {
-          el.setAttribute('data-__stashed-fixed', '1');
-          el.style.setProperty('position', 'static', 'important');
-          el.style.setProperty('top', 'auto', 'important');
-          el.style.setProperty('bottom', 'auto', 'important');
-          el.style.setProperty('z-index', 'auto', 'important');
-        }
+      if (!result.success || !result.data) {
+        console.warn(`⚠️  Failed to scrape ${url}: ${result.error || 'No data'}`);
+        return {
+          compressedHTML: '',
+          url,
+          scrapedAt: new Date().toISOString(),
+          method: 'firecrawl-api',
+          pageLoadTime: 0,
+          metadata: {
+            title: 'Failed to scrape',
+            description: result.error || 'Unknown error',
+          },
+        };
       }
-    });
-  } catch {}
-}
 
-async function enableLightweightRouting(context: BrowserContext) {
-  try {
-    await context.route('**/*', (route) => {
-      const req = route.request();
-      const type = req.resourceType();
-      const url = req.url();
-      // Abort heavy/irrelevant resources on retry
-      if (
-        type === 'media' ||
-        type === 'font' ||
-        type === 'eventsource' ||
-        type === 'websocket' ||
-        /analytics|gtm|googletagmanager|doubleclick|facebook|meta|hotjar|segment|amplitude|optimizely/i.test(url)
-      ) {
-        return route.abort();
-      }
-      return route.continue();
+      const { markdown, screenshot, metadata } = result.data;
+
+      return {
+        compressedHTML: markdown || '',
+        url: metadata?.url || url,
+        scrapedAt: new Date().toISOString(),
+        method: 'firecrawl-api',
+        pageLoadTime: 0, // Not tracked in batch mode
+        screenshots: screenshot
+          ? {
+              mobileFullPage: screenshot,
+            }
+          : undefined,
+        metadata: metadata
+          ? {
+              title: metadata.title,
+              description: metadata.description,
+              language: metadata.language,
+            }
+          : undefined,
+      };
     });
-  } catch {
-    // ignore routing setup failures
+
+    const successCount = analysisResults.filter((r) => r.compressedHTML).length;
+    console.log(`✅ Batch analysis complete: ${successCount}/${urls.length} successful`);
+
+    overallTimerStop({ urlCount: urls.length, successCount });
+    return analysisResults;
+  } catch (error) {
+    overallTimerStop({
+      urlCount: urls.length,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    console.error('❌ Firecrawl batch analysis error:', error);
+    throw new Error(
+      `Failed to batch analyze pages: ${error instanceof Error ? error.message : 'Unknown error'}`
+    );
   }
 }

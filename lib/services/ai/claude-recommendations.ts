@@ -31,7 +31,7 @@ export async function generateClaudeRecommendations(
   context?: { trafficSource?: string; productType?: string; pricePoint?: string }
 ): Promise<RecommendationResult> {
   const anthropic = getAnthropicClient();
-  const mobileImage = buildClaudeImageSource(pageData.screenshots.mobile.fullPage);
+  const mobileImage = buildClaudeImageSource(pageData.screenshots?.mobileFullPage);
 
   const response = await anthropic.messages.create({
     model: 'claude-sonnet-4-5-20250929',
@@ -45,10 +45,22 @@ export async function generateClaudeRecommendations(
             type: 'text',
             text: buildSystemPrompt(url, context),
           },
-          {
-            type: 'image',
-            source: mobileImage,
-          },
+          ...(!mobileImage
+            ? [
+                {
+                  type: 'text' as const,
+                  text: 'No screenshot is available; rely solely on the HTML snapshot below for visual cues.',
+                },
+              ]
+            : []),
+          ...(mobileImage
+            ? [
+                {
+                  type: 'image' as const,
+                  source: mobileImage,
+                },
+              ]
+            : []),
           {
             type: 'text',
             text: buildHTMLSection(pageData.compressedHTML),
@@ -78,9 +90,9 @@ type ClaudeImageSource =
   | { type: 'url'; url: string }
   | { type: 'base64'; media_type: ClaudeSupportedMime; data: string };
 
-function buildClaudeImageSource(source: string | undefined | null): ClaudeImageSource {
+function buildClaudeImageSource(source: string | undefined | null): ClaudeImageSource | null {
   if (!source) {
-    throw new Error('Claude image source not provided');
+    return null;
   }
 
   if (source.startsWith('http://') || source.startsWith('https://')) {
@@ -135,7 +147,7 @@ Analyze the following landing page for conversion optimization opportunities:
 **URL:** ${url}${contextSection}
 
 You will receive:
-1. Mobile full-page screenshot (first image)
+1. (Optional) Mobile full-page screenshot
 2. Compressed HTML source code
 
 **Your Task:**
@@ -193,17 +205,26 @@ Provide your analysis in the following JSON format:
  * Builds the HTML analysis section
  */
 function buildHTMLSection(compressedHTML: string): string {
+  const trimmed = truncateHTML(compressedHTML);
   return `
 
 **PAGE HTML SOURCE:**
 
 Below is the compressed, rendered HTML of the page (scripts removed, whitespace minimized). Use this to understand the exact content, structure, and elements present on the page:
 
-${compressedHTML}
+${trimmed}
 
 **END OF HTML SOURCE**
 
 Based on the screenshots and HTML provided above, generate your comprehensive CRO analysis now.`;
+}
+
+function truncateHTML(input: string): string {
+  if (!input) return '';
+  if (input.length <= MAX_HTML_CHARS) {
+    return input;
+  }
+  return `${input.slice(0, MAX_HTML_CHARS)}\n<!-- truncated -->`;
 }
 
 /**
@@ -239,3 +260,4 @@ function parseAIResponse(outputText: string): any {
     };
   }
 }
+const MAX_HTML_CHARS = 40000;

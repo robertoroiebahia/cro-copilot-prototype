@@ -7,6 +7,7 @@ import OpenAI from 'openai';
 import type { PageAnalysisResult } from '../analysis/page-analyzer';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const MAX_HTML_CHARS = 40000;
 
 export interface RecommendationResult {
   insights: any;
@@ -24,7 +25,7 @@ export async function generateGPTRecommendations(
   url: string,
   context?: { trafficSource?: string; productType?: string; pricePoint?: string }
 ): Promise<RecommendationResult> {
-  const mobileImageUrl = buildOpenAIImageRef(pageData.screenshots.mobile.fullPage);
+  const mobileImageUrl = buildOpenAIImageRef(pageData.screenshots?.mobileFullPage);
 
   const response = await openai.responses.create({
     model: 'gpt-5-mini',
@@ -36,11 +37,23 @@ export async function generateGPTRecommendations(
             type: 'input_text',
             text: buildSystemPrompt(url, context),
           },
-          {
-            type: 'input_image',
-            image_url: mobileImageUrl,
-            detail: 'high',
-          },
+          ...(!mobileImageUrl
+            ? [
+                {
+                  type: 'input_text' as const,
+                  text: 'No screenshot is available; base your analysis solely on the HTML snapshot.',
+                },
+              ]
+            : []),
+          ...(mobileImageUrl
+            ? [
+                {
+                  type: 'input_image' as const,
+                  image_url: mobileImageUrl,
+                  detail: 'high' as const,
+                },
+              ]
+            : []),
           {
             type: 'input_text',
             text: buildHTMLSection(pageData.compressedHTML),
@@ -64,9 +77,9 @@ export async function generateGPTRecommendations(
   };
 }
 
-function buildOpenAIImageRef(source: string | undefined | null): string {
+function buildOpenAIImageRef(source: string | undefined | null): string | null {
   if (!source) {
-    throw new Error('OpenAI image source not provided');
+    return null;
   }
 
   if (source.startsWith('http://') || source.startsWith('https://')) {
@@ -140,7 +153,7 @@ Analyze the following landing page for conversion optimization opportunities:
 **URL:** ${url}${contextSection}
 
 You will receive:
-1. Mobile full-page screenshot (first image)
+1. (Optional) Mobile full-page screenshot
 2. Compressed HTML source code
 
 **Your Task:**
@@ -198,17 +211,26 @@ Provide your analysis in the following JSON format:
  * Builds the HTML analysis section
  */
 function buildHTMLSection(compressedHTML: string): string {
+  const trimmed = truncateHTML(compressedHTML);
   return `
 
 **PAGE HTML SOURCE:**
 
 Below is the compressed, rendered HTML of the page (scripts removed, whitespace minimized). Use this to understand the exact content, structure, and elements present on the page:
 
-${compressedHTML}
+${trimmed}
 
 **END OF HTML SOURCE**
 
 Based on the screenshots and HTML provided above, generate your comprehensive CRO analysis now.`;
+}
+
+function truncateHTML(input: string): string {
+  if (!input) return '';
+  if (input.length <= MAX_HTML_CHARS) {
+    return input;
+  }
+  return `${input.slice(0, MAX_HTML_CHARS)}\n<!-- truncated -->`;
 }
 
 /**

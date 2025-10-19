@@ -3,10 +3,7 @@ import { analyzePage } from '@/lib/services';
 import { generateClaudeRecommendations } from '@/lib/services/ai/claude-recommendations';
 import { generateGPTRecommendations } from '@/lib/services/ai/gpt-recommendations';
 import { createAdminClient } from '@/utils/supabase/admin';
-import { uploadScreenshot, type UploadScreenshotParams } from '@/lib/storage/screenshot-storage';
-import { Buffer } from 'node:buffer';
 import type {
-  AnalysisScreenshots,
   AnalysisUsage,
   AnalysisContext,
   AnalysisMetrics,
@@ -51,62 +48,13 @@ export const processAnalysis = inngest.createFunction(
         }
       });
 
-      const screenshotUrls = await step.run('upload-screenshots', async () => {
-        const stop = startTimer('analysis.job.uploadScreenshots');
-        try {
-          const variantStop = startTimer('analysis.job.upload.mobile-full-page');
-          const mobileFullPageUrl = await uploadScreenshot({
-            client: admin,
-            buffer: toImageBuffer(pageData.screenshots.mobile.fullPage),
-            userId,
-            analysisId,
-            variant: 'mobile-full-page',
-          });
-          variantStop({ analysisId, variant: 'mobile-full-page' });
-
-          const urls: AnalysisScreenshots = { mobileFullPage: mobileFullPageUrl };
-
-          const { error } = await admin
-            .from('analyses')
-            .update({
-              screenshots: urls,
-              status: 'processing',
-              error_message: null,
-            })
-            .eq('id', analysisId)
-            .eq('user_id', userId);
-
-          if (error) {
-            throw error;
-          }
-
-          stop({ analysisId });
-          return urls;
-        } catch (error) {
-          stop({
-            analysisId,
-            error: error instanceof Error ? error.message : String(error),
-          });
-          throw error;
-        }
-      });
-
-      const pageDataForLLM = {
-        ...pageData,
-        screenshots: {
-          mobile: {
-            fullPage: screenshotUrls.mobileFullPage!,
-          },
-        },
-      };
-
       const { insights, usage } = await step.run('generate-insights', async () => {
         const stop = startTimer(`analysis.job.llm.${llm}`);
         try {
           const result =
             llm === 'claude'
-              ? await generateClaudeRecommendations(pageDataForLLM, url, context)
-              : await generateGPTRecommendations(pageDataForLLM, url, context);
+              ? await generateClaudeRecommendations(pageData, url, context)
+              : await generateGPTRecommendations(pageData, url, context);
 
           stop({
             analysisId,
@@ -148,7 +96,7 @@ export const processAnalysis = inngest.createFunction(
                 confidence: 'medium',
               },
               recommendations: insights.recommendations ?? [],
-              screenshots: screenshotUrls,
+              screenshots: null,
               usage: normalizedUsage,
               status: 'completed',
               error_message: null,
@@ -201,8 +149,3 @@ export const processAnalysis = inngest.createFunction(
     }
   },
 );
-
-const toImageBuffer = (source: string): Buffer => {
-  const base64 = source.startsWith('data:image') ? source.split(',')[1] ?? '' : source;
-  return Buffer.from(base64, 'base64');
-};

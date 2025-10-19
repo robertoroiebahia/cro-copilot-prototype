@@ -5,25 +5,17 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { randomUUID } from 'node:crypto';
-import { Buffer } from 'node:buffer';
 import { createClient } from '@/utils/supabase/server';
-import { createAdminClient } from '@/utils/supabase/admin';
-import { uploadScreenshot, type UploadScreenshotParams } from '@/lib/storage/screenshot-storage';
 import { analyzePage } from '@/lib/services';
 import { AnalysisRepository, ProfileRepository } from '@/lib/services';
 import { generateClaudeRecommendations } from '@/lib/services/ai/claude-recommendations';
 import { generateGPTRecommendations } from '@/lib/services/ai/gpt-recommendations';
-import type { InsertAnalysis, AnalysisScreenshots } from '@/lib/types/database.types';
+import type { InsertAnalysis } from '@/lib/types/database.types';
 import { startTimer } from '@/lib/utils/timing';
 
 // Force Node.js runtime for Playwright compatibility
 export const runtime = 'nodejs';
 export const maxDuration = 60;
-
-const toImageBuffer = (source: string): Buffer => {
-  const base64 = source.startsWith('data:image') ? source.split(',')[1] ?? '' : source;
-  return Buffer.from(base64, 'base64');
-};
 
 export async function POST(req: NextRequest) {
   const analysisId = randomUUID();
@@ -55,50 +47,6 @@ export async function POST(req: NextRequest) {
     const pageData = await analyzePage(url);
     captureTimerStop({ analysisId, url });
 
-    const admin = createAdminClient();
-
-    const uploadWithTimer = async (
-      variant: UploadScreenshotParams['variant'],
-      buffer: Buffer,
-    ) => {
-      const stop = startTimer(`analysis.sync.upload.${variant}`);
-      try {
-        const result = await uploadScreenshot({
-          client: admin,
-          buffer,
-          userId: user.id,
-          analysisId,
-          variant,
-        });
-        stop({ analysisId, variant });
-        return result;
-      } catch (error) {
-        stop({
-          analysisId,
-          variant,
-          error: error instanceof Error ? error.message : String(error),
-        });
-        throw error;
-      }
-    };
-
-    const mobileFullPageUrl = await uploadWithTimer(
-      'mobile-full-page',
-      toImageBuffer(pageData.screenshots.mobile.fullPage),
-    );
-    const screenshotUrls: AnalysisScreenshots = {
-      mobileFullPage: mobileFullPageUrl,
-    };
-
-    const pageDataForLLM = {
-      ...pageData,
-      screenshots: {
-        mobile: {
-          fullPage: mobileFullPageUrl,
-        },
-      },
-    };
-
     const llmTimerStop = startTimer(`analysis.sync.llm.${llm}`);
     let recommendationResult:
       | Awaited<ReturnType<typeof generateClaudeRecommendations>>
@@ -107,8 +55,8 @@ export async function POST(req: NextRequest) {
     try {
       recommendationResult =
         llm === 'claude'
-          ? await generateClaudeRecommendations(pageDataForLLM, url, context)
-          : await generateGPTRecommendations(pageDataForLLM, url, context);
+          ? await generateClaudeRecommendations(pageData, url, context)
+          : await generateGPTRecommendations(pageData, url, context);
     } catch (error) {
       llmTimerStop({
         analysisId,
@@ -148,7 +96,7 @@ export async function POST(req: NextRequest) {
       strategic_extensions: null,
       roadmap: null,
       vision_analysis: null,
-      screenshots: screenshotUrls,
+      screenshots: null,
       usage: {
         totalTokens: (usage?.input_tokens || 0) + (usage?.output_tokens || 0),
         analysisInputTokens: usage?.input_tokens,
@@ -171,12 +119,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       ...insights,
       id: savedAnalysis.id,
-      screenshots: {
-        capturedAt: pageData.scrapedAt,
-        mobile: {
-          fullPage: mobileFullPageUrl,
-        },
-      },
+      screenshots: null,
       usage: {
         inputTokens: usage?.input_tokens ?? 0,
         outputTokens: usage?.output_tokens ?? 0,

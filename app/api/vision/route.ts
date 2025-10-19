@@ -50,11 +50,13 @@ export async function POST(req: NextRequest) {
     if (url) {
       const pageData = await analyzePage(url);
 
-      mobile = pageData.screenshots.mobile.fullPage;
+      mobile = pageData.screenshots?.mobileFullPage ?? null;
       screenshots = {
         capturedAt: pageData.scrapedAt,
         mobile: {
-          fullPage: `data:image/png;base64,${pageData.screenshots.mobile.fullPage}`,
+          fullPage: pageData.screenshots?.mobileFullPage
+            ? `data:image/png;base64,${pageData.screenshots?.mobileFullPage}`
+            : undefined,
         },
       };
     }
