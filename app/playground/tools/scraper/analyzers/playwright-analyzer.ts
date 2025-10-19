@@ -133,8 +133,13 @@ export async function analyzePage(url: string): Promise<PageAnalysisResult> {
     });
 
     // Capture screenshots
-    const aboveFold = await page.screenshot({ type: 'jpeg', quality: 60, fullPage: false });
-    const fullPage = await page.screenshot({ type: 'jpeg', quality: 60, fullPage: true });
+    const aboveFold = await safeScreenshot(page, { type: 'jpeg', quality: 60, fullPage: false });
+    let fullPage: Buffer;
+    try {
+      fullPage = await safeScreenshot(page, { type: 'jpeg', quality: 60, fullPage: true });
+    } catch {
+      fullPage = await safeScreenshot(page, { type: 'jpeg', quality: 60, fullPage: false });
+    }
 
     const pageLoadTime = Date.now() - startTime;
 
@@ -176,8 +181,11 @@ async function getChromiumLaunchConfig(): Promise<ChromiumLaunchConfig> {
   }
   ensureChromiumRuntimeEnv();
   const chromiumModule = await loadChromium();
+  const baseArgs = chromiumModule.args ?? [];
+  const extraArgs = ['--enable-unsafe-swiftshader', '--disable-webgl', '--disable-gpu-program-cache'];
+  const args = Array.from(new Set([...baseArgs, ...extraArgs]));
   return {
-    args: chromiumModule.args ?? [],
+    args,
     executablePath: await chromiumModule.executablePath(),
     headless: chromiumModule.headless === 'shell' ? true : chromiumModule.headless ?? true,
     timeout: 30000,
@@ -219,4 +227,16 @@ async function loadChromium(): Promise<typeof import('@sparticuz/chromium')> {
 
 function wait(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function safeScreenshot(
+  page: Awaited<ReturnType<ReturnType<typeof chromium.launch>['newContext']>['newPage']>,
+  options: Parameters<typeof page.screenshot>[0]
+): Promise<Buffer> {
+  try {
+    return await page.screenshot({ animations: 'disabled', timeout: 10000, ...options });
+  } catch {
+    await wait(300);
+    return await page.screenshot({ animations: 'disabled', timeout: 10000, ...options });
+  }
 }
