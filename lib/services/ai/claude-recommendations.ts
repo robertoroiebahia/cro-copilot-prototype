@@ -6,7 +6,13 @@
 import Anthropic from '@anthropic-ai/sdk';
 import type { PageAnalysisResult } from '../analysis/page-analyzer';
 
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+const getAnthropicClient = () => {
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) {
+    throw new Error('Claude API key not configured. Please set ANTHROPIC_API_KEY.');
+  }
+  return new Anthropic({ apiKey });
+};
 
 export interface RecommendationResult {
   insights: any;
@@ -24,6 +30,7 @@ export async function generateClaudeRecommendations(
   url: string,
   context?: { trafficSource?: string; productType?: string; pricePoint?: string }
 ): Promise<RecommendationResult> {
+  const anthropic = getAnthropicClient();
   const desktopImage = buildClaudeImageSource(pageData.screenshots.desktop.fullPage);
   const mobileImage = buildClaudeImageSource(pageData.screenshots.mobile.fullPage);
 
