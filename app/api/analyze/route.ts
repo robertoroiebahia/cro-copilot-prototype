@@ -82,35 +82,19 @@ export async function POST(req: NextRequest) {
       }
     };
 
-    const screenshotUrls: Required<AnalysisScreenshots> = {
-      desktopAboveFold: await uploadWithTimer(
-        'desktop-above-fold',
-        toImageBuffer(pageData.screenshots.desktop.aboveFold),
-      ),
-      desktopFullPage: await uploadWithTimer(
-        'desktop-full-page',
-        toImageBuffer(pageData.screenshots.desktop.fullPage),
-      ),
-      mobileAboveFold: await uploadWithTimer(
-        'mobile-above-fold',
-        toImageBuffer(pageData.screenshots.mobile.aboveFold),
-      ),
-      mobileFullPage: await uploadWithTimer(
-        'mobile-full-page',
-        toImageBuffer(pageData.screenshots.mobile.fullPage),
-      ),
+    const mobileFullPageUrl = await uploadWithTimer(
+      'mobile-full-page',
+      toImageBuffer(pageData.screenshots.mobile.fullPage),
+    );
+    const screenshotUrls: AnalysisScreenshots = {
+      mobileFullPage: mobileFullPageUrl,
     };
 
     const pageDataForLLM = {
       ...pageData,
       screenshots: {
-        desktop: {
-          aboveFold: screenshotUrls.desktopAboveFold,
-          fullPage: screenshotUrls.desktopFullPage,
-        },
         mobile: {
-          aboveFold: screenshotUrls.mobileAboveFold,
-          fullPage: screenshotUrls.mobileFullPage,
+          fullPage: mobileFullPageUrl,
         },
       },
     };
@@ -189,13 +173,8 @@ export async function POST(req: NextRequest) {
       id: savedAnalysis.id,
       screenshots: {
         capturedAt: pageData.scrapedAt,
-        desktop: {
-          aboveFold: screenshotUrls.desktopAboveFold,
-          fullPage: screenshotUrls.desktopFullPage,
-        },
         mobile: {
-          aboveFold: screenshotUrls.mobileAboveFold,
-          fullPage: screenshotUrls.mobileFullPage,
+          fullPage: mobileFullPageUrl,
         },
       },
       usage: {

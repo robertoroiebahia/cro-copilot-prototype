@@ -25,7 +25,6 @@ export async function generateGPTRecommendations(
   context?: { trafficSource?: string; productType?: string; pricePoint?: string }
 ): Promise<RecommendationResult> {
   const mobileImageUrl = buildOpenAIImageRef(pageData.screenshots.mobile.fullPage);
-  const desktopImageUrl = buildOpenAIImageRef(pageData.screenshots.desktop.fullPage, true);
 
   const response = await openai.responses.create({
     model: 'gpt-5-nano',
@@ -42,15 +41,6 @@ export async function generateGPTRecommendations(
             image_url: mobileImageUrl,
             detail: 'high',
           },
-          ...(desktopImageUrl
-            ? [
-                {
-                  type: 'input_image' as const,
-                  image_url: desktopImageUrl,
-                  detail: 'high' as const,
-                },
-              ]
-            : []),
           {
             type: 'input_text',
             text: buildHTMLSection(pageData.compressedHTML),
@@ -74,11 +64,8 @@ export async function generateGPTRecommendations(
   };
 }
 
-function buildOpenAIImageRef(source: string | undefined | null, optional = false): string | undefined {
+function buildOpenAIImageRef(source: string | undefined | null): string {
   if (!source) {
-    if (optional) {
-      return undefined;
-    }
     throw new Error('OpenAI image source not provided');
   }
 
@@ -153,9 +140,8 @@ Analyze the following landing page for conversion optimization opportunities:
 **URL:** ${url}${contextSection}
 
 You will receive:
-1. Desktop full-page screenshot (first image)
-2. Mobile full-page screenshot (second image)
-3. Compressed HTML source code
+1. Mobile full-page screenshot (first image)
+2. Compressed HTML source code
 
 **Your Task:**
 Provide a comprehensive CRO analysis that identifies specific, actionable opportunities to improve conversion rates. Focus on the entire page experience, not just above-the-fold.

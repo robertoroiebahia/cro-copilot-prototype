@@ -32,7 +32,6 @@ export async function generateClaudeRecommendations(
 ): Promise<RecommendationResult> {
   const anthropic = getAnthropicClient();
   const mobileImage = buildClaudeImageSource(pageData.screenshots.mobile.fullPage);
-  const desktopContent = buildClaudeImageContent(pageData.screenshots.desktop.fullPage);
 
   const response = await anthropic.messages.create({
     model: 'claude-sonnet-4-5-20250929',
@@ -46,7 +45,6 @@ export async function generateClaudeRecommendations(
             type: 'text',
             text: buildSystemPrompt(url, context),
           },
-          ...(desktopContent ? [desktopContent] : []),
           {
             type: 'image',
             source: mobileImage,
@@ -108,21 +106,6 @@ function buildClaudeImageSource(source: string | undefined | null): ClaudeImageS
   };
 }
 
-function buildClaudeImageContent(source: string | undefined | null) {
-  if (!source) {
-    return null;
-  }
-
-  try {
-    return {
-      type: 'image' as const,
-      source: buildClaudeImageSource(source),
-    };
-  } catch {
-    return null;
-  }
-}
-
 /**
  * Builds the system prompt for CRO analysis
  */
@@ -152,9 +135,8 @@ Analyze the following landing page for conversion optimization opportunities:
 **URL:** ${url}${contextSection}
 
 You will receive:
-1. Desktop full-page screenshot (first image)
-2. Mobile full-page screenshot (second image)
-3. Compressed HTML source code
+1. Mobile full-page screenshot (first image)
+2. Compressed HTML source code
 
 **Your Task:**
 Provide a comprehensive CRO analysis that identifies specific, actionable opportunities to improve conversion rates. Focus on the entire page experience, not just above-the-fold.

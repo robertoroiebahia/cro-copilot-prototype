@@ -54,49 +54,17 @@ export const processAnalysis = inngest.createFunction(
       const screenshotUrls = await step.run('upload-screenshots', async () => {
         const stop = startTimer('analysis.job.uploadScreenshots');
         try {
-          const uploadVariant = async (
-            variant: UploadScreenshotParams['variant'],
-            source: string,
-          ) => {
-            const variantStop = startTimer(`analysis.job.upload.${variant}`);
-            try {
-              const result = await uploadScreenshot({
-                client: admin,
-                buffer: toImageBuffer(source),
-                userId,
-                analysisId,
-                variant,
-              });
-              variantStop({ analysisId, variant });
-              return result;
-            } catch (error) {
-              variantStop({
-                analysisId,
-                variant,
-                error: error instanceof Error ? error.message : String(error),
-              });
-              throw error;
-            }
-          };
+          const variantStop = startTimer('analysis.job.upload.mobile-full-page');
+          const mobileFullPageUrl = await uploadScreenshot({
+            client: admin,
+            buffer: toImageBuffer(pageData.screenshots.mobile.fullPage),
+            userId,
+            analysisId,
+            variant: 'mobile-full-page',
+          });
+          variantStop({ analysisId, variant: 'mobile-full-page' });
 
-          const urls: Required<AnalysisScreenshots> = {
-            desktopAboveFold: await uploadVariant(
-              'desktop-above-fold',
-              pageData.screenshots.desktop.aboveFold,
-            ),
-            desktopFullPage: await uploadVariant(
-              'desktop-full-page',
-              pageData.screenshots.desktop.fullPage,
-            ),
-            mobileAboveFold: await uploadVariant(
-              'mobile-above-fold',
-              pageData.screenshots.mobile.aboveFold,
-            ),
-            mobileFullPage: await uploadVariant(
-              'mobile-full-page',
-              pageData.screenshots.mobile.fullPage,
-            ),
-          };
+          const urls: AnalysisScreenshots = { mobileFullPage: mobileFullPageUrl };
 
           const { error } = await admin
             .from('analyses')
@@ -126,13 +94,8 @@ export const processAnalysis = inngest.createFunction(
       const pageDataForLLM = {
         ...pageData,
         screenshots: {
-          desktop: {
-            aboveFold: screenshotUrls.desktopAboveFold,
-            fullPage: screenshotUrls.desktopFullPage,
-          },
           mobile: {
-            aboveFold: screenshotUrls.mobileAboveFold,
-            fullPage: screenshotUrls.mobileFullPage,
+            fullPage: screenshotUrls.mobileFullPage!,
           },
         },
       };

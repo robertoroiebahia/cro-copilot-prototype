@@ -11,7 +11,7 @@ export interface UploadScreenshotParams {
   buffer: Buffer;
   userId: string;
   analysisId: string;
-  variant: 'desktop-above-fold' | 'desktop-full-page' | 'mobile-above-fold' | 'mobile-full-page';
+  variant: 'mobile-full-page';
   contentType?: string;
 }
 

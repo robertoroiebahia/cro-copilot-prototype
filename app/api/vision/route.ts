@@ -11,7 +11,6 @@ export const maxDuration = 60;
 
 type RequestBody = {
   url?: string;
-  desktopImageBase64?: string;
   mobileImageBase64?: string;
   blockPatterns?: string[];
   waitForNetworkIdle?: boolean;
@@ -27,57 +26,48 @@ export async function POST(req: NextRequest) {
 
   const {
     url,
-    desktopImageBase64,
     mobileImageBase64,
     blockPatterns,
     waitForNetworkIdle,
   } = body ?? {};
 
-  if (!url && (!desktopImageBase64 || !mobileImageBase64)) {
+  if (!url && !mobileImageBase64) {
     return NextResponse.json(
-      { error: 'Provide either a URL or both desktopImageBase64 and mobileImageBase64 values.' },
+      { error: 'Provide either a URL or mobileImageBase64 value.' },
       { status: 400 },
     );
   }
 
   try {
-    let desktop = desktopImageBase64;
     let mobile = mobileImageBase64;
     let screenshots:
       | {
           capturedAt: string;
-          desktop: { aboveFold: string; fullPage: string };
-          mobile: { aboveFold: string; fullPage: string };
+          mobile: { fullPage: string };
         }
       | null = null;
 
     if (url) {
       const pageData = await analyzePage(url);
 
-      desktop = pageData.screenshots.desktop.aboveFold;
-      mobile = pageData.screenshots.mobile.aboveFold;
+      mobile = pageData.screenshots.mobile.fullPage;
       screenshots = {
         capturedAt: pageData.scrapedAt,
-        desktop: {
-          aboveFold: `data:image/png;base64,${pageData.screenshots.desktop.aboveFold}`,
-          fullPage: `data:image/png;base64,${pageData.screenshots.desktop.fullPage}`,
-        },
         mobile: {
-          aboveFold: `data:image/png;base64,${pageData.screenshots.mobile.aboveFold}`,
           fullPage: `data:image/png;base64,${pageData.screenshots.mobile.fullPage}`,
         },
       };
     }
 
-    if (!desktop || !mobile) {
+    if (!mobile) {
       return NextResponse.json(
-        { error: 'Both desktop and mobile above-fold images are required.' },
+        { error: 'Mobile screenshot is required.' },
         { status: 400 },
       );
     }
 
     const analysis = await analyzeAboveFold({
-      desktopImageBase64: desktop,
+      desktopImageBase64: mobile,
       mobileImageBase64: mobile,
     });
 

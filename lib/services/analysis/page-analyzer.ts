@@ -10,11 +10,6 @@ import { startTimer } from '@/lib/utils/timing';
 type PlaywrightLaunchOptions = NonNullable<Parameters<typeof chromium.launch>[0]>;
 type ChromiumLaunchConfig = Pick<PlaywrightLaunchOptions, 'args' | 'executablePath' | 'headless' | 'timeout' | 'ignoreDefaultArgs'>;
 
-export interface ScreenshotCapture {
-  fullPage: string; // base64
-  aboveFold: string; // base64
-}
-
 export interface PageAnalysisResult {
   compressedHTML: string; // Compressed rendered HTML without scripts - ready for AI
   url: string;
@@ -22,8 +17,9 @@ export interface PageAnalysisResult {
   method: 'playwright-browser';
   pageLoadTime: number;
   screenshots: {
-    desktop: ScreenshotCapture;
-    mobile: ScreenshotCapture;
+    mobile: {
+      fullPage: string; // base64
+    };
   };
 }
 
@@ -39,83 +35,47 @@ export async function analyzePage(url: string): Promise<PageAnalysisResult> {
   try {
     const launchConfig = await getChromiumLaunchConfig();
     browser = await chromium.launch(launchConfig);
-    // Small stabilization delay to avoid early crashes before first context
-    await new Promise((r) => setTimeout(r, 200));
+    await wait(200);
 
-    // Capture desktop version
-    let desktopContext;
-    try {
-      desktopContext = await browser.newContext({
-        viewport: { width: 1920, height: 1080 },
-        userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+    const createMobileContext = async () => {
+      const ctx = await browser!.newContext({
+        ...devices['iPhone 13'],
         ignoreHTTPSErrors: true,
       });
-    } catch (e: any) {
-      if (String(e?.message || e).includes('Target page, context or browser has been closed')) {
-        try { await browser.close(); } catch {}
-        browser = await chromium.launch(await getChromiumLaunchConfig());
-        await wait(200);
-        desktopContext = await browser.newContext({
-          viewport: { width: 1366, height: 900 }, // slightly smaller fallback
-          userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
-          ignoreHTTPSErrors: true,
-        });
-      } else {
-        throw e;
-      }
-    }
+      await installBlockers(ctx);
+      return ctx;
+    };
 
-    let desktopPage;
-    try {
-      desktopPage = await desktopContext.newPage();
-    } catch (e: any) {
-      if (String(e?.message || e).includes('Target page, context or browser has been closed')) {
-        try { await desktopContext.close(); } catch {}
-        try { await browser.close(); } catch {}
-        browser = await chromium.launch(await getChromiumLaunchConfig());
-        await wait(200);
-        desktopContext = await browser.newContext({
-          viewport: { width: 1366, height: 900 },
-          userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
-          ignoreHTTPSErrors: true,
-        });
-        desktopPage = await desktopContext.newPage();
-      } else {
-        throw e;
-      }
-    }
+    let mobileContext = await createMobileContext();
+    let mobilePage = await mobileContext.newPage();
 
-    // Navigate with fallback and one retry with lighter resources
+    const navigate = async (page: Page, waitUntil: 'networkidle' | 'domcontentloaded', timeout: number) => {
+      page.setDefaultNavigationTimeout(timeout + 5000);
+      await page.goto(url, { waitUntil, timeout });
+    };
+
     try {
-      desktopPage.setDefaultNavigationTimeout(25000);
-      await desktopPage.goto(url, { waitUntil: 'networkidle', timeout: 20000 });
+      await navigate(mobilePage, 'networkidle', 20000);
     } catch (e: any) {
       const msg = String(e?.message || e);
       if (msg.includes('ERR_INSUFFICIENT_RESOURCES') || msg.includes('Target page, context or browser has been closed')) {
-        try { await desktopContext.close(); } catch {}
+        try { await mobileContext.close(); } catch {}
         try { await browser.close(); } catch {}
         browser = await chromium.launch(await getChromiumLaunchConfig());
         await wait(200);
-        desktopContext = await browser.newContext({
-          viewport: { width: 1280, height: 800 },
-          userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
-          ignoreHTTPSErrors: true,
-        });
-        await enableLightweightRouting(desktopContext);
-        desktopPage = await desktopContext.newPage();
-        desktopPage.setDefaultNavigationTimeout(20000);
-        await desktopPage.goto(url, { waitUntil: 'domcontentloaded', timeout: 15000 });
+        mobileContext = await createMobileContext();
+        mobilePage = await mobileContext.newPage();
+        await enableLightweightRouting(mobileContext);
+        await navigate(mobilePage, 'domcontentloaded', 15000);
       } else {
         console.log('Page analyzer: networkidle timeout, trying domcontentloaded...');
-        await desktopPage.goto(url, { waitUntil: 'domcontentloaded', timeout: 15000 });
+        await navigate(mobilePage, 'domcontentloaded', 15000);
       }
     }
 
-    // Wait for content to settle
-    await desktopPage.waitForTimeout(1500);
+    await mobilePage.waitForTimeout(1500);
 
-    // Extract compressed HTML from desktop
-    const compressedHTML = await desktopPage.evaluate(() => {
+    const compressedHTML = await mobilePage.evaluate(() => {
       const clone = document.documentElement.cloneNode(true) as HTMLElement;
       clone.querySelectorAll('script').forEach(el => el.remove());
       clone.querySelectorAll('noscript').forEach(el => el.remove());
@@ -151,101 +111,7 @@ export async function analyzePage(url: string): Promise<PageAnalysisResult> {
         .trim();
     });
 
-    // Capture desktop screenshots (jpeg to reduce payload size)
-    const desktopAboveFold = await safeScreenshot(desktopPage, {
-      type: 'jpeg',
-      quality: 60,
-      fullPage: false,
-    });
-    let desktopFullPage: Buffer;
-    try {
-      desktopFullPage = await safeScreenshot(desktopPage, {
-        type: 'jpeg',
-        quality: 60,
-        fullPage: true,
-      });
-    } catch {
-      desktopFullPage = await safeScreenshot(desktopPage, {
-        type: 'jpeg',
-        quality: 60,
-        fullPage: false,
-      });
-    }
-
-    await desktopContext.close();
-
-    // Capture mobile version
-    const mobileDevice = devices['iPhone 13'];
-    let mobileContext;
-    try {
-      mobileContext = await browser.newContext({
-        ...mobileDevice,
-        ignoreHTTPSErrors: true,
-      });
-    } catch (e: any) {
-      if (String(e?.message || e).includes('Target page, context or browser has been closed')) {
-        try { await browser.close(); } catch {}
-        browser = await chromium.launch(await getChromiumLaunchConfig());
-        await wait(200);
-        mobileContext = await browser.newContext({
-          ...devices['iPhone 13'],
-          ignoreHTTPSErrors: true,
-        });
-      } else {
-        throw e;
-      }
-    }
-
-    let mobilePage;
-    try {
-      mobilePage = await mobileContext.newPage();
-    } catch (e: any) {
-      if (String(e?.message || e).includes('Target page, context or browser has been closed')) {
-        try { await mobileContext.close(); } catch {}
-        try { await browser.close(); } catch {}
-        browser = await chromium.launch(await getChromiumLaunchConfig());
-        await wait(200);
-        mobileContext = await browser.newContext({
-          ...devices['iPhone 13'],
-          ignoreHTTPSErrors: true,
-        });
-        mobilePage = await mobileContext.newPage();
-      } else {
-        throw e;
-      }
-    }
-
-    try {
-      mobilePage.setDefaultNavigationTimeout(25000);
-      await mobilePage.goto(url, { waitUntil: 'networkidle', timeout: 20000 });
-    } catch (e: any) {
-      const msg = String(e?.message || e);
-      if (msg.includes('ERR_INSUFFICIENT_RESOURCES') || msg.includes('Target page, context or browser has been closed')) {
-        try { await mobileContext.close(); } catch {}
-        try { await browser.close(); } catch {}
-        browser = await chromium.launch(await getChromiumLaunchConfig());
-        await wait(200);
-        mobileContext = await browser.newContext({
-          ...devices['iPhone 13'],
-          ignoreHTTPSErrors: true,
-        });
-        await enableLightweightRouting(mobileContext);
-        mobilePage = await mobileContext.newPage();
-        mobilePage.setDefaultNavigationTimeout(20000);
-        await mobilePage.goto(url, { waitUntil: 'domcontentloaded', timeout: 15000 });
-      } else {
-        await mobilePage.goto(url, { waitUntil: 'domcontentloaded', timeout: 15000 });
-      }
-    }
-
-    await mobilePage.waitForTimeout(1500);
-
-    // Capture mobile screenshots (jpeg to reduce payload size)
-    const mobileAboveFold = await safeScreenshot(mobilePage, {
-      type: 'jpeg',
-      quality: 60,
-      fullPage: false,
-    });
+    await hideStickyBeforeFullPage(mobilePage);
     let mobileFullPage: Buffer;
     try {
       mobileFullPage = await safeScreenshot(mobilePage, {
@@ -273,12 +139,7 @@ export async function analyzePage(url: string): Promise<PageAnalysisResult> {
       method: 'playwright-browser',
       pageLoadTime,
       screenshots: {
-        desktop: {
-          aboveFold: desktopAboveFold.toString('base64'),
-          fullPage: desktopFullPage.toString('base64'),
-        },
         mobile: {
-          aboveFold: mobileAboveFold.toString('base64'),
           fullPage: mobileFullPage.toString('base64'),
         },
       },
@@ -409,6 +270,72 @@ async function safeScreenshot(
     await wait(300);
     return await page.screenshot({ animations: 'disabled', timeout: 10000, ...options });
   }
+}
+
+async function installBlockers(context: BrowserContext) {
+  const ANALYTICS_RE = /(google-analytics|googletagmanager|doubleclick|facebook|fbcdn|meta\.com|hotjar|segment|amplitude|optimizely|fullstory|sentry|clarity|intercom|hubspot|widget|analytics)/i;
+
+  await context.route('**/*', (route) => {
+    const req = route.request();
+    const type = req.resourceType();
+    const url = req.url();
+
+    if (
+      type === 'font' ||
+      type === 'media' ||
+      type === 'websocket' ||
+      type === 'eventsource'
+    ) {
+      return route.abort();
+    }
+
+    if (ANALYTICS_RE.test(url)) {
+      return route.abort();
+    }
+
+    return route.continue();
+  });
+
+  // Disable animations and force system fonts very early
+  await context.addInitScript(() => {
+    try {
+      const style = document.createElement('style');
+      style.id = '__capture_overrides';
+      style.textContent = `
+        *, *::before, *::after { 
+          animation: none !important; 
+          transition: none !important; 
+        }
+        html, body, * { 
+          font-family: system-ui, -apple-system, Segoe UI, Roboto, 'Helvetica Neue', Arial, 'Noto Sans', 'Liberation Sans', sans-serif !important; 
+        }
+      `;
+      document.documentElement.appendChild(style);
+    } catch {}
+  });
+}
+
+async function hideStickyBeforeFullPage(page: Page) {
+  try {
+    await page.addStyleTag({
+      content: `
+        *[data-__stashed-fixed] { position: static !important; top: auto !important; bottom: auto !important; z-index: auto !important; }
+      `,
+    });
+    await page.evaluate(() => {
+      const nodes = Array.from(document.querySelectorAll<HTMLElement>('body *'));
+      for (const el of nodes) {
+        const cs = window.getComputedStyle(el);
+        if (cs.position === 'fixed' || cs.position === 'sticky') {
+          el.setAttribute('data-__stashed-fixed', '1');
+          el.style.setProperty('position', 'static', 'important');
+          el.style.setProperty('top', 'auto', 'important');
+          el.style.setProperty('bottom', 'auto', 'important');
+          el.style.setProperty('z-index', 'auto', 'important');
+        }
+      }
+    });
+  } catch {}
 }
 
 async function enableLightweightRouting(context: BrowserContext) {
