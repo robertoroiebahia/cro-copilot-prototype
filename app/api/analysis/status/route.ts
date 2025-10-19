@@ -36,7 +36,10 @@ export async function GET(req: NextRequest) {
         metrics,
         context,
         created_at,
-        updated_at
+        updated_at,
+        progress,
+        progress_stage,
+        progress_message
       `,
     )
     .eq('id', analysisId)
@@ -48,10 +51,30 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Analysis not found' }, { status: 404 });
   }
 
-  const response =
-    data.status === 'completed'
-      ? { status: data.status, analysis: data }
-      : { status: data.status, error: data.error_message };
+  // Return different response based on status
+  if (data.status === 'completed') {
+    return NextResponse.json({
+      status: 'completed',
+      progress: 100,
+      message: 'Analysis complete!',
+      analysis: data,
+    });
+  }
 
-  return NextResponse.json(response);
+  if (data.status === 'failed') {
+    return NextResponse.json({
+      status: 'failed',
+      progress: data.progress || 0,
+      message: data.error_message || 'Analysis failed',
+      error: data.error_message,
+    });
+  }
+
+  // Processing status - return real-time progress
+  return NextResponse.json({
+    status: 'processing',
+    progress: data.progress || 0,
+    stage: data.progress_stage || 'initializing',
+    message: data.progress_message || 'Processing...',
+  });
 }

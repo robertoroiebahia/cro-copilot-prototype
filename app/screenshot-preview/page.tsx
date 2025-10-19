@@ -6,13 +6,8 @@ import { FormEvent, useMemo, useState } from 'react';
 type ScreenshotPayload = {
   url: string;
   capturedAt: string;
-  desktop: {
-    fullPage: string;
-    aboveFold: string;
-  };
   mobile: {
     fullPage: string;
-    aboveFold: string;
   };
 };
 
@@ -93,28 +88,12 @@ export default function ScreenshotPreviewPage() {
           />
         </label>
 
-        <label className="grid gap-2">
-          <span className="text-sm font-medium text-slate-700">Block Patterns (optional)</span>
-          <textarea
-            className="min-h-[80px] rounded border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-            placeholder="*/analytics*&#10;*/tracking/*"
-            value={blockPatterns}
-            onChange={(event) => setBlockPatterns(event.target.value)}
-          />
-          <span className="text-xs text-slate-500">
-            One glob per line. Requests matching any pattern are aborted to speed up captures.
-          </span>
-        </label>
-
-        <label className="inline-flex items-center gap-2">
-          <input
-            type="checkbox"
-            checked={waitForNetworkIdle}
-            onChange={(event) => setWaitForNetworkIdle(event.target.checked)}
-            className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
-          />
-          <span className="text-sm text-slate-700">Wait briefly for network idle after DOM ready</span>
-        </label>
+        <div className="rounded bg-blue-50 px-3 py-2 text-sm text-blue-700">
+          <p className="font-medium">Using Firecrawl API</p>
+          <p className="mt-1 text-xs text-blue-600">
+            Screenshots are captured using Firecrawl's serverless screenshot service in mobile viewport.
+          </p>
+        </div>
 
         <button
           type="submit"
@@ -141,37 +120,15 @@ export default function ScreenshotPreviewPage() {
             </p>
           </header>
 
-          <div className="grid gap-12 md:grid-cols-2">
-            <ScreenshotColumn title="Desktop" capture={payload.desktop} />
-            <ScreenshotColumn title="Mobile" capture={payload.mobile} />
+          <div className="grid gap-8">
+            <figure className="grid gap-3">
+              <figcaption className="text-sm font-medium text-slate-600">Mobile Full Page</figcaption>
+              <ImageFrame src={payload.mobile.fullPage} alt="Mobile full-page screenshot" tall />
+            </figure>
           </div>
         </section>
       )}
     </main>
-  );
-}
-
-type ScreenshotColumnProps = {
-  title: string;
-  capture: {
-    fullPage: string;
-    aboveFold: string;
-  };
-};
-
-function ScreenshotColumn({ title, capture }: ScreenshotColumnProps) {
-  return (
-    <article className="grid gap-6">
-      <h3 className="text-xl font-semibold text-slate-800">{title}</h3>
-      <figure className="grid gap-3">
-        <figcaption className="text-sm font-medium text-slate-600">Above the fold</figcaption>
-        <ImageFrame src={capture.aboveFold} alt={`${title} above-the-fold`} />
-      </figure>
-      <figure className="grid gap-3">
-        <figcaption className="text-sm font-medium text-slate-600">Full page</figcaption>
-        <ImageFrame src={capture.fullPage} alt={`${title} full-page screenshot`} tall />
-      </figure>
-    </article>
   );
 }
 

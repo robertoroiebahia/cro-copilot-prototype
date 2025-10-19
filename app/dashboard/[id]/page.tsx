@@ -344,18 +344,6 @@ export default async function AnalysisDetailPage({
               </div>
             </details>
           )}
-
-          {/* Vision Analysis */}
-          {analysis.vision_analysis && (
-            <details className="border-b border-gray-200 last:border-b-0">
-              <summary className="px-6 py-4 cursor-pointer hover:bg-gray-50 transition-colors font-medium text-gray-900">
-                Vision AI Analysis
-              </summary>
-              <div className="px-6 py-4 bg-gray-50">
-                <AnalysisContent data={analysis.vision_analysis} />
-              </div>
-            </details>
-          )}
         </div>
 
         {/* Usage Stats */}
@@ -367,18 +355,11 @@ export default async function AnalysisDetailPage({
               </svg>
               <h3 className="text-lg font-semibold text-gray-900">Usage Statistics</h3>
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
               <div className="text-center">
                 <dt className="text-sm text-gray-600 mb-2">Total Tokens</dt>
                 <dd className="text-2xl font-bold text-gray-900">
                   {analysis.usage.totalTokens?.toLocaleString() || 0}
-                </dd>
-              </div>
-              <div className="text-center">
-                <dt className="text-sm text-gray-600 mb-2">Vision Tokens</dt>
-                <dd className="text-2xl font-bold text-blue-600">
-                  {((analysis.usage.visionInputTokens || 0) +
-                    (analysis.usage.visionOutputTokens || 0)).toLocaleString()}
                 </dd>
               </div>
               <div className="text-center">

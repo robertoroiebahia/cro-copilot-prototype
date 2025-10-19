@@ -4,19 +4,7 @@
       "maxDuration": 120,
       "memory": 512
     },
-    "app/api/vision/route.ts": {
-      "maxDuration": 120,
-      "memory": 512
-    },
-    "app/playground/tools/scraper/api/route.ts": {
-      "maxDuration": 120,
-      "memory": 512
-    },
-    "app/api/inngest/route.ts": {
-      "maxDuration": 60,
-      "memory": 512
-    },
-    "app/api/analysis/queue/route.ts": {
+    "app/api/screenshot/route.ts": {
       "maxDuration": 60,
       "memory": 512
     },

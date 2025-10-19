@@ -58,6 +58,9 @@ export interface Database {
           usage: AnalysisUsage | null
           status: 'completed' | 'failed' | 'processing'
           error_message: string | null
+          progress: number | null
+          progress_stage: string | null
+          progress_message: string | null
           created_at: string
           updated_at: string
         }
@@ -65,10 +68,10 @@ export interface Database {
           id?: string
           user_id: string
           url: string
-          metrics: AnalysisMetrics
-          context: AnalysisContext
+          metrics?: AnalysisMetrics
+          context?: AnalysisContext
           llm?: string | null
-          summary: AnalysisSummary
+          summary?: AnalysisSummary
           recommendations?: Json | null
           above_the_fold?: Json | null
           below_the_fold?: Json | null
@@ -80,6 +83,9 @@ export interface Database {
           usage?: AnalysisUsage | null
           status?: 'completed' | 'failed' | 'processing'
           error_message?: string | null
+          progress?: number | null
+          progress_stage?: string | null
+          progress_message?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -102,6 +108,9 @@ export interface Database {
           usage?: AnalysisUsage | null
           status?: 'completed' | 'failed' | 'processing'
           error_message?: string | null
+          progress?: number | null
+          progress_stage?: string | null
+          progress_message?: string | null
           created_at?: string
           updated_at?: string
         }

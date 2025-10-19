@@ -76,36 +76,20 @@ export default function Home() {
     // Create abort controller for cancellation
     abortControllerRef.current = new AbortController();
 
-    // Set 5-minute timeout (analysis can take 2-3 minutes for complex pages)
+    // Set 3-minute timeout
     timeoutRef.current = setTimeout(() => {
       cancelAnalysis();
-      setError('Analysis timed out after 5 minutes. The analysis may have completed - please check your dashboard.');
-    }, 300000);
+      setError('Analysis timed out after 3 minutes. The analysis may have completed - please check your dashboard.');
+    }, 180000);
 
     try {
-      // Stage 1: Starting
-      updateProgress('scraping', 10, 'Analyzing page content...');
+      // Realistic progress simulation based on actual stages
+      updateProgress('scraping', 10, 'Fetching page content with Firecrawl...');
 
-      // Simulate progress updates (since we can't actually track API progress)
-      const progressInterval = setInterval(() => {
-        setAnalysisProgress(prev => {
-          if (prev.progress >= 90) return prev;
-          return { ...prev, progress: prev.progress + 2 };
-        });
-      }, 1000);
+      // Scraping typically takes 3-5 seconds
+      const scrapePromise = new Promise(resolve => setTimeout(resolve, 3000));
 
-      // Stage 2: Screenshots
-      setTimeout(() => updateProgress('screenshots', 25, 'Capturing screenshots...'), 2000);
-
-      // Stage 3: Vision analysis
-      setTimeout(() => updateProgress('hero-analysis', 40, 'Analyzing hero section...'), 5000);
-      setTimeout(() => updateProgress('social-proof-analysis', 55, 'Analyzing social proof...'), 10000);
-      setTimeout(() => updateProgress('cta-analysis', 70, 'Analyzing CTAs...'), 15000);
-
-      // Stage 4: Recommendations
-      setTimeout(() => updateProgress('generating-recommendations', 85, 'Generating recommendations...'), 20000);
-
-      const res = await fetch('/api/analyze', {
+      const analysisPromise = fetch('/api/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -116,7 +100,28 @@ export default function Home() {
         signal: abortControllerRef.current.signal,
       });
 
-      clearInterval(progressInterval);
+      // Update progress while waiting
+      await scrapePromise;
+      updateProgress('scraping', 35, 'Processing page structure...');
+
+      // Wait a bit more then show AI analysis stage
+      setTimeout(() => {
+        updateProgress('generating-recommendations', 50, `Running ${llm.toUpperCase()} analysis (this may take 30-60 seconds)...`);
+      }, 2000);
+
+      // Show progress ticks during AI analysis
+      const aiProgressInterval = setInterval(() => {
+        setAnalysisProgress(prev => {
+          if (prev.stage === 'generating-recommendations' && prev.progress < 85) {
+            return { ...prev, progress: prev.progress + 3 };
+          }
+          return prev;
+        });
+      }, 2000);
+
+      const res = await analysisPromise;
+
+      clearInterval(aiProgressInterval);
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
       }
@@ -481,13 +486,13 @@ export default function Home() {
                   </div>
                 </div>
 
-                {/* Stage List */}
+                {/* Stage List - Updated for Real Pipeline */}
                 <div className="space-y-4 mb-8">
                   {/* Scraping Stage */}
                   <div className="flex items-center gap-3">
                     {analysisProgress.stage === 'scraping' ? (
                       <div className="animate-spin rounded-full h-6 w-6 border-2 border-gray-200 border-t-brand-gold flex-shrink-0" />
-                    ) : analysisProgress.progress > 10 ? (
+                    ) : analysisProgress.progress > 35 ? (
                       <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
                         <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -496,80 +501,8 @@ export default function Home() {
                     ) : (
                       <div className="w-6 h-6 rounded-full border-2 border-gray-200 flex-shrink-0" />
                     )}
-                    <span className={`text-sm ${analysisProgress.progress > 10 ? 'text-brand-black font-bold' : 'text-brand-text-tertiary font-medium'}`}>
-                      Analyzing page content...
-                    </span>
-                  </div>
-
-                  {/* Screenshots Stage */}
-                  <div className="flex items-center gap-3">
-                    {analysisProgress.stage === 'screenshots' ? (
-                      <div className="animate-spin rounded-full h-6 w-6 border-2 border-gray-200 border-t-brand-gold flex-shrink-0" />
-                    ) : analysisProgress.progress > 25 ? (
-                      <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
-                        <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
-                      </div>
-                    ) : (
-                      <div className="w-6 h-6 rounded-full border-2 border-gray-200 flex-shrink-0" />
-                    )}
-                    <span className={`text-sm ${analysisProgress.progress > 25 ? 'text-brand-black font-bold' : 'text-brand-text-tertiary font-medium'}`}>
-                      Capturing screenshots...
-                    </span>
-                  </div>
-
-                  {/* Hero Analysis Stage */}
-                  <div className="flex items-center gap-3">
-                    {analysisProgress.stage === 'hero-analysis' ? (
-                      <div className="animate-spin rounded-full h-6 w-6 border-2 border-gray-200 border-t-brand-gold flex-shrink-0" />
-                    ) : analysisProgress.progress > 40 ? (
-                      <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
-                        <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
-                      </div>
-                    ) : (
-                      <div className="w-6 h-6 rounded-full border-2 border-gray-200 flex-shrink-0" />
-                    )}
-                    <span className={`text-sm ${analysisProgress.progress > 40 ? 'text-brand-black font-bold' : 'text-brand-text-tertiary font-medium'}`}>
-                      Analyzing hero section...
-                    </span>
-                  </div>
-
-                  {/* Social Proof Analysis Stage */}
-                  <div className="flex items-center gap-3">
-                    {analysisProgress.stage === 'social-proof-analysis' ? (
-                      <div className="animate-spin rounded-full h-6 w-6 border-2 border-gray-200 border-t-brand-gold flex-shrink-0" />
-                    ) : analysisProgress.progress > 55 ? (
-                      <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
-                        <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
-                      </div>
-                    ) : (
-                      <div className="w-6 h-6 rounded-full border-2 border-gray-200 flex-shrink-0" />
-                    )}
-                    <span className={`text-sm ${analysisProgress.progress > 55 ? 'text-brand-black font-bold' : 'text-brand-text-tertiary font-medium'}`}>
-                      Analyzing social proof...
-                    </span>
-                  </div>
-
-                  {/* CTA Analysis Stage */}
-                  <div className="flex items-center gap-3">
-                    {analysisProgress.stage === 'cta-analysis' ? (
-                      <div className="animate-spin rounded-full h-6 w-6 border-2 border-gray-200 border-t-brand-gold flex-shrink-0" />
-                    ) : analysisProgress.progress > 70 ? (
-                      <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
-                        <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
-                      </div>
-                    ) : (
-                      <div className="w-6 h-6 rounded-full border-2 border-gray-200 flex-shrink-0" />
-                    )}
-                    <span className={`text-sm ${analysisProgress.progress > 70 ? 'text-brand-black font-bold' : 'text-brand-text-tertiary font-medium'}`}>
-                      Analyzing CTAs...
+                    <span className={`text-sm ${analysisProgress.progress > 35 ? 'text-brand-black font-bold' : 'text-brand-text-tertiary font-medium'}`}>
+                      Fetching page content with Firecrawl
                     </span>
                   </div>
 
@@ -587,7 +520,23 @@ export default function Home() {
                       <div className="w-6 h-6 rounded-full border-2 border-gray-200 flex-shrink-0" />
                     )}
                     <span className={`text-sm ${analysisProgress.progress > 85 ? 'text-brand-black font-bold' : 'text-brand-text-tertiary font-medium'}`}>
-                      Generating recommendations...
+                      Running AI analysis (30-60 seconds)
+                    </span>
+                  </div>
+
+                  {/* Completion Indicator */}
+                  <div className="flex items-center gap-3">
+                    {analysisProgress.progress === 100 ? (
+                      <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
+                        <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                      </div>
+                    ) : (
+                      <div className="w-6 h-6 rounded-full border-2 border-gray-200 flex-shrink-0" />
+                    )}
+                    <span className={`text-sm ${analysisProgress.progress === 100 ? 'text-brand-black font-bold' : 'text-brand-text-tertiary font-medium'}`}>
+                      Saving results
                     </span>
                   </div>
                 </div>

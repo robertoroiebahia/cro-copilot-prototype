@@ -4,7 +4,7 @@
  */
 
 import { startTimer } from '@/lib/utils/timing';
-import { getFirecrawlClient } from '@/lib/services/firecrawl-client';
+import { getFirecrawlClient, type FirecrawlScrapeOptions } from '@/lib/services/firecrawl-client';
 
 export interface PageAnalysisResult {
   compressedHTML: string; // Markdown content from Firecrawl - ready for AI
@@ -42,8 +42,8 @@ export async function analyzePage(url: string): Promise<PageAnalysisResult> {
     const firecrawl = getFirecrawlClient();
 
     // Configure Firecrawl for optimal e-commerce scraping
-    const scrapeOptions = {
-      formats: ['markdown', 'screenshot'] as const,
+    const scrapeOptions: FirecrawlScrapeOptions = {
+      formats: ['markdown', 'screenshot'],
       onlyMainContent: true,
       waitFor: 2000,
       mobile: true, // Mobile-first for CRO analysis
@@ -153,8 +153,8 @@ export async function analyzePagesBatch(
   try {
     const firecrawl = getFirecrawlClient();
 
-    const scrapeOptions = {
-      formats: ['markdown', 'screenshot'] as const,
+    const scrapeOptions: FirecrawlScrapeOptions = {
+      formats: ['markdown', 'screenshot'],
       onlyMainContent: true,
       waitFor: 2000,
       mobile: true,

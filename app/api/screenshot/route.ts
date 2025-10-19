@@ -1,14 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import {
-  ScreenshotOptions,
-  ScreenshotService,
-} from '../../../lib/screenshot-service';
+import { getFirecrawlClient } from '@/lib/services';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
 
-const screenshotService = new ScreenshotService();
-
+/**
+ * Screenshot API (Migrated to Firecrawl)
+ * Captures mobile screenshots using Firecrawl instead of Playwright
+ */
 export async function POST(req: NextRequest) {
   let body: unknown;
 
@@ -28,36 +27,27 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'URL is required' }, { status: 400 });
   }
 
-  const { blockPatterns, waitForNetworkIdle } = body as {
-    blockPatterns?: unknown;
-    waitForNetworkIdle?: unknown;
-  };
-
-  const options: ScreenshotOptions = {};
-
-  if (Array.isArray(blockPatterns)) {
-    const sanitized = blockPatterns
-      .filter((pattern): pattern is string => typeof pattern === 'string')
-      .map((pattern) => pattern.trim())
-      .filter((pattern) => pattern.length > 0);
-
-    if (sanitized.length > 0) {
-      options.blockPatterns = sanitized;
-    }
-  }
-
-  if (typeof waitForNetworkIdle === 'boolean') {
-    options.waitForNetworkIdle = waitForNetworkIdle;
-  }
-
   try {
-    const result = await screenshotService.capturePageScreenshots(url, options);
+    const firecrawl = getFirecrawlClient();
 
+    // Use Firecrawl to capture screenshot
+    const result = await firecrawl.scrape(url, {
+      formats: ['screenshot'],
+      mobile: true,
+      waitFor: 2000,
+      onlyMainContent: true,
+    });
+
+    if (!result.success || !result.data?.screenshot) {
+      throw new Error('Failed to capture screenshot');
+    }
+
+    // Return in the same format as before for compatibility
     return NextResponse.json({
       url,
-      capturedAt: result.capturedAt,
+      capturedAt: new Date().toISOString(),
       mobile: {
-        fullPage: `data:image/png;base64,${result.mobile.fullPage}`,
+        fullPage: `data:image/png;base64,${result.data.screenshot}`,
       },
     });
   } catch (error: any) {
@@ -70,7 +60,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: message }, { status: 400 });
     }
 
-    if (message.includes('Timed out')) {
+    if (message.includes('Timed out') || message.includes('timeout')) {
       return NextResponse.json({ error: message }, { status: 504 });
     }
 
