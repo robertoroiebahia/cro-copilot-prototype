@@ -5,8 +5,8 @@
 
 import { chromium, devices } from 'playwright-core';
 
-type PlaywrightLaunchOptions = NonNullable<Parameters<typeof chromium.launch>[0]>;
-type ChromiumLaunchConfig = Pick<PlaywrightLaunchOptions, 'args' | 'executablePath' | 'headless' | 'timeout'>;
+type PlaywrightLaunchOptions = NonNullable<Parameters<typeof chromium.launch>[0]>:
+type ChromiumLaunchConfig = Pick<PlaywrightLaunchOptions, 'args' | 'executablePath' | 'headless' | 'timeout' | 'ignoreDefaultArgs'>;
 
 export interface ScreenshotCapture {
   fullPage: string; // base64
@@ -35,13 +35,31 @@ export async function analyzePage(url: string): Promise<PageAnalysisResult> {
   try {
     const launchConfig = await getChromiumLaunchConfig();
     browser = await chromium.launch(launchConfig);
+    // Small stabilization delay to avoid early crashes before first context
+    await new Promise((r) => setTimeout(r, 200));
 
     // Capture desktop version
-    const desktopContext = await browser.newContext({
+    let desktopContext = await browser.newContext({
       viewport: { width: 1920, height: 1080 },
       userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
       ignoreHTTPSErrors: true,
     });
+    try {
+      // no-op to keep try/catch structure aligned
+    } catch (e: any) {
+      if (String(e?.message || e).includes('Target page, context or browser has been closed')) {
+        try { await browser.close(); } catch {}
+        browser = await chromium.launch(await getChromiumLaunchConfig());
+        await new Promise((r) => setTimeout(r, 200));
+        desktopContext = await browser.newContext({
+          viewport: { width: 1366, height: 900 }, // slightly smaller fallback
+          userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+          ignoreHTTPSErrors: true,
+        });
+      } else {
+        throw e;
+      }
+    }
 
     const desktopPage = await desktopContext.newPage();
 
@@ -107,10 +125,25 @@ export async function analyzePage(url: string): Promise<PageAnalysisResult> {
 
     // Capture mobile version
     const mobileDevice = devices['iPhone 13'];
-    const mobileContext = await browser.newContext({
+    let mobileContext = await browser.newContext({
       ...mobileDevice,
       ignoreHTTPSErrors: true,
     });
+    try {
+      // no-op to keep try/catch structure aligned
+    } catch (e: any) {
+      if (String(e?.message || e).includes('Target page, context or browser has been closed')) {
+        try { await browser.close(); } catch {}
+        browser = await chromium.launch(await getChromiumLaunchConfig());
+        await new Promise((r) => setTimeout(r, 200));
+        mobileContext = await browser.newContext({
+          ...devices['iPhone 13'],
+          ignoreHTTPSErrors: true,
+        });
+      } else {
+        throw e;
+      }
+    }
 
     const mobilePage = await mobileContext.newPage();
 
@@ -178,6 +211,7 @@ async function getChromiumLaunchConfig(): Promise<ChromiumLaunchConfig> {
       executablePath: undefined,
       headless: true,
       timeout: 30000,
+      ignoreDefaultArgs: ['--disable-extensions'],
     };
   }
 
@@ -189,6 +223,7 @@ async function getChromiumLaunchConfig(): Promise<ChromiumLaunchConfig> {
     executablePath: await chromiumModule.executablePath(),
     headless: chromiumModule.headless === 'shell' ? true : chromiumModule.headless ?? true,
     timeout: 30000,
+    ignoreDefaultArgs: ['--disable-extensions'],
   };
 }
 
