@@ -82,12 +82,30 @@ export async function analyzePage(url: string): Promise<PageAnalysisResult> {
       }
     }
 
-    // Navigate with fallback
+    // Navigate with fallback and one retry with lighter resources
     try {
+      desktopPage.setDefaultNavigationTimeout(25000);
       await desktopPage.goto(url, { waitUntil: 'networkidle', timeout: 20000 });
-    } catch (e) {
-      console.log('Page analyzer: networkidle timeout, trying domcontentloaded...');
-      await desktopPage.goto(url, { waitUntil: 'domcontentloaded', timeout: 15000 });
+    } catch (e: any) {
+      const msg = String(e?.message || e);
+      if (msg.includes('ERR_INSUFFICIENT_RESOURCES') || msg.includes('Target page, context or browser has been closed')) {
+        try { await desktopContext.close(); } catch {}
+        try { await browser.close(); } catch {}
+        browser = await chromium.launch(await getChromiumLaunchConfig());
+        await wait(200);
+        desktopContext = await browser.newContext({
+          viewport: { width: 1280, height: 800 },
+          userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+          ignoreHTTPSErrors: true,
+        });
+        await enableLightweightRouting(desktopContext);
+        desktopPage = await desktopContext.newPage();
+        desktopPage.setDefaultNavigationTimeout(20000);
+        await desktopPage.goto(url, { waitUntil: 'domcontentloaded', timeout: 15000 });
+      } else {
+        console.log('Page analyzer: networkidle timeout, trying domcontentloaded...');
+        await desktopPage.goto(url, { waitUntil: 'domcontentloaded', timeout: 15000 });
+      }
     }
 
     // Wait for content to settle
@@ -195,9 +213,26 @@ export async function analyzePage(url: string): Promise<PageAnalysisResult> {
     }
 
     try {
+      mobilePage.setDefaultNavigationTimeout(25000);
       await mobilePage.goto(url, { waitUntil: 'networkidle', timeout: 20000 });
-    } catch (e) {
-      await mobilePage.goto(url, { waitUntil: 'domcontentloaded', timeout: 15000 });
+    } catch (e: any) {
+      const msg = String(e?.message || e);
+      if (msg.includes('ERR_INSUFFICIENT_RESOURCES') || msg.includes('Target page, context or browser has been closed')) {
+        try { await mobileContext.close(); } catch {}
+        try { await browser.close(); } catch {}
+        browser = await chromium.launch(await getChromiumLaunchConfig());
+        await wait(200);
+        mobileContext = await browser.newContext({
+          ...devices['iPhone 13'],
+          ignoreHTTPSErrors: true,
+        });
+        await enableLightweightRouting(mobileContext);
+        mobilePage = await mobileContext.newPage();
+        mobilePage.setDefaultNavigationTimeout(20000);
+        await mobilePage.goto(url, { waitUntil: 'domcontentloaded', timeout: 15000 });
+      } else {
+        await mobilePage.goto(url, { waitUntil: 'domcontentloaded', timeout: 15000 });
+      }
     }
 
     await mobilePage.waitForTimeout(1500);
@@ -358,5 +393,28 @@ async function safeScreenshot(
   } catch {
     await wait(300);
     return await page.screenshot({ animations: 'disabled', timeout: 10000, ...options });
+  }
+}
+
+async function enableLightweightRouting(context: Parameters<typeof chromium['launch']>[0] extends any ? any : never) {
+  try {
+    await context.route('**/*', (route) => {
+      const req = route.request();
+      const type = req.resourceType();
+      const url = req.url();
+      // Abort heavy/irrelevant resources on retry
+      if (
+        type === 'media' ||
+        type === 'font' ||
+        type === 'eventsource' ||
+        type === 'websocket' ||
+        /analytics|gtm|googletagmanager|doubleclick|facebook|meta|hotjar|segment|amplitude|optimizely/i.test(url)
+      ) {
+        return route.abort();
+      }
+      return route.continue();
+    });
+  } catch {
+    // ignore routing setup failures
   }
 }
