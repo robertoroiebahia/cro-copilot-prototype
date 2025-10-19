@@ -27,7 +27,7 @@ export async function generateGPTRecommendations(
   const mobileImageUrl = buildOpenAIImageRef(pageData.screenshots.mobile.fullPage);
 
   const response = await openai.responses.create({
-    model: 'gpt-5-nano',
+    model: 'gpt-5-mini',
     input: [
       {
         role: 'user',
