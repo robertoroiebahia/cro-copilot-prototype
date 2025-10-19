@@ -5,7 +5,7 @@
 
 import { chromium, devices } from 'playwright-core';
 
-type PlaywrightLaunchOptions = NonNullable<Parameters<typeof chromium.launch>[0]>:
+type PlaywrightLaunchOptions = NonNullable<Parameters<typeof chromium.launch>[0]>;
 type ChromiumLaunchConfig = Pick<PlaywrightLaunchOptions, 'args' | 'executablePath' | 'headless' | 'timeout' | 'ignoreDefaultArgs'>;
 
 export interface ScreenshotCapture {
