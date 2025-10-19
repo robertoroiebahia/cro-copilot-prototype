@@ -14,6 +14,10 @@ export interface PageAnalysisResult {
   scrapedAt: string;
   method: 'playwright-browser';
   pageLoadTime: number;
+  screenshots?: {
+    aboveFold: string; // base64 jpeg
+    fullPage: string;  // base64 jpeg
+  };
 }
 
 export async function analyzePage(url: string): Promise<PageAnalysisResult> {
@@ -128,6 +132,10 @@ export async function analyzePage(url: string): Promise<PageAnalysisResult> {
         .trim();
     });
 
+    // Capture screenshots
+    const aboveFold = await page.screenshot({ type: 'jpeg', quality: 60, fullPage: false });
+    const fullPage = await page.screenshot({ type: 'jpeg', quality: 60, fullPage: true });
+
     const pageLoadTime = Date.now() - startTime;
 
     return {
@@ -136,6 +144,10 @@ export async function analyzePage(url: string): Promise<PageAnalysisResult> {
       scrapedAt: new Date().toISOString(),
       method: 'playwright-browser',
       pageLoadTime,
+      screenshots: {
+        aboveFold: aboveFold.toString('base64'),
+        fullPage: fullPage.toString('base64'),
+      },
     };
 
   } catch (error) {

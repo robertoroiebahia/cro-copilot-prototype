@@ -23,7 +23,7 @@ export default function ScraperToolPage() {
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<TestResults | null>(null);
   const [activeTab, setActiveTab] = useState<ScraperType>('cheerio');
-  const [viewMode, setViewMode] = useState<'raw' | 'formatted' | 'html'>('formatted');
+  const [viewMode, setViewMode] = useState<'raw' | 'formatted' | 'html' | 'screenshots'>('formatted');
 
   const testScrapers = async () => {
     if (!url) return;
@@ -190,7 +190,7 @@ export default function ScraperToolPage() {
                   </button>
                   <button
                     onClick={() => setViewMode('html')}
-                    className={`px-4 py-2 text-sm font-medium rounded-r-lg border-t border-r border-b ${
+                    className={`px-4 py-2 text-sm font-medium border-t border-b ${
                       viewMode === 'html'
                         ? 'bg-indigo-600 text-white border-indigo-600'
                         : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
@@ -198,6 +198,18 @@ export default function ScraperToolPage() {
                   >
                     Raw HTML
                   </button>
+                  {(results[activeTab].raw?.screenshots?.aboveFold || results[activeTab].raw?.screenshots?.fullPage) && (
+                    <button
+                      onClick={() => setViewMode('screenshots')}
+                      className={`px-4 py-2 text-sm font-medium rounded-r-lg border-t border-r border-b ${
+                        viewMode === 'screenshots'
+                          ? 'bg-indigo-600 text-white border-indigo-600'
+                          : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                      }`}
+                    >
+                      Screenshots
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
@@ -227,10 +239,36 @@ export default function ScraperToolPage() {
                     <pre className="bg-gray-900 text-blue-400 p-4 rounded-lg overflow-x-auto text-sm font-mono">
                       {JSON.stringify(results[activeTab].raw, null, 2)}
                     </pre>
-                  ) : (
+                  ) : viewMode === 'html' ? (
                     <pre className="bg-gray-900 text-orange-400 p-4 rounded-lg overflow-x-auto text-xs font-mono">
                       {results[activeTab].html}
                     </pre>
+                  ) : (
+                    <div className="space-y-4">
+                      {results[activeTab].raw?.screenshots?.aboveFold && (
+                        <div>
+                          <h4 className="text-sm font-semibold text-gray-900 mb-2">Above the fold</h4>
+                          <img
+                            alt="Above the fold"
+                            className="border border-gray-200 rounded max-w-full h-auto"
+                            src={`data:image/jpeg;base64,${results[activeTab].raw.screenshots.aboveFold}`}
+                          />
+                        </div>
+                      )}
+                      {results[activeTab].raw?.screenshots?.fullPage && (
+                        <div>
+                          <h4 className="text-sm font-semibold text-gray-900 mb-2">Full page</h4>
+                          <img
+                            alt="Full page"
+                            className="border border-gray-200 rounded max-w-full h-auto"
+                            src={`data:image/jpeg;base64,${results[activeTab].raw.screenshots.fullPage}`}
+                          />
+                        </div>
+                      )}
+                      {!results[activeTab].raw?.screenshots && (
+                        <p className="text-gray-600 text-sm">No screenshots available for this analyzer.</p>
+                      )}
+                    </div>
                   )}
                 </div>
               )}
