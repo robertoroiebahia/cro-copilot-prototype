@@ -5,6 +5,7 @@
 
 import { chromium, devices } from 'playwright-core';
 import type { Page, BrowserContext } from 'playwright-core';
+import { startTimer } from '@/lib/utils/timing';
 
 type PlaywrightLaunchOptions = NonNullable<Parameters<typeof chromium.launch>[0]>;
 type ChromiumLaunchConfig = Pick<PlaywrightLaunchOptions, 'args' | 'executablePath' | 'headless' | 'timeout' | 'ignoreDefaultArgs'>;
@@ -32,6 +33,8 @@ export interface PageAnalysisResult {
 export async function analyzePage(url: string): Promise<PageAnalysisResult> {
   let browser: Awaited<ReturnType<typeof chromium.launch>> | undefined;
   const startTime = Date.now();
+  const overallTimerStop = startTimer('analysis.scraper.total');
+  let timerMeta: Record<string, unknown> = { url };
 
   try {
     const launchConfig = await getChromiumLaunchConfig();
@@ -261,6 +264,7 @@ export async function analyzePage(url: string): Promise<PageAnalysisResult> {
     await mobileContext.close();
 
     const pageLoadTime = Date.now() - startTime;
+    timerMeta = { ...timerMeta, pageLoadTime };
 
     return {
       compressedHTML,
@@ -281,9 +285,20 @@ export async function analyzePage(url: string): Promise<PageAnalysisResult> {
     };
 
   } catch (error) {
+    timerMeta = {
+      ...timerMeta,
+      error: error instanceof Error ? error.message : String(error),
+    };
     console.error('Playwright analyzer error:', error);
     throw new Error(`Failed to analyze page: ${error instanceof Error ? error.message : 'Unknown error'}`);
   } finally {
+    if (!('pageLoadTime' in timerMeta)) {
+      timerMeta = {
+        ...timerMeta,
+        durationFallbackMs: Date.now() - startTime,
+      };
+    }
+    overallTimerStop(timerMeta);
     if (browser) {
       await browser.close();
     }
