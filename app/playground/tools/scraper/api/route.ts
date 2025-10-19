@@ -11,7 +11,8 @@ import * as playwrightAnalyzer from '../analyzers/playwright-analyzer';
 import * as playwrightAdvancedAnalyzer from '../analyzers/playwright-advanced-analyzer';
 
 // Timeout for scrapers
-export const maxDuration = 30; // 30 seconds
+export const runtime = 'nodejs';
+export const maxDuration = 60; // allow more time on serverless
 export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {

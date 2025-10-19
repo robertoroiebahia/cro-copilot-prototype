@@ -5,6 +5,9 @@
 
 import { chromium } from 'playwright-core';
 
+type PlaywrightLaunchOptions = NonNullable<Parameters<typeof chromium.launch>[0]>;
+type ChromiumLaunchConfig = Pick<PlaywrightLaunchOptions, 'args' | 'executablePath' | 'headless' | 'timeout' | 'ignoreDefaultArgs'>;
+
 export interface PageAnalysisResult {
   compressedHTML: string; // Compressed rendered HTML without scripts - ready for AI
   url: string;
@@ -14,41 +17,52 @@ export interface PageAnalysisResult {
 }
 
 export async function analyzePage(url: string): Promise<PageAnalysisResult> {
-  let browser;
+  let browser: Awaited<ReturnType<typeof chromium.launch>> | undefined;
   const startTime = Date.now();
 
   try {
-    const isVercel = !!process.env.VERCEL;
+    const launchConfig = await getChromiumLaunchConfig();
+    browser = await chromium.launch(launchConfig);
+    await wait(200);
 
-    let executablePath: string | undefined;
-    let args: string[];
-
-    if (isVercel) {
-      const chromiumPkg = await import('@sparticuz/chromium');
-      executablePath = await chromiumPkg.default.executablePath();
-      args = chromiumPkg.default.args;
-    } else {
-      executablePath = undefined;
-      args = [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-      ];
+    let context;
+    try {
+      context = await browser.newContext({
+        viewport: { width: 1366, height: 900 },
+        userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
+      });
+    } catch (e: any) {
+      if (String(e?.message || e).includes('Target page, context or browser has been closed')) {
+        try { await browser.close(); } catch {}
+        browser = await chromium.launch(await getChromiumLaunchConfig());
+        await wait(200);
+        context = await browser.newContext({
+          viewport: { width: 1280, height: 800 },
+          userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
+        });
+      } else {
+        throw e;
+      }
     }
 
-    browser = await chromium.launch({
-      args,
-      executablePath,
-      headless: true,
-      timeout: 30000,
-    });
-
-    const context = await browser.newContext({
-      viewport: { width: 1920, height: 1080 },
-      userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
-    });
-
-    const page = await context.newPage();
+    let page;
+    try {
+      page = await context.newPage();
+    } catch (e: any) {
+      if (String(e?.message || e).includes('Target page, context or browser has been closed')) {
+        try { await context.close(); } catch {}
+        try { await browser.close(); } catch {}
+        browser = await chromium.launch(await getChromiumLaunchConfig());
+        await wait(200);
+        context = await browser.newContext({
+          viewport: { width: 1280, height: 800 },
+          userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
+        });
+        page = await context.newPage();
+      } else {
+        throw e;
+      }
+    }
 
     // Navigate with multiple fallback strategies
     try {
@@ -128,8 +142,69 @@ export async function analyzePage(url: string): Promise<PageAnalysisResult> {
     console.error('Playwright analyzer error:', error);
     throw new Error(`Failed to analyze page: ${error instanceof Error ? error.message : 'Unknown error'}`);
   } finally {
-    if (browser) {
-      await browser.close();
-    }
+    if (browser) { try { await browser.close(); } catch {} }
   }
+}
+
+async function getChromiumLaunchConfig(): Promise<ChromiumLaunchConfig> {
+  const isVercel = Boolean(process.env.VERCEL);
+  if (!isVercel) {
+    return {
+      args: [
+        '--disable-blink-features=AutomationControlled',
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+      ],
+      executablePath: undefined,
+      headless: true,
+      timeout: 30000,
+      ignoreDefaultArgs: ['--disable-extensions'],
+    };
+  }
+  ensureChromiumRuntimeEnv();
+  const chromiumModule = await loadChromium();
+  return {
+    args: chromiumModule.args ?? [],
+    executablePath: await chromiumModule.executablePath(),
+    headless: chromiumModule.headless === 'shell' ? true : chromiumModule.headless ?? true,
+    timeout: 30000,
+    ignoreDefaultArgs: ['--disable-extensions'],
+  };
+}
+
+function ensureChromiumRuntimeEnv(): void {
+  const nodeMajorVersion = Number.parseInt(process.versions.node?.split('.')?.[0] ?? '', 10);
+  let runtime = 'nodejs18.x';
+  let lambdaLibPath = '/tmp/al2/lib';
+  if (!Number.isNaN(nodeMajorVersion)) {
+    if (nodeMajorVersion >= 22) { runtime = 'nodejs22.x'; lambdaLibPath = '/tmp/al2023/lib'; }
+    else if (nodeMajorVersion >= 20) { runtime = 'nodejs20.x'; lambdaLibPath = '/tmp/al2023/lib'; }
+    else if (nodeMajorVersion >= 18) { runtime = 'nodejs18.x'; lambdaLibPath = '/tmp/al2/lib'; }
+  }
+  process.env.AWS_EXECUTION_ENV ??= `AWS_Lambda_${runtime}`;
+  process.env.AWS_LAMBDA_JS_RUNTIME ??= runtime;
+  const candidateLibPaths = new Set<string>([lambdaLibPath, '/tmp/al2/lib', '/tmp/al2023/lib']);
+  const existingLdPath = process.env.LD_LIBRARY_PATH ?? '';
+  existingLdPath.split(':').filter(Boolean).forEach((p) => candidateLibPaths.add(p));
+  process.env.LD_LIBRARY_PATH = Array.from(candidateLibPaths).join(':');
+  process.env.FONTCONFIG_PATH ??= '/tmp/fonts';
+  process.env.HOME ??= process.env.HOME && process.env.HOME !== '/' ? process.env.HOME : '/tmp';
+  process.env.TMPDIR ??= '/tmp';
+  const pathEntries = new Set<string>((process.env.PATH ?? '').split(':').filter(Boolean));
+  pathEntries.add('/tmp');
+  process.env.PATH = Array.from(pathEntries).join(':');
+}
+
+async function loadChromium(): Promise<typeof import('@sparticuz/chromium')> {
+  const rawModule = (await import('@sparticuz/chromium')) as unknown;
+  if (rawModule && typeof rawModule === 'object' && 'default' in rawModule) {
+    const moduleWithDefault = rawModule as { default?: typeof import('@sparticuz/chromium') };
+    if (moduleWithDefault.default) return moduleWithDefault.default;
+  }
+  return rawModule as typeof import('@sparticuz/chromium');
+}
+
+function wait(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
