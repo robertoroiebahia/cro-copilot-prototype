@@ -129,13 +129,15 @@ export async function analyzePage(url: string): Promise<PageAnalysisResult> {
         .trim();
     });
 
-    // Capture desktop screenshots
+    // Capture desktop screenshots (jpeg to reduce payload size)
     const desktopAboveFold = await desktopPage.screenshot({
-      type: 'png',
+      type: 'jpeg',
+      quality: 60,
       fullPage: false,
     });
     const desktopFullPage = await desktopPage.screenshot({
-      type: 'png',
+      type: 'jpeg',
+      quality: 60,
       fullPage: true,
     });
 
@@ -190,13 +192,15 @@ export async function analyzePage(url: string): Promise<PageAnalysisResult> {
 
     await mobilePage.waitForTimeout(1500);
 
-    // Capture mobile screenshots
+    // Capture mobile screenshots (jpeg to reduce payload size)
     const mobileAboveFold = await mobilePage.screenshot({
-      type: 'png',
+      type: 'jpeg',
+      quality: 60,
       fullPage: false,
     });
     const mobileFullPage = await mobilePage.screenshot({
-      type: 'png',
+      type: 'jpeg',
+      quality: 60,
       fullPage: true,
     });
 
