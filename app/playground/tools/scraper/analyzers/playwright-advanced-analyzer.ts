@@ -4,6 +4,7 @@
  */
 
 import { chromium as playwright } from 'playwright-core';
+import type { Page } from 'playwright-core';
 
 type PlaywrightLaunchOptions = NonNullable<Parameters<typeof playwright.launch>[0]>;
 type ChromiumLaunchConfig = Pick<PlaywrightLaunchOptions, 'args' | 'executablePath' | 'headless' | 'timeout' | 'ignoreDefaultArgs'>;
@@ -221,8 +222,8 @@ function wait(ms: number): Promise<void> {
 }
 
 async function safeScreenshot(
-  page: Awaited<ReturnType<ReturnType<typeof playwright.launch>['newContext']>['newPage']>,
-  options: Parameters<typeof page.screenshot>[0]
+  page: Page,
+  options: Parameters<Page['screenshot']>[0]
 ): Promise<Buffer> {
   try {
     return await page.screenshot({ animations: 'disabled', timeout: 10000, ...options });
