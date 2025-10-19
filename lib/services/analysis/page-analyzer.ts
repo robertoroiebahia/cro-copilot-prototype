@@ -5,6 +5,9 @@
 
 import { chromium, devices } from 'playwright-core';
 
+type PlaywrightLaunchOptions = NonNullable<Parameters<typeof chromium.launch>[0]>;
+type ChromiumLaunchConfig = Pick<PlaywrightLaunchOptions, 'args' | 'executablePath' | 'headless' | 'timeout'>;
+
 export interface ScreenshotCapture {
   fullPage: string; // base64
   aboveFold: string; // base64
@@ -30,34 +33,8 @@ export async function analyzePage(url: string): Promise<PageAnalysisResult> {
   const startTime = Date.now();
 
   try {
-    // Use @sparticuz/chromium on Vercel, local Playwright otherwise
-    const isVercel = !!process.env.VERCEL;
-
-    let executablePath: string | undefined;
-    let args: string[];
-
-    if (isVercel) {
-      // Dynamic import for Vercel environment
-      const chromiumPkg = await import('@sparticuz/chromium');
-      executablePath = await chromiumPkg.default.executablePath();
-      args = chromiumPkg.default.args;
-    } else {
-      // Local development - use system Playwright
-      executablePath = undefined;
-      args = [
-        '--disable-blink-features=AutomationControlled',
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-      ];
-    }
-
-    browser = await chromium.launch({
-      args,
-      executablePath,
-      headless: true,
-      timeout: 30000,
-    });
+    const launchConfig = await getChromiumLaunchConfig();
+    browser = await chromium.launch(launchConfig);
 
     // Capture desktop version
     const desktopContext = await browser.newContext({
@@ -187,3 +164,86 @@ export async function analyzePage(url: string): Promise<PageAnalysisResult> {
   }
 }
 
+async function getChromiumLaunchConfig(): Promise<ChromiumLaunchConfig> {
+  const isVercel = Boolean(process.env.VERCEL);
+
+  if (!isVercel) {
+    return {
+      args: [
+        '--disable-blink-features=AutomationControlled',
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+      ],
+      executablePath: undefined,
+      headless: true,
+      timeout: 30000,
+    };
+  }
+
+  ensureChromiumRuntimeEnv();
+  const chromiumModule = await loadChromium();
+
+  return {
+    args: chromiumModule.args ?? [],
+    executablePath: await chromiumModule.executablePath(),
+    headless: chromiumModule.headless === 'shell' ? true : chromiumModule.headless ?? true,
+    timeout: 30000,
+  };
+}
+
+function ensureChromiumRuntimeEnv(): void {
+  const nodeMajorVersion = Number.parseInt(process.versions.node?.split('.')?.[0] ?? '', 10);
+
+  let runtime = 'nodejs18.x';
+  let lambdaLibPath = '/tmp/al2/lib';
+  if (!Number.isNaN(nodeMajorVersion)) {
+    if (nodeMajorVersion >= 22) {
+      runtime = 'nodejs22.x';
+      lambdaLibPath = '/tmp/al2023/lib';
+    } else if (nodeMajorVersion >= 20) {
+      runtime = 'nodejs20.x';
+      lambdaLibPath = '/tmp/al2023/lib';
+    } else if (nodeMajorVersion >= 18) {
+      runtime = 'nodejs18.x';
+      lambdaLibPath = '/tmp/al2/lib';
+    }
+  }
+
+  process.env.AWS_EXECUTION_ENV ??= `AWS_Lambda_${runtime}`;
+  process.env.AWS_LAMBDA_JS_RUNTIME ??= runtime;
+
+  const candidateLibPaths = new Set<string>();
+  candidateLibPaths.add(lambdaLibPath);
+  candidateLibPaths.add('/tmp/al2/lib');
+  candidateLibPaths.add('/tmp/al2023/lib');
+
+  const existingLdPath = process.env.LD_LIBRARY_PATH ?? '';
+  existingLdPath
+    .split(':')
+    .filter(Boolean)
+    .forEach((p) => candidateLibPaths.add(p));
+
+  process.env.LD_LIBRARY_PATH = Array.from(candidateLibPaths).join(':');
+  process.env.FONTCONFIG_PATH ??= '/tmp/fonts';
+  process.env.HOME ??= process.env.HOME && process.env.HOME !== '/' ? process.env.HOME : '/tmp';
+  process.env.TMPDIR ??= '/tmp';
+
+  const pathEntries = new Set<string>();
+  if (process.env.PATH) {
+    process.env.PATH.split(':')
+      .filter(Boolean)
+      .forEach((entry) => pathEntries.add(entry));
+  }
+  pathEntries.add('/tmp');
+  process.env.PATH = Array.from(pathEntries).join(':');
+}
+
+async function loadChromium(): Promise<typeof import('@sparticuz/chromium')> {
+  const rawModule = (await import('@sparticuz/chromium')) as unknown;
+  if (rawModule && typeof rawModule === 'object' && 'default' in rawModule) {
+    const moduleWithDefault = rawModule as { default?: typeof import('@sparticuz/chromium') };
+    if (moduleWithDefault.default) return moduleWithDefault.default;
+  }
+  return rawModule as typeof import('@sparticuz/chromium');
+}
