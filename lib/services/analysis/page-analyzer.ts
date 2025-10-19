@@ -273,7 +273,7 @@ async function safeScreenshot(
 }
 
 async function installBlockers(context: BrowserContext) {
-  const ANALYTICS_RE = /(google-analytics|googletagmanager|doubleclick|facebook|fbcdn|meta\.com|hotjar|segment|amplitude|optimizely|fullstory|sentry|clarity|intercom|hubspot|widget|analytics)/i;
+  const ANALYTICS_RE = /(google-analytics|googletagmanager|doubleclick|facebook|fbcdn|meta\.com|hotjar|segment|amplitude|optimizely|fullstory|sentry|clarity|intercom|hubspot|widget|analytics|alia-cloudflare|cloudflare\.com\/public\/launcher\.js|cdnjs\.cloudflare\.com|gsap\.min\.js)/i;
 
   await context.route('**/*', (route) => {
     const req = route.request();
