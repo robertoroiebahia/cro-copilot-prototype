@@ -173,7 +173,7 @@ export async function analyzePagesBatch(
 
     // Transform results into PageAnalysisResult format
     const analysisResults: PageAnalysisResult[] = results.map((result, index) => {
-      const url = urls[index];
+      const url = urls[index] || '';
 
       if (!result.success || !result.data) {
         console.warn(`⚠️  Failed to scrape ${url}: ${result.error || 'No data'}`);

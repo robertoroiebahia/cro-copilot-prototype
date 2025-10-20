@@ -26,7 +26,9 @@ export function FunnelChart({ data, insights }: FunnelChartProps) {
     return values.map((stage, i) => {
       if (i === 0) return { ...stage, dropOff: 0, rate: 100, severity: 'good' };
 
-      const prev = values[i - 1].value;
+      const prevStage = values[i - 1];
+      if (!prevStage) return { ...stage, dropOff: 0, rate: 0, severity: 'critical' };
+      const prev = prevStage.value;
       const dropOff = prev - stage.value;
       const rate = (stage.value / prev * 100).toFixed(1);
 
@@ -61,7 +63,7 @@ export function FunnelChart({ data, insights }: FunnelChartProps) {
             <div
               className={`h-12 ${getBarColor(i)} relative transition-all duration-200`}
               style={{
-                width: `${(stage.value / stages[0].value) * 100}%`,
+                width: `${stages[0] ? (stage.value / stages[0].value) * 100 : 0}%`,
                 borderRadius: '4px'
               }}
             >

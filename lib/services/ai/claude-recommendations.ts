@@ -70,8 +70,9 @@ export async function generateClaudeRecommendations(
     ],
   });
 
+  const firstContent = response.content[0];
   const outputText =
-    response.content[0].type === 'text' ? response.content[0].text : '';
+    firstContent && firstContent.type === 'text' ? firstContent.text : '';
 
   const insights = parseAIResponse(outputText);
 
@@ -104,9 +105,11 @@ function buildClaudeImageSource(source: string | undefined | null): ClaudeImageS
 
   if (source.startsWith('data:image')) {
     const [metadata, data = ''] = source.split(',', 2);
-    const match = metadata.match(/^data:(image\/(?:jpeg|png|gif|webp))/i);
-    if (match) {
-      mediaType = match[1].toLowerCase() as ClaudeSupportedMime;
+    if (metadata) {
+      const match = metadata.match(/^data:(image\/(?:jpeg|png|gif|webp))/i);
+      if (match && match[1]) {
+        mediaType = match[1].toLowerCase() as ClaudeSupportedMime;
+      }
     }
     base64Data = data;
   }

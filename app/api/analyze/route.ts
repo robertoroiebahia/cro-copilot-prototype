@@ -14,6 +14,7 @@ import { generateGPTRecommendations } from '@/lib/services/ai/gpt-recommendation
 import type { InsertAnalysis } from '@/lib/types/database.types';
 import { startTimer } from '@/lib/utils/timing';
 import { ProgressTracker } from '@/lib/utils/progress-tracker';
+import { rateLimit } from '@/lib/utils/rate-limit';
 
 // Force Node.js runtime for Firecrawl compatibility
 export const runtime = 'nodejs';
@@ -40,6 +41,21 @@ export async function POST(req: NextRequest) {
     if (authError || !user) {
       overallTimerStop({ analysisId, status: 'unauthorized' });
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // ✅ Rate limit check
+    const rateLimitResult = await rateLimit(user.id);
+    if (!rateLimitResult.success) {
+      overallTimerStop({ analysisId, status: 'rate-limited', userId: user.id });
+      return NextResponse.json(
+        {
+          error: 'Rate limit exceeded',
+          limit: rateLimitResult.limit,
+          remaining: rateLimitResult.remaining,
+          reset: rateLimitResult.reset,
+        },
+        { status: 429 }
+      );
     }
 
     const profileRepo = new ProfileRepository(supabase);

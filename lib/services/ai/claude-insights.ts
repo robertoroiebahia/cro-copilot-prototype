@@ -64,7 +64,7 @@ export class ClaudeInsightsExtractor {
       });
 
       const response = message.content[0];
-      if (response.type !== 'text') {
+      if (!response || response.type !== 'text') {
         throw new Error('Unexpected response type from Claude');
       }
 

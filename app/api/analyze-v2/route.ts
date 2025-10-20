@@ -4,12 +4,14 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@/utils/supabase/server';
 import { createPageAnalyzer } from '@/lib/analyzers/page-analyzer';
 import { createThemeClusterer } from '@/lib/analyzers/theme-clusterer';
 import { createHypothesisGenerator } from '@/lib/analyzers/hypothesis-generator';
 import { createFirecrawlService } from '@/lib/services/firecrawl';
 import { logger } from '@/lib/utils/logger';
 import { AppError, ValidationError, ErrorHandler } from '@/lib/utils/errors';
+import { rateLimit } from '@/lib/utils/rate-limit';
 
 /**
  * POST /api/analyze-v2
@@ -19,13 +21,41 @@ export async function POST(request: NextRequest) {
   const startTime = Date.now();
 
   try {
+    // ✅ Authenticate user
+    const supabase = createClient();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      logger.warn('Unauthorized access attempt');
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // ✅ Rate limit check
+    const rateLimitResult = await rateLimit(user.id);
+    if (!rateLimitResult.success) {
+      logger.warn('Rate limit exceeded', { userId: user.id });
+      return NextResponse.json(
+        {
+          error: 'Rate limit exceeded',
+          limit: rateLimitResult.limit,
+          remaining: rateLimitResult.remaining,
+          reset: rateLimitResult.reset,
+        },
+        { status: 429 }
+      );
+    }
+
     // Parse request body
     const body = await request.json();
-    const { url, userId, options = {} } = body;
+    const { url, options = {} } = body;
+    const userId = user.id; // ✅ Use authenticated user ID
 
     // Validate input
-    if (!url || !userId) {
-      throw new ValidationError('URL and userId are required', { url, userId });
+    if (!url) {
+      throw new ValidationError('URL is required', { url });
     }
 
     logger.info('Starting analysis v2', { url, userId });
