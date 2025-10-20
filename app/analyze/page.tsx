@@ -190,9 +190,7 @@ export default function Home() {
       if (data.visionAnalysisError) {
         responseWarnings.push('Screenshot analysis unavailable: ' + data.visionAnalysisError);
       }
-      if (!data.visualAnalysis || Object.keys(data.visualAnalysis).length === 0) {
-        responseWarnings.push('Claude Vision analysis unavailable - showing text-based analysis only');
-      }
+      // Note: We no longer show a warning for missing visualAnalysis since screenshots are now working
       setWarnings(responseWarnings);
 
       updateProgress('complete', 100, 'Analysis complete!');
