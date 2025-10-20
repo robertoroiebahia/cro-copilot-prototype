@@ -117,7 +117,7 @@ export default function QueuePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white pt-16 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white  flex items-center justify-center">
         <div className="text-center">
           <div className="w-16 h-16 mx-auto mb-6 border-4 border-gray-200 border-t-brand-gold rounded-full animate-spin" />
           <p className="text-base text-brand-text-secondary font-bold">Loading your test queue...</p>
@@ -127,7 +127,7 @@ export default function QueuePage() {
   }
 
   return (
-    <div className="min-h-screen bg-white pt-16">
+    <div className="min-h-screen bg-white ">
       {/* Page Header - Premium Design */}
       <div className="bg-gradient-to-b from-gray-50 to-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

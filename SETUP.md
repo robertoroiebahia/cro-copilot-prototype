@@ -1,8 +1,8 @@
-# Smart Nudge Builder - Setup Guide
+# CRO Copilot - Setup Guide
 
 ## Overview
 
-Your Smart Nudge Builder app now has user authentication and database storage for landing page analyses. This guide walks you through setting up the database schema in Supabase.
+Your CRO Copilot app now has user authentication and database storage for landing page analyses. This guide walks you through setting up the database schema in Supabase.
 
 ---
 

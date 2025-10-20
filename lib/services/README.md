@@ -1,6 +1,6 @@
 # Services Layer
 
-This directory contains all business logic for the Smart Nudge Builder application.
+This directory contains all business logic for the CRO Copilot application.
 
 ## 📁 Structure
 

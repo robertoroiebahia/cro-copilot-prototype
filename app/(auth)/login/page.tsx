@@ -57,7 +57,7 @@ export default function LoginPage() {
             Welcome back
           </h2>
           <p className="text-sm text-gray-600">
-            Sign in to your Smart Nudge Builder account
+            Sign in to your CRO Copilot account
           </p>
         </div>
 

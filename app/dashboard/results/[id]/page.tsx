@@ -50,7 +50,7 @@ function NavigationButton({ item, isActive, onClick }: {
 }
 
 const LoadingState = () => (
-  <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white flex items-center justify-center pt-16">
+  <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white flex items-center justify-center ">
     <div className="text-center">
       <div className="w-16 h-16 mx-auto mb-6 border-4 border-gray-200 border-t-brand-gold rounded-full animate-spin" />
       <p className="text-base text-brand-text-secondary font-bold">Loading analysis details...</p>
@@ -59,7 +59,7 @@ const LoadingState = () => (
 );
 
 const ErrorState = ({ message }: { message: string }) => (
-  <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white flex items-center justify-center pt-16">
+  <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white flex items-center justify-center ">
     <div className="bg-white rounded-lg border border-red-200 p-10 max-w-lg text-center"
       style={{
         boxShadow: '0 8px 24px rgba(239, 68, 68, 0.1)'
@@ -216,7 +216,7 @@ export default function AnalysisDetailPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-white pt-16">{/* pt-16 accounts for fixed nav */}
+    <div className="min-h-screen bg-white ">{/*  accounts for fixed nav */}
       {/* Page Header - Premium Design */}
       <div className="bg-gradient-to-b from-gray-50 to-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

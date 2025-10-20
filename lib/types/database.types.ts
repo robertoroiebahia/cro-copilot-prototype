@@ -61,6 +61,10 @@ export interface Database {
           progress: number | null
           progress_stage: string | null
           progress_message: string | null
+          tags: string[]
+          is_starred: boolean
+          notes: string | null
+          archived_at: string | null
           created_at: string
           updated_at: string
         }
@@ -86,6 +90,10 @@ export interface Database {
           progress?: number | null
           progress_stage?: string | null
           progress_message?: string | null
+          tags?: string[]
+          is_starred?: boolean
+          notes?: string | null
+          archived_at?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -111,6 +119,10 @@ export interface Database {
           progress?: number | null
           progress_stage?: string | null
           progress_message?: string | null
+          tags?: string[]
+          is_starred?: boolean
+          notes?: string | null
+          archived_at?: string | null
           created_at?: string
           updated_at?: string
         }

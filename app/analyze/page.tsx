@@ -246,7 +246,7 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-white pt-16">{/* pt-16 accounts for fixed nav */}
+    <div className="min-h-screen bg-white ">
       {/* Page Header */}
       <div className="bg-gradient-to-b from-gray-50 to-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

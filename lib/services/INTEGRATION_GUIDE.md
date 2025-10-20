@@ -1,6 +1,6 @@
 # Integration Guide
 
-This guide explains how to work with external service integrations in the Smart Nudge Builder.
+This guide explains how to work with external service integrations in the CRO Copilot.
 
 ## Overview
 
