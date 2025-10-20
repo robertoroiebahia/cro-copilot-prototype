@@ -1,5 +1,38 @@
 // TypeScript types for the Insights Research System
-// Based on database schema in migrations 004 and 005
+// Based on database schema in migrations 004, 005, and 007
+
+// ============================================================================
+// RESEARCH TYPES (Methodologies)
+// ============================================================================
+
+export type ResearchType =
+  | 'page_analysis'        // Screenshot-based CRO analysis (current)
+  | 'ga_analysis'          // Google Analytics data analysis
+  | 'survey_analysis'      // Post-purchase surveys, user surveys
+  | 'heatmap_analysis'     // Heatmap & session recording analysis
+  | 'user_testing'         // Moderated/unmoderated user testing
+  | 'competitor_analysis'  // Competitive research
+  | 'other';               // Other research methodologies
+
+export const RESEARCH_TYPE_LABELS: Record<ResearchType, string> = {
+  page_analysis: 'Page Analysis',
+  ga_analysis: 'Google Analytics',
+  survey_analysis: 'Survey Analysis',
+  heatmap_analysis: 'Heatmap Analysis',
+  user_testing: 'User Testing',
+  competitor_analysis: 'Competitor Analysis',
+  other: 'Other Research',
+};
+
+export const RESEARCH_TYPE_ICONS: Record<ResearchType, string> = {
+  page_analysis: '📸',
+  ga_analysis: '📊',
+  survey_analysis: '📋',
+  heatmap_analysis: '🔥',
+  user_testing: '👥',
+  competitor_analysis: '🔍',
+  other: '📝',
+};
 
 // ============================================================================
 // INSIGHTS
@@ -31,7 +64,8 @@ export interface Sources {
 
 export interface Insight {
   id: string;
-  analysis_id: string;
+  analysis_id?: string; // Optional - manual insights may not have analysis_id
+  research_type?: ResearchType; // The research methodology used
   insight_id: string; // e.g., "INS-001"
   statement: string;
   segment?: string; // "First-time buyers", "Mobile users"
@@ -40,6 +74,7 @@ export interface Insight {
   sources: Sources;
   growth_pillar?: 'Conversion' | 'Spend' | 'Frequency' | 'Merchandise';
   confidence: 'high' | 'medium' | 'low';
+  source_type: 'automated' | 'manual'; // automated: from AI, manual: user-created
   created_at: string;
   updated_at: string;
 }
