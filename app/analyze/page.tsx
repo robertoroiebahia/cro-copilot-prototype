@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
+import { AIChat } from '@/components/AIChat';
 
 type AnalysisStage =
   | 'idle'
@@ -720,6 +721,22 @@ export default function Home() {
           </div>
         </div>
       </main>
+
+      {/* AI Chat Assistant - Context-aware when results are available */}
+      <AIChat
+        context={results ? {
+          analysis_id: results.analysisId,
+          insights: results.insights,
+          themes: results.themes,
+          hypotheses: results.hypotheses,
+          url: url,
+        } : undefined}
+        onAction={(action) => {
+          console.log('Suggested action:', action);
+          // Handle suggested actions (create experiment, add insight, etc.)
+          // This can be expanded to open modals or trigger workflows
+        }}
+      />
     </div>
   );
 }
