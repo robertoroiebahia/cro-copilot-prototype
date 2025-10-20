@@ -16,6 +16,7 @@ export default function AppSidebar({ isCollapsed, onToggle }: SidebarProps) {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['analysis']));
   const menuRef = useRef<HTMLDivElement>(null);
 
   // Check authentication
@@ -65,93 +66,99 @@ export default function AppSidebar({ isCollapsed, onToggle }: SidebarProps) {
     router.push('/');
   };
 
-  const navItems = [
-    {
-      href: '/dashboard',
-      label: 'Analyses',
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-        </svg>
-      ),
-    },
+  const toggleSection = (section: string) => {
+    setExpandedSections(prev => {
+      const next = new Set(prev);
+      if (next.has(section)) {
+        next.delete(section);
+      } else {
+        next.add(section);
+      }
+      return next;
+    });
+  };
+
+  const analysisTypes = [
     {
       href: '/analyze',
-      label: 'New Analysis',
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-        </svg>
-      ),
+      label: 'Page Analysis',
+      icon: '📸',
+      description: 'Screenshot CRO analysis',
+      isLive: true,
+    },
+    {
+      href: '/analyze/ga',
+      label: 'GA Analysis',
+      icon: '📊',
+      description: 'Google Analytics data',
+      isLive: false,
+    },
+    {
+      href: '/analyze/survey',
+      label: 'Survey Analysis',
+      icon: '📋',
+      description: 'Post-purchase surveys',
+      isLive: false,
+    },
+    {
+      href: '/analyze/heatmap',
+      label: 'Heatmap Analysis',
+      icon: '🔥',
+      description: 'Session recordings',
+      isLive: false,
+    },
+    {
+      href: '/analyze/user-testing',
+      label: 'User Testing',
+      icon: '👥',
+      description: 'Moderated sessions',
+      isLive: false,
+    },
+    {
+      href: '/analyze/competitor',
+      label: 'Competitor',
+      icon: '🔍',
+      description: 'Competitive research',
+      isLive: false,
     },
   ];
 
   const researchItems = [
     {
       href: '/insights',
-      label: 'Insights',
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-        </svg>
-      ),
+      label: 'All Insights',
+      icon: '💡',
+      description: 'View all research insights',
     },
     {
       href: '/themes',
       label: 'Themes',
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 14v6m-3-3h6M6 10h2a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v2a2 2 0 002 2zm10 0h2a2 2 0 002-2V6a2 2 0 00-2-2h-2a2 2 0 00-2 2v2a2 2 0 002 2zM6 20h2a2 2 0 002-2v-2a2 2 0 00-2-2H6a2 2 0 00-2 2v2a2 2 0 002 2z" />
-        </svg>
-      ),
+      icon: '🎯',
+      description: 'Clustered patterns',
     },
     {
       href: '/hypotheses',
       label: 'Hypotheses',
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
-        </svg>
-      ),
+      icon: '🧪',
+      description: 'Testable predictions',
     },
     {
       href: '/experiments',
       label: 'Experiments',
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-        </svg>
-      ),
-    },
-  ];
-
-  const otherItems = [
-    {
-      href: '/queue',
-      label: 'Test Queue',
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-        </svg>
-      ),
-    },
-    {
-      href: '/settings',
-      label: 'Settings',
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-        </svg>
-      ),
+      icon: '📊',
+      description: 'A/B test results',
     },
   ];
 
   const isActive = (path: string) => {
-    if (path === '/dashboard') {
-      return pathname === '/dashboard' || pathname?.startsWith('/dashboard/');
+    if (path === '/analyze') {
+      return pathname === '/analyze';
     }
-    return pathname === path;
+    return pathname === path || pathname?.startsWith(path + '/');
+  };
+
+  const isAnalysisActive = () => {
+    return pathname === '/analyze' || pathname?.startsWith('/analyze/');
   };
 
   // Don't show sidebar on login/signup pages
@@ -174,7 +181,7 @@ export default function AppSidebar({ isCollapsed, onToggle }: SidebarProps) {
     >
       {/* Logo & Brand */}
       <div className="p-6 border-b border-gray-200">
-        <Link href="/" className="flex items-center gap-3 group">
+        <Link href="/dashboard" className="flex items-center gap-3 group">
           <div className="w-10 h-10 bg-brand-gold rounded flex items-center justify-center transition-all duration-200 group-hover:shadow-[0_0_0_2px_rgba(245,197,66,0.5)] flex-shrink-0">
             <span className="text-xl font-black text-brand-black">G</span>
           </div>
@@ -190,45 +197,120 @@ export default function AppSidebar({ isCollapsed, onToggle }: SidebarProps) {
       </div>
 
       {/* Navigation Items */}
-      <nav className="flex-1 p-4 space-y-6 overflow-y-auto">
-        {/* Main Section */}
-        <div className="space-y-1">
-          {navItems.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 group relative ${
-                isActive(item.href)
-                  ? 'bg-brand-gold text-brand-black font-black'
-                  : 'text-brand-text-secondary hover:bg-gray-100 font-bold'
-              }`}
-              title={isCollapsed ? item.label : undefined}
+      <nav className="flex-1 p-4 space-y-4 overflow-y-auto">
+        {/* Dashboard */}
+        <Link
+          href="/dashboard"
+          className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 group relative ${
+            pathname === '/dashboard'
+              ? 'bg-brand-gold text-brand-black font-black'
+              : 'text-brand-text-secondary hover:bg-gray-100 font-bold'
+          }`}
+          title={isCollapsed ? 'Dashboard' : undefined}
+        >
+          {pathname === '/dashboard' && (
+            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-brand-black rounded-r" />
+          )}
+          <div className={`flex-shrink-0 text-xl ${pathname === '/dashboard' ? '' : 'group-hover:scale-110 transition-transform'}`}>
+            🏠
+          </div>
+          {!isCollapsed && <span className="text-sm truncate">Dashboard</span>}
+        </Link>
+
+        {/* Run Analysis Section */}
+        {!isCollapsed && (
+          <div>
+            <button
+              onClick={() => toggleSection('analysis')}
+              className="w-full flex items-center justify-between px-4 py-2 mb-2 hover:bg-gray-50 rounded-lg transition-all"
             >
-              {/* Active indicator */}
-              {isActive(item.href) && (
+              <div className="flex items-center gap-2">
+                <span className="text-xl">▶️</span>
+                <h3 className="text-xs font-black text-brand-text-tertiary uppercase tracking-wider">
+                  Run Analysis
+                </h3>
+              </div>
+              <svg
+                className={`w-4 h-4 text-brand-text-tertiary transition-transform duration-200 ${
+                  expandedSections.has('analysis') ? 'rotate-180' : ''
+                }`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+
+            {expandedSections.has('analysis') && (
+              <div className="space-y-1 ml-2">
+                {analysisTypes.map((item) => (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={`flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-200 group relative ${
+                      isActive(item.href)
+                        ? 'bg-brand-gold/20 text-brand-black font-black border-l-2 border-brand-gold'
+                        : 'text-brand-text-secondary hover:bg-gray-50 font-medium'
+                    }`}
+                  >
+                    <div className={`flex-shrink-0 text-base ${isActive(item.href) ? '' : 'group-hover:scale-110 transition-transform'}`}>
+                      {item.icon}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs truncate">{item.label}</span>
+                        {item.isLive && (
+                          <span className="px-1.5 py-0.5 bg-green-100 text-green-700 text-[9px] font-black rounded uppercase">
+                            Live
+                          </span>
+                        )}
+                        {!item.isLive && (
+                          <span className="px-1.5 py-0.5 bg-gray-100 text-gray-500 text-[9px] font-black rounded uppercase">
+                            Soon
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-[10px] text-brand-text-tertiary truncate">
+                        {item.description}
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Collapsed Analysis Section */}
+        {isCollapsed && (
+          <div className="space-y-1">
+            <Link
+              href="/analyze"
+              className={`flex items-center justify-center p-3 rounded-lg transition-all duration-200 group relative ${
+                isAnalysisActive()
+                  ? 'bg-brand-gold text-brand-black'
+                  : 'text-brand-text-secondary hover:bg-gray-100'
+              }`}
+              title="Run Analysis"
+            >
+              {isAnalysisActive() && (
                 <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-brand-black rounded-r" />
               )}
-
-              {/* Icon */}
-              <div className={`flex-shrink-0 ${isActive(item.href) ? 'text-brand-black' : 'text-brand-text-tertiary group-hover:text-brand-gold'}`}>
-                {item.icon}
+              <div className="text-xl group-hover:scale-110 transition-transform">
+                ▶️
               </div>
-
-              {/* Label */}
-              {!isCollapsed && (
-                <span className="text-sm truncate">
-                  {item.label}
-                </span>
-              )}
             </Link>
-          ))}
-        </div>
+          </div>
+        )}
 
-        {/* Research Section */}
+        {/* Research Insights Section */}
         {!isCollapsed && (
           <div className="pt-4 border-t border-gray-200">
             <div className="px-4 mb-3">
-              <h3 className="text-xs font-black text-brand-text-tertiary uppercase tracking-wider">Research</h3>
+              <h3 className="text-xs font-black text-brand-text-tertiary uppercase tracking-wider">
+                💡 Research Insights
+              </h3>
             </div>
             <div className="space-y-1">
               {researchItems.map((item) => (
@@ -244,7 +326,7 @@ export default function AppSidebar({ isCollapsed, onToggle }: SidebarProps) {
                   {isActive(item.href) && (
                     <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-brand-black rounded-r" />
                   )}
-                  <div className={`flex-shrink-0 ${isActive(item.href) ? 'text-brand-black' : 'text-brand-text-tertiary group-hover:text-brand-gold'}`}>
+                  <div className={`flex-shrink-0 text-xl ${isActive(item.href) ? '' : 'group-hover:scale-110 transition-transform'}`}>
                     {item.icon}
                   </div>
                   <span className="text-sm truncate">{item.label}</span>
@@ -271,7 +353,7 @@ export default function AppSidebar({ isCollapsed, onToggle }: SidebarProps) {
                 {isActive(item.href) && (
                   <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-brand-black rounded-r" />
                 )}
-                <div className={isActive(item.href) ? 'text-brand-black' : 'text-brand-text-tertiary group-hover:text-brand-gold'}>
+                <div className="text-xl group-hover:scale-110 transition-transform">
                   {item.icon}
                 </div>
               </Link>
@@ -279,53 +361,81 @@ export default function AppSidebar({ isCollapsed, onToggle }: SidebarProps) {
           </div>
         )}
 
-        {/* Other Items Section */}
+        {/* Test Queue & Settings */}
         {!isCollapsed && (
-          <div className="space-y-1">
-            {otherItems.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 group relative ${
-                  isActive(item.href)
-                    ? 'bg-brand-gold text-brand-black font-black'
-                    : 'text-brand-text-secondary hover:bg-gray-100 font-bold'
-                }`}
-              >
-                {isActive(item.href) && (
-                  <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-brand-black rounded-r" />
-                )}
-                <div className={`flex-shrink-0 ${isActive(item.href) ? 'text-brand-black' : 'text-brand-text-tertiary group-hover:text-brand-gold'}`}>
-                  {item.icon}
-                </div>
-                <span className="text-sm truncate">{item.label}</span>
-              </Link>
-            ))}
+          <div className="pt-4 border-t border-gray-200 space-y-1">
+            <Link
+              href="/queue"
+              className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 group relative ${
+                pathname === '/queue'
+                  ? 'bg-brand-gold text-brand-black font-black'
+                  : 'text-brand-text-secondary hover:bg-gray-100 font-bold'
+              }`}
+            >
+              {pathname === '/queue' && (
+                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-brand-black rounded-r" />
+              )}
+              <div className={`flex-shrink-0 text-xl ${pathname === '/queue' ? '' : 'group-hover:scale-110 transition-transform'}`}>
+                📋
+              </div>
+              <span className="text-sm truncate">Test Queue</span>
+            </Link>
+
+            <Link
+              href="/settings"
+              className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 group relative ${
+                pathname === '/settings'
+                  ? 'bg-brand-gold text-brand-black font-black'
+                  : 'text-brand-text-secondary hover:bg-gray-100 font-bold'
+              }`}
+            >
+              {pathname === '/settings' && (
+                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-brand-black rounded-r" />
+              )}
+              <div className={`flex-shrink-0 text-xl ${pathname === '/settings' ? '' : 'group-hover:scale-110 transition-transform'}`}>
+                ⚙️
+              </div>
+              <span className="text-sm truncate">Settings</span>
+            </Link>
           </div>
         )}
 
-        {/* Collapsed Other Items */}
+        {/* Collapsed Queue & Settings */}
         {isCollapsed && (
-          <div className="space-y-1">
-            {otherItems.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`flex items-center justify-center p-3 rounded-lg transition-all duration-200 group relative ${
-                  isActive(item.href)
-                    ? 'bg-brand-gold text-brand-black'
-                    : 'text-brand-text-secondary hover:bg-gray-100'
-                }`}
-                title={item.label}
-              >
-                {isActive(item.href) && (
-                  <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-brand-black rounded-r" />
-                )}
-                <div className={isActive(item.href) ? 'text-brand-black' : 'text-brand-text-tertiary group-hover:text-brand-gold'}>
-                  {item.icon}
-                </div>
-              </Link>
-            ))}
+          <div className="pt-4 border-t border-gray-200 space-y-1">
+            <Link
+              href="/queue"
+              className={`flex items-center justify-center p-3 rounded-lg transition-all duration-200 group relative ${
+                pathname === '/queue'
+                  ? 'bg-brand-gold text-brand-black'
+                  : 'text-brand-text-secondary hover:bg-gray-100'
+              }`}
+              title="Test Queue"
+            >
+              {pathname === '/queue' && (
+                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-brand-black rounded-r" />
+              )}
+              <div className="text-xl group-hover:scale-110 transition-transform">
+                📋
+              </div>
+            </Link>
+
+            <Link
+              href="/settings"
+              className={`flex items-center justify-center p-3 rounded-lg transition-all duration-200 group relative ${
+                pathname === '/settings'
+                  ? 'bg-brand-gold text-brand-black'
+                  : 'text-brand-text-secondary hover:bg-gray-100'
+              }`}
+              title="Settings"
+            >
+              {pathname === '/settings' && (
+                <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-brand-black rounded-r" />
+              )}
+              <div className="text-xl group-hover:scale-110 transition-transform">
+                ⚙️
+              </div>
+            </Link>
           </div>
         )}
       </nav>
