@@ -1,4 +1,4 @@
-# Smart Nudge Builder
+# CRO Copilot Prototype
 
 > AI-powered CRO analysis platform for DTC brands. Turn any landing page into a conversion machine.
 
@@ -16,7 +16,7 @@ Get started in 5 minutes:
 ```bash
 # Clone and install
 git clone <repo-url>
-cd smart-nudge-builder
+cd cro-copilot-prototype
 npm install
 
 # Set up environment variables (see QUICKSTART.md)
@@ -59,7 +59,7 @@ npm run dev
 ## 🏗️ Architecture
 
 ```
-Smart Nudge Builder
+CRO Copilot Prototype
 ├── Next.js 14 (App Router)
 ├── React 18 + TypeScript
 ├── Supabase (PostgreSQL + Auth)
@@ -75,7 +75,7 @@ Smart Nudge Builder
 ## 📁 Project Structure
 
 ```
-smart-nudge-builder/
+cro-copilot-prototype/
 ├── app/                    # Next.js routes
 │   ├── analyze/            # Analysis submission
 │   ├── dashboard/          # User dashboard
