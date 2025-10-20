@@ -21,13 +21,10 @@ interface AnalysisProgress {
 
 export default function Home() {
   const [url, setUrl] = useState('');
-  const [context, setContext] = useState({
-    trafficSource: 'mixed',
-    productType: '',
-    pricePoint: ''
-  });
   const [llm, setLlm] = useState<'gpt' | 'claude'>('gpt');
-  const [insights, setInsights] = useState<any>(null);
+  const [generateThemes, setGenerateThemes] = useState(true);
+  const [generateHypotheses, setGenerateHypotheses] = useState(true);
+  const [results, setResults] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [analysisProgress, setAnalysisProgress] = useState<AnalysisProgress>({
@@ -71,7 +68,7 @@ export default function Home() {
     setLoading(true);
     setError('');
     setWarnings([]);
-    setInsights(null);
+    setResults(null);
 
     // Create abort controller for cancellation
     abortControllerRef.current = new AbortController();
@@ -89,13 +86,16 @@ export default function Home() {
       // Scraping typically takes 3-5 seconds
       const scrapePromise = new Promise(resolve => setTimeout(resolve, 3000));
 
-      const analysisPromise = fetch('/api/analyze', {
+      const analysisPromise = fetch('/api/analyze-v2', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           url,
-          context,
-          llm
+          options: {
+            llmProvider: llm,
+            generateThemes,
+            generateHypotheses
+          }
         }),
         signal: abortControllerRef.current.signal,
       });
@@ -127,7 +127,7 @@ export default function Home() {
       }
 
       if (res.status === 401) {
-        setError('You must be logged in to run analyses. Redirecting to login...');
+        setError('🔒 Authentication Required\n\nYou must be logged in to run analyses. Redirecting to login...');
         setTimeout(() => {
           window.location.href = '/login';
         }, 2000);
@@ -140,6 +140,21 @@ export default function Home() {
         data = payloadText ? JSON.parse(payloadText) : null;
       } catch {
         data = null;
+      }
+
+      // Handle rate limiting with detailed feedback
+      if (res.status === 429) {
+        const resetTime = data?.reset ? new Date(data.reset) : null;
+        const timeUntilReset = resetTime ? Math.ceil((resetTime.getTime() - Date.now()) / 1000) : 60;
+        const minutes = Math.floor(timeUntilReset / 60);
+        const seconds = timeUntilReset % 60;
+
+        setError(
+          `⏱️ Rate Limit Reached\n\n` +
+          `You've used ${data?.limit || 10} of ${data?.limit || 10} requests.\n` +
+          `Please wait ${minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`} before trying again.`
+        );
+        return;
       }
 
       if (!res.ok) {
@@ -161,8 +176,6 @@ export default function Home() {
           setWarnings(['Screenshot capture failed', 'Visual insights unavailable']);
         } else if (message.includes('timeout') || message.includes('Timeout')) {
           setError('The page took too long to load. Please try a faster-loading page or try again later.');
-        } else if (message.includes('rate limit')) {
-          setError('You\'ve reached the analysis limit for this page. Please try again later or analyze a different page.');
         } else {
           setError(message);
         }
@@ -170,7 +183,7 @@ export default function Home() {
         // If we have partial data, still show it
         if (data && !data.error) {
           updateProgress('complete', 100, 'Analysis complete with warnings');
-          setInsights(data);
+          setResults(data);
         }
         return;
       }
@@ -180,25 +193,33 @@ export default function Home() {
         return;
       }
 
-      if (data.error) {
-        setError(data.error + (data.hint ? '\n\n' + data.hint : ''));
+      if (!data.success) {
+        setError(data.error || 'Analysis failed');
         return;
       }
 
-      // Check for warnings in the response
+      // Check for warnings
       const responseWarnings: string[] = [];
-      if (data.visionAnalysisError) {
-        responseWarnings.push('Screenshot analysis unavailable: ' + data.visionAnalysisError);
+      if (data.insights && data.insights.length === 0) {
+        responseWarnings.push('No insights extracted from the page');
       }
-      // Note: We no longer show a warning for missing visualAnalysis since screenshots are now working
+      if (generateThemes && (!data.themes || data.themes.length === 0)) {
+        responseWarnings.push('No themes could be generated from insights');
+      }
+      if (generateHypotheses && (!data.hypotheses || data.hypotheses.length === 0)) {
+        responseWarnings.push('No hypotheses could be generated');
+      }
       setWarnings(responseWarnings);
 
       updateProgress('complete', 100, 'Analysis complete!');
-      setInsights(data);
+      setResults(data);
 
-      if (data.id) {
-        console.log('Analysis saved with ID:', data.id);
-      }
+      console.log('Analysis completed:', {
+        analysisId: data.analysisId,
+        insights: data.insights?.length || 0,
+        themes: data.themes?.length || 0,
+        hypotheses: data.hypotheses?.length || 0,
+      });
     } catch (err: any) {
       console.error('Analysis error:', err);
 
@@ -278,38 +299,40 @@ export default function Home() {
                 />
               </div>
 
-              {/* Context */}
+              {/* Analysis Workflow Options */}
               <div className="mb-6">
                 <label className="block text-sm font-bold text-brand-text-secondary mb-3">
-                  Context (Optional)
+                  Analysis Options
                 </label>
                 <div className="space-y-3">
-                  <select
-                    value={context.trafficSource}
-                    onChange={(e) => setContext({ ...context, trafficSource: e.target.value })}
-                    className="w-full px-4 py-3 bg-white border border-gray-200 text-brand-black rounded-lg focus:border-brand-gold focus:ring-2 focus:ring-brand-gold/20 focus:outline-none transition-all duration-200 text-sm font-medium"
-                  >
-                    <option value="mixed">Mixed Traffic</option>
-                    <option value="paid_social">Paid Social (FB/IG/TikTok)</option>
-                    <option value="paid_search">Paid Search (Google)</option>
-                    <option value="organic">Organic Search</option>
-                    <option value="email">Email Campaign</option>
-                    <option value="influencer">Influencer/Affiliate</option>
-                  </select>
-                  <input
-                    type="text"
-                    placeholder="Product Type (e.g., skincare)"
-                    value={context.productType}
-                    onChange={(e) => setContext({ ...context, productType: e.target.value })}
-                    className="w-full px-4 py-3 bg-white border border-gray-200 text-brand-black rounded-lg focus:border-brand-gold focus:ring-2 focus:ring-brand-gold/20 focus:outline-none transition-all duration-200 text-sm font-medium"
-                  />
-                  <input
-                    type="text"
-                    placeholder="Price Point (e.g., $50-100)"
-                    value={context.pricePoint}
-                    onChange={(e) => setContext({ ...context, pricePoint: e.target.value })}
-                    className="w-full px-4 py-3 bg-white border border-gray-200 text-brand-black rounded-lg focus:border-brand-gold focus:ring-2 focus:ring-brand-gold/20 focus:outline-none transition-all duration-200 text-sm font-medium"
-                  />
+                  <label className="flex items-center justify-between p-3 bg-white border border-gray-200 rounded-lg cursor-pointer hover:border-brand-gold/50 transition-all duration-200">
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="checkbox"
+                        checked={generateThemes}
+                        onChange={(e) => setGenerateThemes(e.target.checked)}
+                        className="w-4 h-4 text-brand-gold border-gray-300 rounded focus:ring-brand-gold"
+                      />
+                      <div>
+                        <p className="text-sm font-bold text-brand-black">Generate Themes</p>
+                        <p className="text-xs text-brand-text-tertiary">Cluster insights into themes</p>
+                      </div>
+                    </div>
+                  </label>
+                  <label className="flex items-center justify-between p-3 bg-white border border-gray-200 rounded-lg cursor-pointer hover:border-brand-gold/50 transition-all duration-200">
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="checkbox"
+                        checked={generateHypotheses}
+                        onChange={(e) => setGenerateHypotheses(e.target.checked)}
+                        className="w-4 h-4 text-brand-gold border-gray-300 rounded focus:ring-brand-gold"
+                      />
+                      <div>
+                        <p className="text-sm font-bold text-brand-black">Generate Hypotheses</p>
+                        <p className="text-xs text-brand-text-tertiary">Create testable hypotheses from themes</p>
+                      </div>
+                    </div>
+                  </label>
                 </div>
               </div>
 
@@ -407,14 +430,11 @@ export default function Home() {
                 )}
               </button>
 
-              {insights && insights.id && (
+              {results && results.analysisId && (
                 <div className="mt-4 text-center">
-                  <Link
-                    href={`/dashboard/results/${insights.id}`}
-                    className="text-sm text-brand-gold hover:text-brand-gold/80 hover:underline font-bold transition-colors duration-200"
-                  >
-                    View full analysis in dashboard →
-                  </Link>
+                  <p className="text-xs text-brand-text-tertiary font-medium">
+                    Analysis ID: {results.analysisId}
+                  </p>
                 </div>
               )}
             </div>
@@ -422,7 +442,7 @@ export default function Home() {
 
           {/* Right Content - Results */}
           <div className="lg:col-span-2">
-            {!insights && !loading && (
+            {!results && !loading && (
               <div className="bg-white rounded-lg border border-gray-200 p-16 flex flex-col items-center justify-center min-h-[600px]"
                 style={{
                   boxShadow: '0 4px 16px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04)'
@@ -554,7 +574,7 @@ export default function Home() {
               </div>
             )}
 
-            {insights && (
+            {results && (
               <div className="space-y-6">
                 {/* Success Banner */}
                 <div className="bg-white border border-green-200 rounded-lg p-5 shadow-sm">
@@ -567,10 +587,9 @@ export default function Home() {
                     <div className="flex-1">
                       <h3 className="text-base font-black text-brand-black">Analysis Complete!</h3>
                       <p className="text-sm text-brand-text-secondary mt-1 font-medium">
-                        Your analysis has been saved.{' '}
-                        <Link href={`/dashboard/results/${insights.id}`} className="text-brand-gold hover:text-brand-gold/80 transition-colors duration-200 font-bold underline">
-                          View full details in dashboard
-                        </Link>
+                        Extracted {results.metadata?.insightCount || 0} insights
+                        {results.metadata?.themeCount > 0 && `, ${results.metadata.themeCount} themes`}
+                        {results.metadata?.hypothesisCount > 0 && `, ${results.metadata.hypothesisCount} hypotheses`}
                       </p>
                     </div>
                   </div>
@@ -603,52 +622,99 @@ export default function Home() {
                   </div>
                 )}
 
-                {/* Summary Preview */}
-                {insights.summary && (
+                {/* Insights Section */}
+                {results.insights && results.insights.length > 0 && (
                   <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
-                    <div className="flex items-start gap-4">
-                      <div className="flex-shrink-0">
-                        <div className="w-12 h-12 bg-brand-gold rounded-lg flex items-center justify-center">
-                          <svg className="w-6 h-6 text-brand-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                          </svg>
+                    <h2 className="text-lg font-black text-brand-black mb-4 flex items-center gap-2">
+                      <svg className="w-5 h-5 text-brand-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                      </svg>
+                      Atomic Insights ({results.insights.length})
+                    </h2>
+                    <div className="space-y-3">
+                      {results.insights.slice(0, 5).map((insight: any, idx: number) => (
+                        <div key={idx} className="p-4 bg-gray-50 rounded-lg border border-gray-100">
+                          <div className="flex items-start justify-between gap-3 mb-2">
+                            <h3 className="font-bold text-sm text-brand-black">{insight.title}</h3>
+                            <span className={`px-2 py-1 text-xs font-bold rounded-full ${
+                              insight.severity === 'critical' ? 'bg-red-100 text-red-700' :
+                              insight.severity === 'high' ? 'bg-orange-100 text-orange-700' :
+                              insight.severity === 'medium' ? 'bg-yellow-100 text-yellow-700' :
+                              'bg-green-100 text-green-700'
+                            }`}>
+                              {insight.severity}
+                            </span>
+                          </div>
+                          <p className="text-sm text-brand-text-secondary">{insight.description}</p>
+                          <div className="flex items-center gap-4 mt-3 text-xs">
+                            <span className="text-brand-text-tertiary">
+                              <span className="font-bold">Category:</span> {insight.category}
+                            </span>
+                            <span className="text-brand-text-tertiary">
+                              <span className="font-bold">Confidence:</span> {insight.confidence}%
+                            </span>
+                          </div>
                         </div>
-                      </div>
-                      <div className="flex-1">
-                        <h2 className="text-lg font-black text-brand-black mb-2">Quick Summary</h2>
-                        <p className="text-brand-text-secondary text-sm leading-relaxed font-medium">
-                          {insights.summary.headline}
+                      ))}
+                      {results.insights.length > 5 && (
+                        <p className="text-sm text-brand-text-tertiary text-center pt-2">
+                          ...and {results.insights.length - 5} more insights
                         </p>
-                      </div>
+                      )}
                     </div>
                   </div>
                 )}
 
-                {/* CTA to view full analysis */}
-                <div className="bg-gradient-to-br from-brand-gold/10 to-yellow-50 rounded-lg border border-brand-gold/30 p-8 text-center">
-                  <div className="max-w-md mx-auto">
-                    <div className="w-16 h-16 bg-brand-gold rounded-lg flex items-center justify-center mx-auto mb-4">
-                      <svg className="w-8 h-8 text-brand-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                {/* Themes Section */}
+                {results.themes && results.themes.length > 0 && (
+                  <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
+                    <h2 className="text-lg font-black text-brand-black mb-4 flex items-center gap-2">
+                      <svg className="w-5 h-5 text-brand-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
                       </svg>
+                      Themes ({results.themes.length})
+                    </h2>
+                    <div className="space-y-4">
+                      {results.themes.map((theme: any, idx: number) => (
+                        <div key={idx} className="p-4 bg-gradient-to-br from-brand-gold/5 to-yellow-50/50 rounded-lg border border-brand-gold/20">
+                          <h3 className="font-black text-base text-brand-black mb-2">{theme.title}</h3>
+                          <p className="text-sm text-brand-text-secondary mb-3">{theme.description}</p>
+                          <div className="text-xs text-brand-text-tertiary">
+                            <span className="font-bold">{theme.insights?.length || 0}</span> related insights
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                    <h3 className="text-xl font-black text-brand-black mb-2">
-                      Ready to see the full analysis?
-                    </h3>
-                    <p className="text-sm text-brand-text-secondary mb-6 font-medium">
-                      View detailed insights, screenshots, roadmap, and actionable recommendations to boost your conversion rates
-                    </p>
-                    <Link
-                      href={`/dashboard/results/${insights.id}`}
-                      className="inline-flex items-center gap-2 px-8 py-4 bg-brand-gold text-brand-black font-black rounded-lg hover:bg-brand-gold/90 transition-all duration-200 shadow-[0_4px_12px_rgba(0,0,0,0.2),0_2px_6px_rgba(0,0,0,0.15)] hover:shadow-[0_6px_16px_rgba(0,0,0,0.25),0_3px_8px_rgba(0,0,0,0.18)]"
-                    >
-                      View Full Analysis
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                      </svg>
-                    </Link>
                   </div>
-                </div>
+                )}
+
+                {/* Hypotheses Section */}
+                {results.hypotheses && results.hypotheses.length > 0 && (
+                  <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-sm">
+                    <h2 className="text-lg font-black text-brand-black mb-4 flex items-center gap-2">
+                      <svg className="w-5 h-5 text-brand-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                      </svg>
+                      Testable Hypotheses ({results.hypotheses.length})
+                    </h2>
+                    <div className="space-y-4">
+                      {results.hypotheses.map((hypothesis: any, idx: number) => (
+                        <div key={idx} className="p-4 bg-blue-50 rounded-lg border border-blue-100">
+                          <h3 className="font-bold text-sm text-brand-black mb-2">{hypothesis.title}</h3>
+                          <p className="text-sm text-brand-text-secondary italic mb-3">"{hypothesis.hypothesis}"</p>
+                          <div className="flex items-center gap-4 text-xs">
+                            <span className="text-brand-text-tertiary">
+                              <span className="font-bold">Expected Lift:</span> {hypothesis.expectedImpact || 'TBD'}
+                            </span>
+                            <span className="text-brand-text-tertiary">
+                              <span className="font-bold">Effort:</span> {hypothesis.effort || 'medium'}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </div>
