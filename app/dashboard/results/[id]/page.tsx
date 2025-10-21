@@ -5,49 +5,8 @@ import type { ReactElement } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import type { Analysis } from '@/lib/types/database.types';
+import type { Insight } from '@/lib/types/insights.types';
 import { createClient } from '@/utils/supabase/client';
-import RecommendationCard, { type Recommendation } from '@/components/RecommendationCard';
-import HeuristicsDisplay from '@/components/HeuristicsDisplay';
-
-type NavigationSection = 'overview' | 'recommendations';
-
-// Navigation Button Component
-function NavigationButton({ item, isActive, onClick }: {
-  item: { id: NavigationSection; label: string; icon: React.ReactNode };
-  isActive: boolean;
-  onClick: () => void;
-}) {
-  const [isHovered, setIsHovered] = useState(false);
-
-  return (
-    <button
-      onClick={onClick}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-      className={`w-full flex items-center gap-3 px-5 py-4 text-sm font-black rounded-lg transition-all duration-300 ${
-        isActive
-          ? 'bg-brand-gold text-black'
-          : 'text-brand-text-secondary bg-white border border-gray-200'
-      }`}
-      style={{
-        transform: isHovered && !isActive ? 'translateX(4px)' : 'translateX(0)',
-        boxShadow: isActive
-          ? '0 4px 12px rgba(245, 197, 66, 0.3), 0 2px 6px rgba(0, 0, 0, 0.1)'
-          : isHovered
-          ? '0 4px 12px rgba(0, 0, 0, 0.08), 0 2px 6px rgba(0, 0, 0, 0.04)'
-          : '0 2px 6px rgba(0, 0, 0, 0.04)',
-        borderColor: isHovered && !isActive ? '#F5C542' : undefined,
-      }}
-    >
-      <div className={`transition-colors duration-300 ${
-        isActive ? 'text-black' : isHovered ? 'text-brand-gold' : 'text-brand-text-tertiary'
-      }`}>
-        {item.icon}
-      </div>
-      <span>{item.label}</span>
-    </button>
-  );
-}
 
 const LoadingState = () => (
   <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white flex items-center justify-center ">
@@ -94,10 +53,11 @@ export default function AnalysisDetailPage() {
   const supabase = useMemo(() => createClient(), []);
 
   const [analysis, setAnalysis] = useState<Analysis | null>(null);
+  const [insights, setInsights] = useState<Insight[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeSection, setActiveSection] = useState<NavigationSection>('overview');
   const [expandedScreenshot, setExpandedScreenshot] = useState<string | null>(null);
+  const [expandedInsight, setExpandedInsight] = useState<string | null>(null);
 
   const analysisId = Array.isArray(params?.id) ? params?.id[0] : params?.id;
 
@@ -142,6 +102,18 @@ export default function AnalysisDetailPage() {
       }
 
       setAnalysis(data as Analysis);
+
+      // Fetch insights for this analysis
+      const { data: insightsData, error: insightsError } = await supabase
+        .from('insights')
+        .select('*')
+        .eq('analysis_id', analysisId)
+        .order('created_at', { ascending: false });
+
+      if (!insightsError && insightsData) {
+        setInsights(insightsData as Insight[]);
+      }
+
       setLoading(false);
     };
 
@@ -184,7 +156,9 @@ export default function AnalysisDetailPage() {
     return `data:image/jpeg;base64,${value}`;
   };
 
-  const mobileFullPageSrc = formatScreenshotSrc(analysis.screenshots?.mobileFullPage);
+  // Try both field names for backwards compatibility
+  const screenshotUrl = (analysis.screenshots as any)?.full_page || analysis.screenshots?.mobileFullPage;
+  const mobileFullPageSrc = formatScreenshotSrc(screenshotUrl);
 
   const domain = (() => {
     try {
@@ -194,455 +168,264 @@ export default function AnalysisDetailPage() {
     }
   })();
 
-  const navigationItems = [
-    {
-      id: 'overview' as NavigationSection,
-      label: 'Overview',
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-        </svg>
-      ),
-    },
-    {
-      id: 'recommendations' as NavigationSection,
-      label: 'CRO Recommendations',
-      icon: (
-        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-        </svg>
-      ),
-    },
-  ];
+  const criticalInsights = insights.filter(i => i.priority === 'critical');
+  const highPriorityInsights = insights.filter(i => i.priority === 'high');
+  const avgConfidence = insights.length > 0
+    ? insights.reduce((sum, i) => {
+        const confScore = { high: 85, medium: 65, low: 40 };
+        return sum + (confScore[i.confidence_level] || 65);
+      }, 0) / insights.length
+    : 0;
 
   return (
-    <div className="min-h-screen bg-white ">{/*  accounts for fixed nav */}
-      {/* Page Header - Premium Design */}
-      <div className="bg-gradient-to-b from-gray-50 to-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {/* Breadcrumb */}
-          <nav className="flex items-center gap-2 text-sm mb-6">
-            <Link href="/dashboard" className="text-brand-text-tertiary hover:text-brand-gold transition-all duration-200 font-bold">
-              Dashboard
-            </Link>
-            <svg className="w-4 h-4 text-brand-text-tertiary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
-            <span className="text-brand-black font-black">Analysis Results</span>
-          </nav>
+    <div className="min-h-screen bg-gray-50">
+      {/* Hero Header */}
+      <div className="bg-gradient-to-br from-gray-100 via-gray-200 to-gray-100 border-b border-gray-300">
+        <div className="max-w-7xl mx-auto px-8 py-12">
+          <div className="flex items-start justify-between gap-8">
+            <div className="flex-1">
+              {/* Breadcrumb */}
+              <Link href="/dashboard" className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-brand-gold transition-colors mb-6 font-bold">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+                Back to Dashboard
+              </Link>
 
-          {/* Analysis Info - Clean Card */}
-          <div className="bg-white rounded-lg border border-brand-gold p-6"
-            style={{
-              boxShadow: '0 4px 16px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04)'
-            }}
-          >
-            <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
-              <div className="flex-1 min-w-0">
-                {/* Domain & Status */}
-                <div className="flex items-center gap-3 mb-3">
-                  <h1 className="text-3xl font-black text-brand-black truncate">
-                    {domain}
-                  </h1>
-                  <span
-                    className={`flex-shrink-0 px-3 py-1.5 text-xs font-black rounded ${
-                      analysis.status === 'completed'
-                        ? 'bg-green-100 text-green-700 border border-green-200'
-                        : analysis.status === 'processing'
-                        ? 'bg-brand-gold/20 text-brand-gold border border-brand-gold/30'
-                        : 'bg-red-100 text-red-700 border border-red-200'
-                    }`}
-                  >
-                    {analysis.status === 'completed' ? '✓ COMPLETE' : analysis.status.toUpperCase()}
-                  </span>
+              {/* Title */}
+              <h1 className="text-4xl font-black text-brand-black mb-3">{domain}</h1>
+              <a
+                href={analysis.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 text-gray-600 hover:text-brand-gold transition-colors group"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                </svg>
+                <span className="text-sm font-medium truncate max-w-xl">{analysis.url}</span>
+              </a>
+
+              {/* Key Metrics */}
+              <div className="grid grid-cols-4 gap-4 mt-8">
+                <div className="bg-white rounded-lg p-4 border border-gray-300 shadow-sm">
+                  <div className="text-3xl font-black text-brand-black mb-1">{insights.length}</div>
+                  <div className="text-xs font-bold text-gray-600 uppercase tracking-wide">Total Insights</div>
                 </div>
-
-                {/* URL Link */}
-                <a
-                  href={analysis.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 text-sm text-brand-text-secondary hover:text-brand-gold max-w-full truncate group font-bold transition-all duration-200"
-                >
-                  <svg className="w-4 h-4 flex-shrink-0 text-brand-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                  </svg>
-                  <span className="truncate">{analysis.url}</span>
-                </a>
-              </div>
-
-              {/* Metadata Pills */}
-              <div className="flex flex-wrap items-center gap-3">
-                {/* LLM Badge */}
-                {analysis.llm && (
-                  <div className="flex items-center gap-2 px-4 py-2 bg-gray-50 rounded-lg border border-gray-200">
-                    <svg className="w-4 h-4 text-brand-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                    </svg>
-                    <span className="text-sm font-black text-brand-black">
-                      {analysis.llm === 'gpt' ? 'GPT-5' : 'Claude 4.5'}
-                    </span>
-                  </div>
-                )}
-
-                {/* Date */}
-                <div className="flex items-center gap-2 px-4 py-2 bg-gray-50 rounded-lg border border-gray-200">
-                  <svg className="w-4 h-4 text-brand-text-tertiary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                  <span className="text-sm text-brand-text-secondary font-bold">
-                    {formattedDate}
-                  </span>
+                <div className="bg-red-50 rounded-lg p-4 border border-red-200 shadow-sm">
+                  <div className="text-3xl font-black text-red-600 mb-1">{criticalInsights.length}</div>
+                  <div className="text-xs font-bold text-red-700 uppercase tracking-wide">Critical Issues</div>
+                </div>
+                <div className="bg-orange-50 rounded-lg p-4 border border-orange-200 shadow-sm">
+                  <div className="text-3xl font-black text-orange-600 mb-1">{highPriorityInsights.length}</div>
+                  <div className="text-xs font-bold text-orange-700 uppercase tracking-wide">High Priority</div>
+                </div>
+                <div className="bg-green-50 rounded-lg p-4 border border-green-200 shadow-sm">
+                  <div className="text-3xl font-black text-green-600 mb-1">{Math.round(avgConfidence)}%</div>
+                  <div className="text-xs font-bold text-green-700 uppercase tracking-wide">Avg Confidence</div>
                 </div>
               </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex flex-col gap-3">
+              <button className="px-6 py-3 bg-brand-gold text-black font-black rounded-lg hover:bg-yellow-500 transition-all duration-300 shadow-lg">
+                Export Report
+              </button>
+              <Link
+                href="/insights"
+                className="px-6 py-3 bg-white text-brand-black font-black rounded-lg hover:bg-gray-50 transition-all duration-300 border border-gray-300 text-center shadow-sm"
+              >
+                View All Insights
+              </Link>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Mobile Tabs - Sticky */}
-      <div className="lg:hidden bg-white border-b border-gray-200 sticky top-16 z-40"
-        style={{
-          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)'
-        }}
-      >
-        <div className="flex overflow-x-auto scrollbar-hide">
-          {navigationItems.map((item) => (
-            <button
-              key={item.id}
-              onClick={() => setActiveSection(item.id)}
-              className={`flex-shrink-0 px-6 py-4 text-sm font-black whitespace-nowrap border-b-2 transition-all duration-200 ${
-                activeSection === item.id
-                  ? 'border-brand-gold text-brand-gold'
-                  : 'border-transparent text-brand-text-tertiary hover:text-brand-gold'
-              }`}
-            >
-              {item.label}
-            </button>
-          ))}
-        </div>
-      </div>
+      {/* Main Content - Side by Side Layout */}
+      <div className="max-w-[1800px] mx-auto px-8 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Left Column - Screenshot */}
+          <div className="lg:sticky lg:top-8 lg:self-start space-y-6">
+            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-xl">
+              <div className="bg-gradient-to-r from-gray-900 to-gray-800 px-6 py-4 border-b border-gray-700">
+                <div className="flex items-center gap-3">
+                  <svg className="w-5 h-5 text-brand-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  <h2 className="text-lg font-black text-white">Page Screenshot</h2>
+                </div>
+              </div>
+              <div className="p-4 bg-gray-50">
+                {mobileFullPageSrc ? (
+                  <div className="relative group">
+                    <img
+                      src={mobileFullPageSrc}
+                      alt="Page Screenshot"
+                      className="w-full rounded-lg border-2 border-gray-300 cursor-pointer transition-all duration-300 group-hover:border-brand-gold group-hover:shadow-2xl"
+                      onClick={() => setExpandedScreenshot(mobileFullPageSrc)}
+                    />
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-all duration-300 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100">
+                      <div className="bg-brand-gold text-black px-4 py-2 rounded-lg font-black text-sm">
+                        Click to enlarge
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 p-12">
+                    <div className="text-center">
+                      <svg className="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                      <p className="text-sm text-gray-600 font-bold">No screenshot available</p>
+                      <p className="text-xs text-gray-500 mt-1">Screenshot was not captured for this analysis</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
 
-      {/* Main Content with Sidebar */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex gap-8">
-          {/* Desktop Sidebar - Fixed position accounting for nav */}
-          <aside className="hidden lg:block w-72 flex-shrink-0">
-            <nav className="sticky top-24 space-y-2">{/* top-24 = 16 (nav) + 8 (spacing) */}
-              {navigationItems.map((item) => (
-                <NavigationButton
-                  key={item.id}
-                  item={item}
-                  isActive={activeSection === item.id}
-                  onClick={() => setActiveSection(item.id)}
-                />
-              ))}
-            </nav>
-          </aside>
+          {/* Right Column - Insights */}
+          <div className="space-y-4">
+            {/* Section Header */}
+            <div className="flex items-center justify-between">
+              <h2 className="text-2xl font-black text-brand-black">Key Insights</h2>
+              <span className="text-sm text-brand-text-tertiary font-bold">{insights.length} found</span>
+            </div>
 
-          {/* Content Area */}
-          <main className="flex-1 min-w-0">
-            {activeSection === 'overview' && (
-              <div className="space-y-6">
-                {/* Summary Section - Premium Design */}
-                {analysis.summary && (
-                  <div className="bg-white rounded-lg border border-gray-200 overflow-hidden"
-                    style={{
-                      boxShadow: '0 4px 16px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04)'
-                    }}
+            {insights.length === 0 ? (
+              <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
+                <svg className="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                </svg>
+                <p className="text-brand-text-secondary font-bold">No insights found</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {insights.map((insight) => (
+                  <div
+                    key={insight.id}
+                    className="bg-white rounded-xl border-2 border-gray-200 hover:border-brand-gold hover:shadow-xl transition-all duration-300 overflow-hidden"
                   >
-                    {/* Header with gradient accent */}
-                    <div className="bg-gradient-to-r from-brand-gold/10 to-transparent border-b border-gray-200 px-8 py-6">
-                      <div className="flex items-center gap-3 mb-4">
-                        <div className="w-10 h-10 bg-brand-gold rounded-lg flex items-center justify-center">
-                          <svg className="w-5 h-5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                          </svg>
-                        </div>
-                        <h2 className="text-xl font-black text-brand-black">Analysis Summary</h2>
-                      </div>
-
-                      <p className="text-brand-black text-base leading-relaxed font-medium">
-                        {analysis.summary.headline}
-                      </p>
-                    </div>
-
-                    {/* Metrics Row */}
-                    <div className="grid grid-cols-2 divide-x divide-gray-200 bg-gray-50">
-                      <div className="px-8 py-5">
-                        <div className="flex items-center gap-2 mb-1">
-                          <svg className="w-4 h-4 text-brand-text-tertiary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
-                          </svg>
-                          <span className="text-xs font-bold text-brand-text-tertiary uppercase tracking-wide">Tone</span>
-                        </div>
-                        <div className="text-lg font-black text-brand-black capitalize">{analysis.summary.diagnosticTone}</div>
-                      </div>
-
-                      <div className="px-8 py-5">
-                        <div className="flex items-center gap-2 mb-1">
-                          <svg className="w-4 h-4 text-brand-text-tertiary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                          </svg>
-                          <span className="text-xs font-bold text-brand-text-tertiary uppercase tracking-wide">Confidence</span>
-                        </div>
-                        <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-lg font-black text-sm ${
-                          analysis.summary.confidence === 'high'
-                            ? 'bg-green-100 text-green-700'
-                            : analysis.summary.confidence === 'medium'
-                            ? 'bg-yellow-100 text-yellow-700'
-                            : 'bg-red-100 text-red-700'
-                        }`}>
-                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                          </svg>
-                          {analysis.summary.confidence.charAt(0).toUpperCase() + analysis.summary.confidence.slice(1)}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Context Section - Only show if user provided context */}
-                    {analysis.context && (analysis.context.productType || analysis.context.pricePoint || analysis.context.trafficSource) && (
-                      <div className="px-8 py-5 border-t border-gray-200">
-                        <div className="flex items-center gap-2 mb-3">
-                          <svg className="w-4 h-4 text-brand-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                          </svg>
-                          <span className="text-xs font-black text-brand-text-tertiary uppercase tracking-wide">Page Context</span>
-                        </div>
-                        <div className="flex flex-wrap gap-2">
-                          {analysis.context.trafficSource && (
-                            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-brand-gold/10 text-brand-gold rounded-lg text-xs font-black border border-brand-gold/20">
-                              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    <button
+                      onClick={() => setExpandedInsight(expandedInsight === insight.id ? null : insight.id)}
+                      className="w-full p-6 text-left"
+                    >
+                      <div className="flex items-start gap-4">
+                        {/* Priority Badge */}
+                        <div className="flex-shrink-0">
+                          {insight.priority === 'critical' && (
+                            <div className="w-12 h-12 bg-red-500 rounded-lg flex items-center justify-center">
+                              <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                               </svg>
-                              <span>{analysis.context.trafficSource}</span>
                             </div>
                           )}
-                          {analysis.context.productType && (
-                            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-brand-gold/10 text-brand-gold rounded-lg text-xs font-black border border-brand-gold/20">
-                              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-                              </svg>
-                              <span>{analysis.context.productType}</span>
+                          {insight.priority === 'high' && (
+                            <div className="w-12 h-12 bg-orange-500 rounded-lg flex items-center justify-center font-black text-white text-lg">
+                              H
                             </div>
                           )}
-                          {analysis.context.pricePoint && (
-                            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-brand-gold/10 text-brand-gold rounded-lg text-xs font-black border border-brand-gold/20">
-                              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                              </svg>
-                              <span>{analysis.context.pricePoint}</span>
+                          {insight.priority === 'medium' && (
+                            <div className="w-12 h-12 bg-blue-500 rounded-lg flex items-center justify-center font-black text-white text-lg">
+                              M
                             </div>
                           )}
+                          {insight.priority === 'low' && (
+                            <div className="w-12 h-12 bg-gray-400 rounded-lg flex items-center justify-center font-black text-white text-lg">
+                              L
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Content */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start justify-between gap-4 mb-2">
+                            <h3 className="text-lg font-black text-brand-black">
+                              {insight.title}
+                            </h3>
+                            <svg
+                              className={`w-5 h-5 text-gray-400 flex-shrink-0 transition-transform ${expandedInsight === insight.id ? 'rotate-180' : ''}`}
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                            </svg>
+                          </div>
+                          <p className="text-sm text-brand-text-secondary font-medium mb-3 line-clamp-2">
+                            {insight.statement}
+                          </p>
+                          <div className="flex flex-wrap items-center gap-2">
+                            {insight.customer_segment && (
+                              <span className="px-2 py-1 bg-purple-100 text-purple-700 text-xs font-bold rounded">
+                                {insight.customer_segment}
+                              </span>
+                            )}
+                            {insight.growth_pillar && (
+                              <span className="px-2 py-1 bg-brand-gold/20 text-brand-black text-xs font-bold rounded uppercase">
+                                {insight.growth_pillar}
+                              </span>
+                            )}
+                            <span className={`px-2 py-1 text-xs font-bold rounded ${
+                              insight.confidence_level === 'high' ? 'bg-green-100 text-green-700' :
+                              insight.confidence_level === 'medium' ? 'bg-yellow-100 text-yellow-700' :
+                              'bg-red-100 text-red-700'
+                            }`}>
+                              {insight.confidence_level} confidence
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </button>
+
+                    {/* Expanded Details */}
+                    {expandedInsight === insight.id && (
+                      <div className="px-6 pb-6 pt-2 border-t border-gray-200 bg-gray-50">
+                        <div className="grid grid-cols-2 gap-6">
+                          <div className="space-y-3">
+                            {insight.journey_stage && (
+                              <div>
+                                <div className="text-xs font-black text-brand-text-tertiary uppercase mb-1">Journey Stage</div>
+                                <div className="text-sm font-medium text-brand-black">{insight.journey_stage}</div>
+                              </div>
+                            )}
+                            {insight.device_type && (
+                              <div>
+                                <div className="text-xs font-black text-brand-text-tertiary uppercase mb-1">Device</div>
+                                <div className="text-sm font-medium text-brand-black">{insight.device_type}</div>
+                              </div>
+                            )}
+                            {insight.page_location && insight.page_location.length > 0 && (
+                              <div>
+                                <div className="text-xs font-black text-brand-text-tertiary uppercase mb-1">Location</div>
+                                <div className="text-sm font-medium text-brand-black">{insight.page_location.join(', ')}</div>
+                              </div>
+                            )}
+                          </div>
+                          <div>
+                            {insight.suggested_actions && (
+                              <div>
+                                <div className="text-xs font-black text-brand-text-tertiary uppercase mb-2">Suggested Actions</div>
+                                <div className="text-sm text-brand-black">{insight.suggested_actions}</div>
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
                     )}
                   </div>
-                )}
-
-                {/* Heuristics Display */}
-                {analysis.summary?.heuristics && (
-                  <HeuristicsDisplay heuristics={analysis.summary.heuristics} />
-                )}
-
-                {/* Analysis Tokens */}
-                {analysis.usage && (
-                  <div className="bg-white rounded-lg border border-gray-200 p-5"
-                    style={{
-                      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)'
-                    }}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <svg className="w-5 h-5 text-brand-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                        </svg>
-                        <span className="text-sm font-bold text-brand-text-secondary">Analysis Tokens</span>
-                      </div>
-                      <span className="text-lg font-black text-brand-black">
-                        {((analysis.usage.analysisInputTokens || 0) + (analysis.usage.analysisOutputTokens || 0)).toLocaleString()}
-                      </span>
-                    </div>
-                  </div>
-                )}
-
-                {/* Full Page Screenshot (Mobile Only) */}
-                {mobileFullPageSrc && (
-                  <details className="bg-white rounded-lg border border-gray-200 overflow-hidden"
-                    style={{
-                      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)'
-                    }}
-                  >
-                    <summary className="px-6 py-5 cursor-pointer hover:bg-gray-50 transition-all duration-200 flex items-center gap-3 font-black text-brand-black group">
-                      <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center group-hover:bg-brand-gold/20 transition-colors">
-                        <svg className="w-5 h-5 text-brand-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                      </div>
-                      <span>Mobile Full Page Screenshot</span>
-                      <svg className="w-5 h-5 ml-auto text-brand-text-tertiary group-hover:text-brand-gold transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                      </svg>
-                    </summary>
-                    <div className="px-6 pb-6 pt-2 bg-gray-50">
-                      <div>
-                        <img
-                          src={mobileFullPageSrc}
-                          alt="Mobile Full Page"
-                          className="w-full border border-gray-200 rounded-lg hover:border-brand-gold transition-all duration-200 cursor-pointer bg-white"
-                          style={{
-                            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)'
-                          }}
-                          onClick={() => setExpandedScreenshot(mobileFullPageSrc)}
-                        />
-                      </div>
-                    </div>
-                  </details>
-                )}
+                ))}
               </div>
             )}
-
-            {activeSection === 'recommendations' && (
-              <div className="space-y-6">
-                {analysis.recommendations && Array.isArray(analysis.recommendations) && analysis.recommendations.length > 0 ? (
-                  <>
-                    {/* Header with Stats - Premium Design */}
-                    <div className="bg-white rounded-lg border border-gray-200 overflow-hidden"
-                      style={{
-                        boxShadow: '0 4px 16px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04)'
-                      }}
-                    >
-                      <div className="bg-gradient-to-r from-brand-gold/10 to-transparent border-b border-gray-200 px-8 py-6">
-                        <div className="flex items-start justify-between gap-6">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-3 mb-3">
-                              <div className="w-10 h-10 bg-brand-gold rounded-lg flex items-center justify-center">
-                                <svg className="w-5 h-5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                                </svg>
-                              </div>
-                              <h2 className="text-xl font-black text-brand-black">CRO Recommendations</h2>
-                            </div>
-                            <p className="text-sm text-brand-text-secondary font-medium">
-                              Click any card to expand and view full details. Recommendations are sorted by priority and impact.
-                            </p>
-                          </div>
-
-                          <div className="bg-brand-gold rounded-lg px-6 py-4 text-center"
-                            style={{
-                              boxShadow: '0 4px 12px rgba(245, 197, 66, 0.3)'
-                            }}
-                          >
-                            <div className="text-4xl font-black text-black mb-1">{analysis.recommendations.length}</div>
-                            <div className="text-xs text-black font-black uppercase tracking-wide">Tests Found</div>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Quick Stats Grid */}
-                      <div className="grid grid-cols-3 divide-x divide-gray-200 bg-gray-50">
-                        {['P0', 'P1', 'P2'].map((priority) => {
-                          const count = (analysis.recommendations as unknown as Recommendation[]).filter(
-                            (r: Recommendation) => r.priority === priority
-                          ).length;
-
-                          const priorityConfig = {
-                            P0: { label: 'High Priority', color: 'text-green-600', icon: '🎯' },
-                            P1: { label: 'Medium Priority', color: 'text-yellow-600', icon: '⚡' },
-                            P2: { label: 'Quick Wins', color: 'text-blue-600', icon: '✨' },
-                          };
-
-                          const config = priorityConfig[priority as keyof typeof priorityConfig];
-
-                          return (
-                            <div key={priority} className="px-6 py-4 text-center">
-                              <div className={`text-3xl font-black mb-1 ${config.color}`}>
-                                {count}
-                              </div>
-                              <div className="text-xs text-brand-text-tertiary font-black uppercase tracking-wide">
-                                {config.label}
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-
-                    {/* Grouped Recommendations */}
-                    {['P0', 'P1', 'P2'].map((priority) => {
-                      const recs = (analysis.recommendations as unknown as Recommendation[]).filter(
-                        (r: Recommendation) => r.priority === priority
-                      );
-
-                      if (recs.length === 0) return null;
-
-                      const priorityLabels = {
-                        P0: { label: 'High Priority Tests', color: '#10B981', bgColor: 'bg-green-50' },
-                        P1: { label: 'Medium Priority Tests', color: '#F5C542', bgColor: 'bg-yellow-50' },
-                        P2: { label: 'Quick Win Tests', color: '#3E6DF4', bgColor: 'bg-blue-50' },
-                      };
-
-                      const config = priorityLabels[priority as keyof typeof priorityLabels];
-
-                      return (
-                        <div key={priority} className="space-y-3">
-                          {/* Priority Section Header */}
-                          <div className={`${config.bgColor} rounded-lg px-6 py-4 border-l-4`}
-                            style={{ borderLeftColor: config.color }}
-                          >
-                            <div className="flex items-center gap-3">
-                              <div className="w-8 h-8 rounded-lg flex items-center justify-center"
-                                style={{ backgroundColor: config.color + '20', color: config.color }}
-                              >
-                                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                                </svg>
-                              </div>
-                              <h3 className="text-lg font-black text-brand-black">{config.label}</h3>
-                              <span className="px-2.5 py-1 bg-white rounded-lg text-sm font-black text-brand-text-secondary border border-gray-200">
-                                {recs.length} {recs.length === 1 ? 'test' : 'tests'}
-                              </span>
-                            </div>
-                          </div>
-
-                          {/* Cards */}
-                          <div className="space-y-3">
-                            {recs.map((rec: Recommendation, priorityIndex: number) => (
-                              <RecommendationCard
-                                key={rec.id || priorityIndex}
-                                recommendation={rec}
-                                index={priorityIndex}
-                                analysisId={analysis.id}
-                              />
-                            ))}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </>
-                ) : (
-                  <div className="bg-white rounded-lg border border-gray-200 p-12 text-center"
-                    style={{
-                      boxShadow: '0 4px 16px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04)'
-                    }}
-                  >
-                    <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center mx-auto mb-4">
-                      <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
-                      </svg>
-                    </div>
-                    <p className="text-brand-text-secondary font-bold">No recommendations available for this analysis.</p>
-                  </div>
-                )}
-              </div>
-            )}
-
-          </main>
+          </div>
         </div>
       </div>
 
-      {/* Screenshot Expansion Modal - Premium Design */}
+      {/* Screenshot Modal */}
       {expandedScreenshot && (
         <div
           className="fixed inset-0 z-50 bg-black/95 backdrop-blur-sm flex items-center justify-center p-4"
@@ -1167,6 +950,169 @@ function StrategicExtensionsDetails({ data }: { data: any }) {
       )}
 
       {restEntries.length > 0 && <AnalysisContent data={rest} />}
+    </div>
+  );
+}
+
+// Insight Row Component
+function InsightRow({ insight, isExpanded, onToggle }: {
+  insight: Insight;
+  isExpanded: boolean;
+  onToggle: () => void;
+}) {
+  const priorityConfig = {
+    critical: { label: 'CRITICAL', color: 'bg-red-500 text-white' },
+    high: { label: 'HIGH', color: 'bg-orange-500 text-white' },
+    medium: { label: 'MEDIUM', color: 'bg-blue-500 text-white' },
+    low: { label: 'LOW', color: 'bg-gray-400 text-white' },
+  }[insight.priority];
+
+  const confidenceConfig = {
+    high: { label: 'High', color: 'text-green-700' },
+    medium: { label: 'Med', color: 'text-yellow-700' },
+    low: { label: 'Low', color: 'text-red-700' },
+  }[insight.confidence_level];
+
+  const statusConfig = {
+    draft: { label: 'Draft', color: 'text-gray-600' },
+    validated: { label: 'Valid', color: 'text-green-600' },
+    archived: { label: 'Arch', color: 'text-orange-600' },
+  }[insight.status];
+
+  return (
+    <div className="hover:bg-gray-50 transition-colors">
+      {/* Main Row */}
+      <button
+        onClick={onToggle}
+        className="w-full px-6 py-4 text-left"
+      >
+        <div className="grid grid-cols-12 gap-4 items-start">
+          {/* Priority */}
+          <div className="col-span-1">
+            <span className={`inline-block px-2 py-1 rounded text-xs font-black ${priorityConfig.color}`}>
+              {priorityConfig.label}
+            </span>
+          </div>
+
+          {/* Insight Statement */}
+          <div className="col-span-5">
+            {insight.title && (
+              <div className="text-sm font-black text-brand-black mb-1">{insight.title}</div>
+            )}
+            <div className="text-sm text-brand-text-secondary font-medium line-clamp-2">
+              {insight.statement}
+            </div>
+          </div>
+
+          {/* Customer Segment */}
+          <div className="col-span-2">
+            <div className="text-sm text-brand-black font-medium">
+              {insight.customer_segment || '—'}
+            </div>
+          </div>
+
+          {/* Growth Pillar */}
+          <div className="col-span-2">
+            <div className="text-sm text-brand-black font-bold uppercase">
+              {insight.growth_pillar || '—'}
+            </div>
+          </div>
+
+          {/* Confidence */}
+          <div className="col-span-1">
+            <div className={`text-sm font-bold ${confidenceConfig.color}`}>
+              {confidenceConfig.label}
+            </div>
+          </div>
+
+          {/* Status */}
+          <div className="col-span-1 flex items-center gap-2">
+            <div className={`text-sm font-bold ${statusConfig.color}`}>
+              {statusConfig.label}
+            </div>
+            <svg
+              className={`w-4 h-4 text-brand-text-tertiary transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </div>
+        </div>
+      </button>
+
+      {/* Expanded Details */}
+      {isExpanded && (
+        <div className="px-6 pb-4 border-t border-gray-200 bg-gray-50">
+          <div className="grid grid-cols-2 gap-6 pt-4">
+            {/* Left Column */}
+            <div className="space-y-4">
+              {/* Context */}
+              <div>
+                <div className="text-xs font-black text-brand-text-tertiary uppercase mb-2">Context</div>
+                <div className="space-y-1 text-sm">
+                  {insight.journey_stage && (
+                    <div><span className="font-bold">Journey:</span> {insight.journey_stage}</div>
+                  )}
+                  {insight.device_type && (
+                    <div><span className="font-bold">Device:</span> {insight.device_type}</div>
+                  )}
+                  {insight.page_location && insight.page_location.length > 0 && (
+                    <div><span className="font-bold">Location:</span> {insight.page_location.join(', ')}</div>
+                  )}
+                </div>
+              </div>
+
+              {/* Evidence */}
+              {insight.evidence?.qualitative?.quotes && insight.evidence.qualitative.quotes.length > 0 && (
+                <div>
+                  <div className="text-xs font-black text-brand-text-tertiary uppercase mb-2">Evidence</div>
+                  <div className="space-y-2">
+                    {insight.evidence.qualitative.quotes.slice(0, 3).map((quote, idx) => (
+                      <div key={idx} className="text-sm text-brand-text-secondary italic">"{quote}"</div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Right Column */}
+            <div className="space-y-4">
+              {/* Behavioral Insights */}
+              {(insight.friction_type || insight.psychology_principle) && (
+                <div>
+                  <div className="text-xs font-black text-brand-text-tertiary uppercase mb-2">Behavioral</div>
+                  <div className="space-y-1 text-sm">
+                    {insight.friction_type && (
+                      <div><span className="font-bold">Friction:</span> {insight.friction_type.replace(/_/g, ' ')}</div>
+                    )}
+                    {insight.psychology_principle && (
+                      <div><span className="font-bold">Psychology:</span> {insight.psychology_principle.replace(/_/g, ' ')}</div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Suggested Actions */}
+              {insight.suggested_actions && (
+                <div>
+                  <div className="text-xs font-black text-brand-text-tertiary uppercase mb-2">Actions</div>
+                  <div className="text-sm text-brand-black">{insight.suggested_actions}</div>
+                </div>
+              )}
+
+              {/* Impact */}
+              {insight.affected_kpis && insight.affected_kpis.length > 0 && (
+                <div>
+                  <div className="text-xs font-black text-brand-text-tertiary uppercase mb-2">Affected KPIs</div>
+                  <div className="text-sm text-brand-black">{insight.affected_kpis.join(', ')}</div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

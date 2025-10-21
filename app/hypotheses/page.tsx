@@ -4,9 +4,12 @@ import { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import type { Hypothesis } from '@/lib/types/insights.types';
+import { useWorkspace } from '@/components/WorkspaceContext';
+import WorkspaceGuard from '@/components/WorkspaceGuard';
 
-export default function HypothesesPage() {
+function HypothesesContent() {
   const supabase = createClientComponentClient();
+  const { selectedWorkspaceId, selectedWorkspace } = useWorkspace();
   const [hypotheses, setHypotheses] = useState<Hypothesis[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -15,10 +18,13 @@ export default function HypothesesPage() {
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
+    if (!selectedWorkspaceId) return;
     fetchHypotheses();
-  }, []);
+  }, [selectedWorkspaceId]);
 
   const fetchHypotheses = async () => {
+    if (!selectedWorkspaceId) return;
+
     try {
       setLoading(true);
       setError(null);
@@ -26,6 +32,7 @@ export default function HypothesesPage() {
       const { data, error: fetchError } = await supabase
         .from('hypotheses')
         .select('*')
+        .eq('workspace_id', selectedWorkspaceId)
         .order('created_at', { ascending: false });
 
       if (fetchError) throw fetchError;
@@ -590,5 +597,13 @@ function HypothesisCard({ hypothesis, onUpdate }: { hypothesis: Hypothesis; onUp
         )}
       </div>
     </div>
+  );
+}
+
+export default function HypothesesPage() {
+  return (
+    <WorkspaceGuard>
+      <HypothesesContent />
+    </WorkspaceGuard>
   );
 }

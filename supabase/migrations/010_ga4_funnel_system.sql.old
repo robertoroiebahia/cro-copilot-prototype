@@ -1,0 +1,311 @@
+-- Migration: GA4 Funnel Analysis System
+-- Date: 2025-10-20
+-- Description: Complete GA4 funnel tracking with events, calculated funnels, and insights
+
+-- ============================================================================
+-- PROFILES TABLE UPDATES (GA4 credentials)
+-- ============================================================================
+
+ALTER TABLE public.profiles
+ADD COLUMN IF NOT EXISTS ga4_property_id TEXT,
+ADD COLUMN IF NOT EXISTS ga4_refresh_token TEXT, -- Encrypted at application level
+ADD COLUMN IF NOT EXISTS ga4_last_sync_at TIMESTAMPTZ,
+ADD COLUMN IF NOT EXISTS ga4_sync_enabled BOOLEAN DEFAULT false;
+
+COMMENT ON COLUMN public.profiles.ga4_property_id IS 'GA4 Property ID (e.g., "123456789")';
+COMMENT ON COLUMN public.profiles.ga4_refresh_token IS 'Encrypted Google OAuth refresh token for GA4 access';
+COMMENT ON COLUMN public.profiles.ga4_last_sync_at IS 'Last successful GA4 data sync timestamp';
+COMMENT ON COLUMN public.profiles.ga4_sync_enabled IS 'Whether automatic daily GA4 sync is enabled';
+
+-- ============================================================================
+-- GA4 RAW EVENTS TABLE
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS public.ga4_raw_events (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+
+  -- Event basics
+  event_date DATE NOT NULL,
+  event_name TEXT NOT NULL CHECK (event_name IN (
+    'session_start',
+    'view_item',
+    'add_to_cart',
+    'begin_checkout',
+    'purchase'
+  )),
+
+  -- Metrics
+  event_count INTEGER NOT NULL DEFAULT 0,
+  total_users INTEGER NOT NULL DEFAULT 0,
+  sessions INTEGER NOT NULL DEFAULT 0,
+
+  -- Dimensions
+  device_category TEXT CHECK (device_category IN ('mobile', 'desktop', 'tablet')),
+  channel TEXT, -- sessionDefaultChannelGroup from GA4
+  user_type TEXT CHECK (user_type IN ('new', 'returning')),
+  country TEXT,
+  landing_page_category TEXT CHECK (landing_page_category IN (
+    'homepage',
+    'product',
+    'collection',
+    'blog',
+    'other'
+  )),
+  landing_page_path TEXT,
+
+  -- Metadata
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Indexes for performance
+CREATE INDEX IF NOT EXISTS idx_ga4_raw_events_user_id ON public.ga4_raw_events(user_id);
+CREATE INDEX IF NOT EXISTS idx_ga4_raw_events_event_date ON public.ga4_raw_events(event_date DESC);
+CREATE INDEX IF NOT EXISTS idx_ga4_raw_events_event_name ON public.ga4_raw_events(event_name);
+CREATE INDEX IF NOT EXISTS idx_ga4_raw_events_user_date ON public.ga4_raw_events(user_id, event_date DESC);
+
+-- Composite index for common queries
+CREATE INDEX IF NOT EXISTS idx_ga4_raw_events_composite ON public.ga4_raw_events(
+  user_id, event_date, event_name, device_category, channel
+);
+
+-- ============================================================================
+-- GA4 CALCULATED FUNNELS TABLE
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS public.ga4_calculated_funnels (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+
+  -- Date range
+  start_date DATE NOT NULL,
+  end_date DATE NOT NULL,
+
+  -- Segment
+  segment_type TEXT NOT NULL CHECK (segment_type IN (
+    'all_users',
+    'device_mobile',
+    'device_desktop',
+    'device_tablet',
+    'channel_direct',
+    'channel_email',
+    'channel_organic',
+    'channel_paid',
+    'channel_social',
+    'user_new',
+    'user_returning',
+    'country_us',
+    'country_non_us',
+    'landing_homepage',
+    'landing_product',
+    'landing_collection',
+    'landing_blog'
+  )),
+  segment_label TEXT NOT NULL, -- Human-readable label
+
+  -- Funnel data (JSON)
+  funnel_data JSONB NOT NULL,
+  /* Structure:
+  {
+    "steps": [
+      {
+        "name": "Landing",
+        "event": "session_start",
+        "users": 10000,
+        "conversion_rate": 100,
+        "drop_off": 0,
+        "drop_off_rate": 0
+      },
+      {
+        "name": "Product View",
+        "event": "view_item",
+        "users": 8000,
+        "conversion_rate": 80,
+        "drop_off": 2000,
+        "drop_off_rate": 20
+      },
+      ...
+    ],
+    "overall_cvr": 2.5,
+    "total_landing_users": 10000,
+    "total_purchases": 250
+  }
+  */
+
+  -- Summary metrics (for quick access)
+  total_landing_users INTEGER NOT NULL,
+  total_purchases INTEGER NOT NULL,
+  overall_cvr NUMERIC(5,2) NOT NULL, -- Overall conversion rate %
+
+  -- Metadata
+  calculated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Indexes
+CREATE INDEX IF NOT EXISTS idx_ga4_funnels_user_id ON public.ga4_calculated_funnels(user_id);
+CREATE INDEX IF NOT EXISTS idx_ga4_funnels_dates ON public.ga4_calculated_funnels(start_date DESC, end_date DESC);
+CREATE INDEX IF NOT EXISTS idx_ga4_funnels_segment ON public.ga4_calculated_funnels(segment_type);
+CREATE INDEX IF NOT EXISTS idx_ga4_funnels_user_segment ON public.ga4_calculated_funnels(
+  user_id, segment_type, start_date DESC
+);
+
+-- Unique constraint: one funnel per user/segment/date range
+CREATE UNIQUE INDEX IF NOT EXISTS idx_ga4_funnels_unique ON public.ga4_calculated_funnels(
+  user_id, segment_type, start_date, end_date
+);
+
+-- ============================================================================
+-- GA4 FUNNEL INSIGHTS TABLE
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS public.ga4_funnel_insights (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  funnel_id UUID REFERENCES public.ga4_calculated_funnels(id) ON DELETE CASCADE,
+
+  -- Insight classification
+  insight_type TEXT NOT NULL CHECK (insight_type IN (
+    'gap_analysis',
+    'segment_comparison',
+    'drop_off',
+    'anomaly',
+    'temporal_pattern'
+  )),
+
+  -- Insight content
+  observation TEXT NOT NULL, -- What's happening (no recommendations)
+  data_points JSONB NOT NULL, -- Numbers supporting the observation
+  /* Example:
+  {
+    "segment": "Mobile",
+    "step": "Add to Cart",
+    "drop_off_rate": 45.2,
+    "comparison_segment": "Desktop",
+    "comparison_drop_off_rate": 28.5,
+    "difference": 16.7
+  }
+  */
+
+  -- Metadata
+  impact TEXT NOT NULL CHECK (impact IN ('critical', 'high', 'medium', 'low')),
+  confidence TEXT NOT NULL CHECK (confidence IN ('high', 'medium', 'low')),
+
+  -- Related segments (for comparisons)
+  primary_segment TEXT,
+  comparison_segment TEXT,
+
+  -- Timestamps
+  generated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Indexes
+CREATE INDEX IF NOT EXISTS idx_ga4_insights_user_id ON public.ga4_funnel_insights(user_id);
+CREATE INDEX IF NOT EXISTS idx_ga4_insights_funnel_id ON public.ga4_funnel_insights(funnel_id);
+CREATE INDEX IF NOT EXISTS idx_ga4_insights_type ON public.ga4_funnel_insights(insight_type);
+CREATE INDEX IF NOT EXISTS idx_ga4_insights_impact ON public.ga4_funnel_insights(impact);
+CREATE INDEX IF NOT EXISTS idx_ga4_insights_generated ON public.ga4_funnel_insights(generated_at DESC);
+
+-- ============================================================================
+-- ROW LEVEL SECURITY
+-- ============================================================================
+
+-- Enable RLS
+ALTER TABLE public.ga4_raw_events ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.ga4_calculated_funnels ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.ga4_funnel_insights ENABLE ROW LEVEL SECURITY;
+
+-- RLS Policies for ga4_raw_events
+CREATE POLICY "Users can view their own GA4 events"
+  ON public.ga4_raw_events
+  FOR SELECT
+  USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert their own GA4 events"
+  ON public.ga4_raw_events
+  FOR INSERT
+  WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update their own GA4 events"
+  ON public.ga4_raw_events
+  FOR UPDATE
+  USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete their own GA4 events"
+  ON public.ga4_raw_events
+  FOR DELETE
+  USING (auth.uid() = user_id);
+
+-- RLS Policies for ga4_calculated_funnels
+CREATE POLICY "Users can view their own funnels"
+  ON public.ga4_calculated_funnels
+  FOR SELECT
+  USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert their own funnels"
+  ON public.ga4_calculated_funnels
+  FOR INSERT
+  WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update their own funnels"
+  ON public.ga4_calculated_funnels
+  FOR UPDATE
+  USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete their own funnels"
+  ON public.ga4_calculated_funnels
+  FOR DELETE
+  USING (auth.uid() = user_id);
+
+-- RLS Policies for ga4_funnel_insights
+CREATE POLICY "Users can view their own funnel insights"
+  ON public.ga4_funnel_insights
+  FOR SELECT
+  USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert their own funnel insights"
+  ON public.ga4_funnel_insights
+  FOR INSERT
+  WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update their own funnel insights"
+  ON public.ga4_funnel_insights
+  FOR UPDATE
+  USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete their own funnel insights"
+  ON public.ga4_funnel_insights
+  FOR DELETE
+  USING (auth.uid() = user_id);
+
+-- ============================================================================
+-- FUNCTIONS AND TRIGGERS
+-- ============================================================================
+
+-- Updated_at trigger for ga4_raw_events
+CREATE OR REPLACE FUNCTION update_ga4_raw_events_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER ga4_raw_events_updated_at
+  BEFORE UPDATE ON public.ga4_raw_events
+  FOR EACH ROW
+  EXECUTE FUNCTION update_ga4_raw_events_updated_at();
+
+-- ============================================================================
+-- COMMENTS FOR DOCUMENTATION
+-- ============================================================================
+
+COMMENT ON TABLE public.ga4_raw_events IS 'Raw event data synced from GA4 API';
+COMMENT ON TABLE public.ga4_calculated_funnels IS 'Pre-calculated funnel data by segment and date range';
+COMMENT ON TABLE public.ga4_funnel_insights IS 'AI-generated insights from funnel analysis';
+
+COMMENT ON COLUMN public.ga4_calculated_funnels.funnel_data IS 'Complete funnel data with steps, conversions, and drop-offs';
+COMMENT ON COLUMN public.ga4_funnel_insights.observation IS 'AI observation of what is happening (no recommendations)';
+COMMENT ON COLUMN public.ga4_funnel_insights.data_points IS 'Supporting data for the observation';

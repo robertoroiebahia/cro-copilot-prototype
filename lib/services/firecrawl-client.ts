@@ -75,16 +75,18 @@ export class FirecrawlClient {
     console.log(`🌐 Firecrawl scraping: ${url}`);
 
     try {
-      const payload = {
+      const payload: any = {
         url,
         formats: options.formats || ['markdown', 'screenshot'],
         onlyMainContent: options.onlyMainContent ?? true,
         waitFor: options.waitFor || 2000,
-        includeTags: options.includeTags,
-        excludeTags: options.excludeTags,
         mobile: options.mobile ?? true,
         removeBase64Images: options.removeBase64Images ?? false,
       };
+
+      // Add optional parameters only if provided
+      if (options.includeTags) payload.includeTags = options.includeTags;
+      if (options.excludeTags) payload.excludeTags = options.excludeTags;
 
       const response = await fetch(`${this.baseUrl}/scrape`, {
         method: 'POST',

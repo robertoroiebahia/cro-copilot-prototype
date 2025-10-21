@@ -2,6 +2,7 @@
 
 import type { Metadata } from 'next'
 import AppSidebar from '@/components/AppSidebar'
+import { WorkspaceProvider } from '@/components/WorkspaceContext'
 import './globals.css'
 import { useState, useEffect } from 'react'
 import { usePathname } from 'next/navigation'
@@ -42,19 +43,21 @@ export default function RootLayout({
         <meta name="description" content="AI-powered funnel analysis for DTC brands. Turn any landing page into a conversion machine." />
       </head>
       <body className="bg-gray-50">
-        {showSidebar && (
-          <AppSidebar
-            isCollapsed={isSidebarCollapsed}
-            onToggle={handleToggleSidebar}
-          />
-        )}
-        <main
-          className={`min-h-screen transition-all duration-300 ${
-            showSidebar ? (isSidebarCollapsed ? 'ml-20' : 'ml-64') : ''
-          }`}
-        >
-          {children}
-        </main>
+        <WorkspaceProvider>
+          {showSidebar && (
+            <AppSidebar
+              isCollapsed={isSidebarCollapsed}
+              onToggle={handleToggleSidebar}
+            />
+          )}
+          <main
+            className={`min-h-screen transition-all duration-300 ${
+              showSidebar ? (isSidebarCollapsed ? 'ml-20' : 'ml-64') : ''
+            }`}
+          >
+            {children}
+          </main>
+        </WorkspaceProvider>
       </body>
     </html>
   )

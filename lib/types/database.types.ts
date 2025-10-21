@@ -158,6 +158,9 @@ export interface AnalysisSummary {
 }
 
 export interface AnalysisScreenshots {
+  full_page?: string
+  captured_at?: string
+  // Legacy fields for backwards compatibility
   desktopAboveFold?: string
   desktopFullPage?: string
   mobileAboveFold?: string

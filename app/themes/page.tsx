@@ -4,20 +4,28 @@ import { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
 import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 import type { Theme } from '@/lib/types/insights.types';
+import { useWorkspace } from '@/components/WorkspaceContext';
+import WorkspaceGuard from '@/components/WorkspaceGuard';
 
-export default function ThemesPage() {
+function ThemesContent() {
   const supabase = createClientComponentClient();
+  const { selectedWorkspaceId, selectedWorkspace } = useWorkspace();
   const [themes, setThemes] = useState<Theme[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedPriority, setSelectedPriority] = useState<'all' | 'critical' | 'high' | 'medium' | 'low'>('all');
+  const [selectedStatus, setSelectedStatus] = useState<'all' | 'active' | 'archived'>('all');
+  const [selectedPillar, setSelectedPillar] = useState<'all' | string>('all');
   const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
+    if (!selectedWorkspaceId) return;
     fetchThemes();
-  }, []);
+  }, [selectedWorkspaceId]);
 
   const fetchThemes = async () => {
+    if (!selectedWorkspaceId) return;
+
     try {
       setLoading(true);
       setError(null);
@@ -25,6 +33,7 @@ export default function ThemesPage() {
       const { data, error: fetchError } = await supabase
         .from('themes')
         .select('*')
+        .eq('workspace_id', selectedWorkspaceId)
         .order('created_at', { ascending: false });
 
       if (fetchError) throw fetchError;
@@ -45,20 +54,31 @@ export default function ThemesPage() {
       filtered = filtered.filter(t => t.priority === selectedPriority);
     }
 
+    if (selectedStatus !== 'all') {
+      filtered = filtered.filter(t => t.status === selectedStatus);
+    }
+
+    if (selectedPillar !== 'all') {
+      filtered = filtered.filter(t => t.growth_pillar === selectedPillar);
+    }
+
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(t =>
-        t.name.toLowerCase().includes(query) ||
-        t.statement.toLowerCase().includes(query)
+        t.title.toLowerCase().includes(query) ||
+        t.theme_statement.toLowerCase().includes(query) ||
+        t.affected_pages?.some(page => page.toLowerCase().includes(query))
       );
     }
 
     return filtered;
-  }, [themes, selectedPriority, searchQuery]);
+  }, [themes, selectedPriority, selectedStatus, selectedPillar, searchQuery]);
 
   const stats = useMemo(() => {
     return {
       total: themes.length,
+      active: themes.filter(t => t.status === 'active').length,
+      archived: themes.filter(t => t.status === 'archived').length,
       critical: themes.filter(t => t.priority === 'critical').length,
       high: themes.filter(t => t.priority === 'high').length,
       medium: themes.filter(t => t.priority === 'medium').length,
@@ -149,43 +169,59 @@ export default function ThemesPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-8 py-12">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="text-5xl">🎯</div>
-            <div>
-              <h1 className="text-4xl font-black text-brand-black">Themes</h1>
-              <p className="text-brand-text-secondary font-medium">
-                Clustered patterns from related insights
-              </p>
+      {/* Header */}
+      <div className="bg-gradient-to-br from-green-600 to-green-800 text-white border-b-4 border-brand-gold">
+        <div className="max-w-7xl mx-auto px-8 py-8">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 bg-white/20 backdrop-blur rounded-lg flex items-center justify-center">
+                <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+                </svg>
+              </div>
+              <div>
+                <h1 className="text-4xl font-black">Themes</h1>
+                {selectedWorkspace && (
+                  <p className="text-green-200 text-sm font-medium">{selectedWorkspace.name}</p>
+                )}
+              </div>
+            </div>
+          </div>
+          <p className="text-green-100 font-medium mb-6">
+            Clustered patterns from related insights
+          </p>
+
+          {/* Stats Cards */}
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            <div className="bg-white/20 backdrop-blur border border-white/30 rounded-lg p-4">
+              <div className="text-2xl font-black text-white">{stats.total}</div>
+              <div className="text-xs text-green-100 uppercase font-bold">Total Themes</div>
+            </div>
+            <div className="bg-white/20 backdrop-blur border border-white/30 rounded-lg p-4">
+              <div className="text-2xl font-black text-white">{stats.active}</div>
+              <div className="text-xs text-green-100 uppercase font-bold">Active</div>
+            </div>
+            <div className="bg-white/20 backdrop-blur border border-white/30 rounded-lg p-4">
+              <div className="text-2xl font-black text-white">{stats.archived}</div>
+              <div className="text-xs text-green-100 uppercase font-bold">Archived</div>
+            </div>
+            <div className="bg-white/20 backdrop-blur border border-white/30 rounded-lg p-4">
+              <div className="text-2xl font-black text-white">{stats.critical}</div>
+              <div className="text-xs text-green-100 uppercase font-bold">Critical</div>
+            </div>
+            <div className="bg-white/20 backdrop-blur border border-white/30 rounded-lg p-4">
+              <div className="text-2xl font-black text-white">{stats.high}</div>
+              <div className="text-xs text-green-100 uppercase font-bold">High Priority</div>
+            </div>
+            <div className="bg-white/20 backdrop-blur border border-white/30 rounded-lg p-4">
+              <div className="text-2xl font-black text-white">{stats.medium}</div>
+              <div className="text-xs text-green-100 uppercase font-bold">Medium Priority</div>
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
-          <div className="bg-white rounded-lg border border-gray-200 p-4">
-            <div className="text-2xl font-black text-brand-black">{stats.total}</div>
-            <div className="text-xs text-brand-text-secondary uppercase font-bold">Total Themes</div>
-          </div>
-          <div className="bg-white rounded-lg border border-gray-200 p-4">
-            <div className="text-2xl font-black text-red-600">{stats.critical}</div>
-            <div className="text-xs text-brand-text-secondary uppercase font-bold">Critical</div>
-          </div>
-          <div className="bg-white rounded-lg border border-gray-200 p-4">
-            <div className="text-2xl font-black text-orange-600">{stats.high}</div>
-            <div className="text-xs text-brand-text-secondary uppercase font-bold">High</div>
-          </div>
-          <div className="bg-white rounded-lg border border-gray-200 p-4">
-            <div className="text-2xl font-black text-yellow-600">{stats.medium}</div>
-            <div className="text-xs text-brand-text-secondary uppercase font-bold">Medium</div>
-          </div>
-          <div className="bg-white rounded-lg border border-gray-200 p-4">
-            <div className="text-2xl font-black text-gray-600">{stats.low}</div>
-            <div className="text-xs text-brand-text-secondary uppercase font-bold">Low</div>
-          </div>
-        </div>
+      <div className="max-w-7xl mx-auto px-8 py-8">
 
         {/* Filters */}
         <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
@@ -194,25 +230,50 @@ export default function ThemesPage() {
             <div className="flex-1">
               <input
                 type="text"
-                placeholder="Search themes..."
+                placeholder="Search themes by title, statement, or affected pages..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-gold"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-gold font-medium"
               />
             </div>
 
-            {/* Priority Filter */}
-            <select
-              value={selectedPriority}
-              onChange={(e) => setSelectedPriority(e.target.value as any)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-gold font-medium"
-            >
-              <option value="all">All Priorities</option>
-              <option value="critical">Critical</option>
-              <option value="high">High</option>
-              <option value="medium">Medium</option>
-              <option value="low">Low</option>
-            </select>
+            {/* Filters */}
+            <div className="flex gap-2 flex-wrap">
+              <select
+                value={selectedStatus}
+                onChange={(e) => setSelectedStatus(e.target.value as any)}
+                className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-gold font-bold text-sm"
+              >
+                <option value="all">All Statuses</option>
+                <option value="active">Active</option>
+                <option value="archived">Archived</option>
+              </select>
+
+              <select
+                value={selectedPillar}
+                onChange={(e) => setSelectedPillar(e.target.value)}
+                className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-gold font-bold text-sm"
+              >
+                <option value="all">All Pillars</option>
+                <option value="conversion">Conversion</option>
+                <option value="aov">AOV</option>
+                <option value="frequency">Frequency</option>
+                <option value="retention">Retention</option>
+                <option value="acquisition">Acquisition</option>
+              </select>
+
+              <select
+                value={selectedPriority}
+                onChange={(e) => setSelectedPriority(e.target.value as any)}
+                className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-gold font-bold text-sm"
+              >
+                <option value="all">All Priorities</option>
+                <option value="critical">Critical</option>
+                <option value="high">High</option>
+                <option value="medium">Medium</option>
+                <option value="low">Low</option>
+              </select>
+            </div>
           </div>
         </div>
 
@@ -249,6 +310,14 @@ export default function ThemesPage() {
   );
 }
 
+export default function ThemesPage() {
+  return (
+    <WorkspaceGuard>
+      <ThemesContent />
+    </WorkspaceGuard>
+  );
+}
+
 function ThemeCard({ theme }: { theme: Theme }) {
   const [isExpanded, setIsExpanded] = useState(false);
   const supabase = createClientComponentClient();
@@ -266,7 +335,7 @@ function ThemeCard({ theme }: { theme: Theme }) {
 
       const { data, error } = await supabase
         .from('insights')
-        .select('insight_id, statement, confidence')
+        .select('insight_id, statement, confidence_level')
         .in('insight_id', insightIds);
 
       if (!error && data) {
@@ -278,13 +347,28 @@ function ThemeCard({ theme }: { theme: Theme }) {
   };
 
   const priorityConfig = {
-    critical: { color: 'bg-red-100 text-red-700 border-red-200', icon: '🔴' },
-    high: { color: 'bg-orange-100 text-orange-700 border-orange-200', icon: '🟠' },
-    medium: { color: 'bg-yellow-100 text-yellow-700 border-yellow-200', icon: '🟡' },
-    low: { color: 'bg-gray-100 text-gray-700 border-gray-200', icon: '⚪' },
+    critical: { color: 'bg-red-500 text-white border-red-600', icon: '🔴' },
+    high: { color: 'bg-orange-500 text-white border-orange-600', icon: '🟠' },
+    medium: { color: 'bg-blue-500 text-white border-blue-600', icon: '🟡' },
+    low: { color: 'bg-gray-400 text-white border-gray-500', icon: '⚪' },
   };
 
-  const config = priorityConfig[theme.priority];
+  const statusConfig = {
+    active: { color: 'bg-green-100 text-green-700 border-green-200', label: 'Active' },
+    archived: { color: 'bg-gray-100 text-gray-700 border-gray-200', label: 'Archived' },
+  };
+
+  const pillarConfig = {
+    conversion: { color: 'bg-blue-100 text-blue-700', label: 'CONVERSION' },
+    aov: { color: 'bg-purple-100 text-purple-700', label: 'AOV' },
+    frequency: { color: 'bg-orange-100 text-orange-700', label: 'FREQUENCY' },
+    retention: { color: 'bg-pink-100 text-pink-700', label: 'RETENTION' },
+    acquisition: { color: 'bg-green-100 text-green-700', label: 'ACQUISITION' },
+  };
+
+  const priorityConf = priorityConfig[theme.priority];
+  const statusConf = statusConfig[theme.status];
+  const pillarConf = pillarConfig[theme.growth_pillar];
 
   return (
     <div className="bg-white rounded-lg border border-gray-200 hover:border-brand-gold transition-all duration-300">
@@ -292,19 +376,82 @@ function ThemeCard({ theme }: { theme: Theme }) {
         {/* Header */}
         <div className="flex items-start justify-between mb-4">
           <div className="flex-1">
-            <div className="flex items-center gap-3 mb-2">
-              <span className="text-xs font-black text-brand-text-secondary">{theme.theme_id}</span>
-              <span className={`px-2 py-1 ${config.color} text-xs font-bold rounded border uppercase`}>
-                {config.icon} {theme.priority}
+            <div className="flex items-center gap-2 mb-3 flex-wrap">
+              <span className="px-2.5 py-1 bg-brand-gold/10 text-brand-gold text-xs font-black rounded border border-brand-gold/20">
+                {theme.theme_id}
               </span>
-              <span className="px-2 py-1 bg-blue-50 text-blue-600 text-xs font-bold rounded border border-blue-200">
+              <span className={`px-2.5 py-1 ${priorityConf.color} text-xs font-bold rounded border uppercase`}>
+                {theme.priority}
+              </span>
+              <span className={`px-2.5 py-1 ${statusConf.color} text-xs font-bold rounded border`}>
+                {statusConf.label}
+              </span>
+              <span className={`px-2.5 py-1 ${pillarConf.color} text-xs font-bold rounded`}>
+                {pillarConf.label}
+              </span>
+              <span className="px-2.5 py-1 bg-blue-50 text-blue-600 text-xs font-bold rounded border border-blue-200">
                 {theme.connected_insights.length} Insights
               </span>
             </div>
-            <h3 className="text-xl font-black text-brand-black mb-2">{theme.name}</h3>
-            <p className="text-brand-text-secondary leading-relaxed">{theme.statement}</p>
+            <h3 className="text-xl font-black text-brand-black mb-2">{theme.title}</h3>
+            <p className="text-brand-text-secondary leading-relaxed">{theme.theme_statement}</p>
           </div>
         </div>
+
+        {/* Affected Pages */}
+        {theme.affected_pages && theme.affected_pages.length > 0 && (
+          <div className="mb-4">
+            <div className="text-xs font-bold text-brand-text-secondary mb-2">Affected Pages:</div>
+            <div className="flex flex-wrap gap-2">
+              {theme.affected_pages.map((page, idx) => (
+                <span key={idx} className="px-2 py-1 bg-indigo-50 text-indigo-700 text-xs font-bold rounded border border-indigo-200">
+                  📄 {page}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Current Performance */}
+        {theme.current_performance && (
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4">
+            <div className="text-xs font-black text-amber-900 mb-1">Current Performance</div>
+            <div className="text-sm text-amber-800">{theme.current_performance}</div>
+          </div>
+        )}
+
+        {/* Opportunity Calculation */}
+        {theme.opportunity_calculation && theme.opportunity_calculation.can_calculate && (
+          <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 mb-4">
+            <div className="flex items-start gap-3">
+              <div className="text-2xl">📈</div>
+              <div className="flex-1">
+                <div className="font-bold text-purple-900 mb-2">Opportunity Sizing</div>
+                {theme.opportunity_calculation.scenarios && (
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
+                    <div className="bg-white rounded p-3">
+                      <div className="text-xs text-purple-700 font-bold mb-1">Conservative</div>
+                      <div className="text-lg text-purple-900 font-black">{theme.opportunity_calculation.scenarios.conservative}</div>
+                    </div>
+                    <div className="bg-white rounded p-3">
+                      <div className="text-xs text-purple-700 font-bold mb-1">Moderate</div>
+                      <div className="text-lg text-purple-900 font-black">{theme.opportunity_calculation.scenarios.moderate}</div>
+                    </div>
+                    <div className="bg-white rounded p-3">
+                      <div className="text-xs text-purple-700 font-bold mb-1">Aggressive</div>
+                      <div className="text-lg text-purple-900 font-black">{theme.opportunity_calculation.scenarios.aggressive}</div>
+                    </div>
+                  </div>
+                )}
+                {theme.opportunity_calculation.data_sources && theme.opportunity_calculation.data_sources.length > 0 && (
+                  <div className="text-xs text-purple-700">
+                    <span className="font-bold">Data Sources:</span> {theme.opportunity_calculation.data_sources.join(', ')}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Business Impact Summary */}
         {theme.business_impact && (
@@ -386,11 +533,11 @@ function ThemeCard({ theme }: { theme: Theme }) {
                               </span>
                             )}
                             <span className={`px-2 py-0.5 text-xs font-bold rounded ${
-                              insight.confidence === 'high' ? 'bg-green-100 text-green-700' :
-                              insight.confidence === 'medium' ? 'bg-yellow-100 text-yellow-700' :
+                              insight.confidence_level === 'high' ? 'bg-green-100 text-green-700' :
+                              insight.confidence_level === 'medium' ? 'bg-yellow-100 text-yellow-700' :
                               'bg-gray-100 text-gray-700'
                             }`}>
-                              {insight.confidence}
+                              {insight.confidence_level}
                             </span>
                           </div>
                           <p className="text-sm text-brand-text-secondary">{insight.statement}</p>

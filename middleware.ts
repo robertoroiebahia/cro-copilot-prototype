@@ -17,7 +17,18 @@ export async function middleware(request: NextRequest) {
     const { data: { session } } = await supabase.auth.getSession();
 
     // Protected routes that require authentication
-    const protectedRoutes = ['/dashboard', '/api/analyze', '/analyze'];
+    const protectedRoutes = [
+      '/dashboard',
+      '/api/analyze',
+      '/analyze',
+      '/experiments',
+      '/hypotheses',
+      '/insights',
+      '/themes',
+      '/queue',
+      '/settings',
+      '/analyses'
+    ];
     const isProtectedRoute = protectedRoutes.some(route =>
       request.nextUrl.pathname.startsWith(route)
     );
@@ -26,7 +37,7 @@ export async function middleware(request: NextRequest) {
     if (isProtectedRoute && !session) {
       const redirectUrl = new URL('/login', request.url);
       if (request.nextUrl.pathname !== '/') {
-        redirectUrl.searchParams.set('redirectTo', request.nextUrl.pathname);
+        redirectUrl.searchParams.set('next', request.nextUrl.pathname);
       }
       return NextResponse.redirect(redirectUrl);
     }
@@ -41,7 +52,7 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL('/dashboard', request.url));
     }
   } catch (error) {
-    console.error('Supabase middleware error:', error);
+    console.error('Middleware auth error:', error);
   }
 
   return response;
