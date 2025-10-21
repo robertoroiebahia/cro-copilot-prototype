@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth/require-auth';
 import { createClient } from '@/utils/supabase/server';
-import { getAllFunnels, getFunnel } from '@/lib/services/ga4/funnel-calculator';
+import { getLatestGA4Analysis } from '@/lib/services/ga4/ga4-analysis';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,7 +23,8 @@ async function verifyWorkspaceOwnership(workspaceId: string, userId: string): Pr
 /**
  * GET /api/ga4/funnels?workspaceId=xxx&startDate=YYYY-MM-DD&endDate=YYYY-MM-DD&segment=all_users
  *
- * Get calculated funnels for a date range
+ * Get funnel data from latest GA4 analysis
+ * Note: Ignores startDate/endDate params, returns latest analysis
  */
 export async function GET(request: NextRequest) {
   try {
@@ -31,20 +32,11 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
 
     const workspaceId = searchParams.get('workspaceId');
-    const startDate = searchParams.get('startDate');
-    const endDate = searchParams.get('endDate');
     const segment = searchParams.get('segment');
 
     if (!workspaceId) {
       return NextResponse.json(
         { error: 'workspaceId is required' },
-        { status: 400 }
-      );
-    }
-
-    if (!startDate || !endDate) {
-      return NextResponse.json(
-        { error: 'startDate and endDate are required' },
         { status: 400 }
       );
     }
@@ -58,13 +50,28 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Get specific segment or all
+    // Get latest GA4 analysis
+    const analysis = await getLatestGA4Analysis(workspaceId);
+
+    if (!analysis) {
+      return NextResponse.json(
+        { error: 'No GA4 analysis found. Click "Sync Data" to run an analysis.' },
+        { status: 404 }
+      );
+    }
+
+    // Extract funnel data from analysis.metrics
+    const funnels = analysis.metrics?.funnels || [];
+
+    // If specific segment requested, filter
     if (segment) {
-      const funnel = await getFunnel(workspaceId, segment as any, startDate, endDate);
+      const funnel = funnels.find((f: any) =>
+        f.segment_label.toLowerCase().replace(/\s+/g, '_') === segment.toLowerCase()
+      );
 
       if (!funnel) {
         return NextResponse.json(
-          { error: 'Funnel not found' },
+          { error: 'Funnel not found for this segment' },
           { status: 404 }
         );
       }
@@ -73,16 +80,27 @@ export async function GET(request: NextRequest) {
         success: true,
         funnel,
         segment,
-      });
-    } else {
-      const funnels = await getAllFunnels(workspaceId, startDate, endDate);
-
-      return NextResponse.json({
-        success: true,
-        funnels,
-        count: funnels.length,
+        analysisId: analysis.id,
+        dateRange: analysis.metrics?.date_range,
       });
     }
+
+    // Return all funnels (currently just "All Users")
+    const mainFunnel = funnels[0];
+
+    if (!mainFunnel) {
+      return NextResponse.json(
+        { error: 'No funnel data in analysis' },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      funnel: mainFunnel,
+      analysisId: analysis.id,
+      dateRange: analysis.metrics?.date_range,
+    });
   } catch (error) {
     console.error('Get funnels error:', error);
     return NextResponse.json(

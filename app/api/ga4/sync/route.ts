@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth/require-auth';
 import { createClient } from '@/utils/supabase/server';
-import { syncGA4Data, syncInitialData, syncDailyData } from '@/lib/services/ga4/ga4-sync';
-import { calculateStandardFunnels } from '@/lib/services/ga4/funnel-calculator';
-import { generateFunnelInsights } from '@/lib/services/ga4/funnel-insights';
+import { runGA4Analysis } from '@/lib/services/ga4/ga4-analysis';
 
 export const dynamic = 'force-dynamic';
 
@@ -25,7 +23,7 @@ async function verifyWorkspaceOwnership(workspaceId: string, userId: string): Pr
 /**
  * POST /api/ga4/sync
  *
- * Sync GA4 data and calculate funnels
+ * Run GA4 funnel analysis (treated as an analysis, not data sync)
  *
  * Body:
  * {
@@ -33,7 +31,7 @@ async function verifyWorkspaceOwnership(workspaceId: string, userId: string): Pr
  *   type: "initial" | "daily" | "custom",
  *   startDate?: "YYYY-MM-DD",
  *   endDate?: "YYYY-MM-DD",
- *   generateInsights?: boolean
+ *   generateInsights?: boolean (default: true)
  * }
  */
 export async function POST(request: NextRequest) {
@@ -44,9 +42,9 @@ export async function POST(request: NextRequest) {
     const {
       workspaceId,
       type = 'daily',
-      startDate,
-      endDate,
-      generateInsights = false,
+      startDate: customStartDate,
+      endDate: customEndDate,
+      generateInsights = true,
     } = body;
 
     if (!workspaceId) {
@@ -65,15 +63,24 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    let syncResult;
+    // Determine date range based on type
+    let startDate: string;
+    let endDate: string;
 
-    // Sync data based on type
     if (type === 'initial') {
-      syncResult = await syncInitialData(workspaceId);
+      // Last 90 days for initial analysis
+      endDate = new Date().toISOString().split('T')[0]!;
+      startDate = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000)
+        .toISOString()
+        .split('T')[0]!;
     } else if (type === 'daily') {
-      syncResult = await syncDailyData(workspaceId);
-    } else if (type === 'custom' && startDate && endDate) {
-      syncResult = await syncGA4Data(workspaceId, startDate, endDate);
+      // Yesterday for daily analysis
+      const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000);
+      startDate = yesterday.toISOString().split('T')[0]!;
+      endDate = yesterday.toISOString().split('T')[0]!;
+    } else if (type === 'custom' && customStartDate && customEndDate) {
+      startDate = customStartDate;
+      endDate = customEndDate;
     } else {
       return NextResponse.json(
         { error: 'Invalid sync type or missing dates' },
@@ -81,36 +88,30 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!syncResult.success) {
+    // Run GA4 analysis (fetches data, calculates funnels, stores as analysis, generates insights)
+    const analysisResult = await runGA4Analysis(
+      workspaceId,
+      startDate,
+      endDate,
+      generateInsights
+    );
+
+    if (!analysisResult.success) {
       return NextResponse.json(
-        { error: syncResult.error || 'Sync failed' },
+        { error: analysisResult.error || 'Analysis failed' },
         { status: 500 }
       );
     }
 
-    // Calculate funnels for standard date ranges
-    const funnelResults = await calculateStandardFunnels(workspaceId);
-
-    // Generate insights if requested
-    let insightsResult;
-    if (generateInsights) {
-      // Generate for last 30 days
-      const endDate = new Date().toISOString().split('T')[0]!;
-      const startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
-        .toISOString()
-        .split('T')[0]!;
-
-      insightsResult = await generateFunnelInsights(workspaceId, startDate, endDate);
-    }
-
     return NextResponse.json({
       success: true,
-      sync: syncResult,
-      funnels: funnelResults,
-      insights: insightsResult,
+      analysisId: analysisResult.analysisId,
+      funnels: analysisResult.funnels,
+      insights: analysisResult.insights,
+      dateRange: { startDate, endDate },
     });
   } catch (error) {
-    console.error('GA4 sync error:', error);
+    console.error('GA4 analysis error:', error);
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
