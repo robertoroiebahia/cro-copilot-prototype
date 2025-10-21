@@ -96,7 +96,10 @@ export async function getGA4Properties() {
     auth: oauth2Client,
   });
 
-  const response = await analyticsAdmin.properties.list();
+  // List properties with filter to get all properties across all accounts
+  const response = await analyticsAdmin.properties.list({
+    filter: 'parent:accounts/*',
+  });
   return response.data.properties || [];
 }
 
