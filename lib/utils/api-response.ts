@@ -70,7 +70,7 @@ export function errorResponse(
 ): NextResponse<APIError> {
   const errorMessage = typeof error === 'string' ? error : error.message;
   const errorCode = code || inferErrorCode(errorMessage, status);
-  const userMessage: string = ERROR_MESSAGES[errorCode] || ERROR_MESSAGES.INTERNAL_SERVER_ERROR;
+  const userMessage = (ERROR_MESSAGES[errorCode] || ERROR_MESSAGES.INTERNAL_SERVER_ERROR) as string;
 
   // Track error
   if (status >= 500) {
