@@ -157,10 +157,46 @@ export async function generateFunnelInsights(
       };
     }
 
-    // Store insights in database
+    // Create analysis record for GA4 funnel analysis
     const supabase = createClient();
 
+    const { data: analysisRecord, error: analysisError } = await supabase
+      .from('analyses')
+      .insert({
+        workspace_id: workspaceId,
+        url: `GA4 Funnel Analysis (${startDate} to ${endDate})`,
+        research_type: 'ga_analysis',
+        metrics: {
+          date_range: { start: startDate, end: endDate },
+          funnels_analyzed: funnels.length,
+        },
+        context: {
+          analysis_type: 'ga4_funnel',
+          segments: funnels.map(f => f.segment_label),
+        },
+        summary: {
+          insights_generated: insights.length,
+          date_range: `${startDate} to ${endDate}`,
+        },
+        status: 'completed',
+      })
+      .select()
+      .single();
+
+    if (analysisError) {
+      console.error('Failed to create analysis record:', analysisError);
+      return {
+        success: false,
+        insightsCount: 0,
+        error: `Failed to create analysis: ${analysisError.message}`,
+      };
+    }
+
+    const analysisId = analysisRecord.id;
+
+    // Transform and save insights to both tables
     for (const insight of insights) {
+      // Save to GA4-specific table (for GA4 metadata)
       await supabase.from('ga4_funnel_insights').insert({
         workspace_id: workspaceId,
         insight_type: insight.insight_type,
@@ -171,11 +207,74 @@ export async function generateFunnelInsights(
         primary_segment: insight.primary_segment,
         comparison_segment: insight.comparison_segment,
       });
+
+      // Transform to standard insights format for unified view
+      const standardInsight = {
+        analysis_id: analysisId,
+        workspace_id: workspaceId,
+        insight_id: `INS-GA4-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`.toUpperCase(),
+        research_type: 'ga_analysis',
+        source_type: 'automated',
+        source_url: `GA4 Funnel Analysis`,
+
+        // Core fields
+        title: insight.observation.substring(0, 100),
+        statement: insight.observation,
+        growth_pillar: 'conversion', // GA4 funnels are primarily about conversion
+        confidence_level: insight.confidence,
+        priority: insight.impact,
+
+        // Evidence
+        evidence: {
+          quantitative: {
+            data_points: insight.data_points,
+          },
+        },
+        sources: {
+          primary: {
+            type: 'analytics',
+            name: 'Google Analytics 4',
+            date: new Date().toISOString(),
+          },
+        },
+
+        // Context
+        customer_segment: insight.primary_segment || 'All Users',
+        journey_stage: 'decision', // Funnels are decision-stage
+        page_location: ['funnel'],
+        device_type: insight.primary_segment?.toLowerCase().includes('mobile') ? 'mobile' :
+                     insight.primary_segment?.toLowerCase().includes('desktop') ? 'desktop' :
+                     insight.primary_segment?.toLowerCase().includes('tablet') ? 'tablet' : null,
+
+        // Categorization
+        friction_type: insight.insight_type === 'drop_off' ? 'usability' : null,
+        tags: [
+          '#ga4',
+          '#funnel',
+          `#${insight.insight_type}`,
+          insight.primary_segment ? `#${insight.primary_segment.toLowerCase().replace(/\s+/g, '_')}` : null,
+        ].filter(Boolean),
+        affected_kpis: ['Conversion Rate', 'Drop-off Rate'],
+
+        // Actions
+        validation_status: 'untested',
+        status: 'draft',
+      };
+
+      // Save to main insights table
+      const { error: insightError } = await supabase
+        .from('insights')
+        .insert(standardInsight);
+
+      if (insightError) {
+        console.error('Failed to save insight to main table:', insightError);
+      }
     }
 
     return {
       success: true,
       insightsCount: insights.length,
+      analysisId,
     };
   } catch (error) {
     console.error('Insight generation failed:', error);
