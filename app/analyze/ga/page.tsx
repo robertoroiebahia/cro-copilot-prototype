@@ -19,6 +19,7 @@ function GA4AnalysisContent() {
   const [ga4Configured, setGa4Configured] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [segmentComparisonExpanded, setSegmentComparisonExpanded] = useState(false);
+  const [generatingInsights, setGeneratingInsights] = useState(false);
 
   // Calculate date range
   const getDateRange = (days: string): { start: string; end: string } => {
@@ -103,35 +104,64 @@ function GA4AnalysisContent() {
     }
   };
 
-  // Sync GA4 data
+  // Sync GA4 data (two-stage: quick funnel data, then AI insights)
   const handleSync = async () => {
     if (!selectedWorkspaceId) return;
 
     setSyncing(true);
     setError(null);
+    setGeneratingInsights(false);
+
     try {
+      // Stage 1: Quick sync without insights
       const res = await fetch('/api/ga4/sync', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           workspaceId: selectedWorkspaceId,
           type: 'daily',
-          generateInsights: true,
+          generateInsights: false, // Skip insights for now
         }),
       });
 
       const data = await res.json();
 
       if (data.success) {
+        // Show funnel data immediately
         await fetchFunnel();
-        await fetchInsights();
+        setSyncing(false);
+
+        // Stage 2: Generate insights in background
+        setGeneratingInsights(true);
+        try {
+          const insightsRes = await fetch('/api/ga4/sync', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              workspaceId: selectedWorkspaceId,
+              type: 'daily',
+              generateInsights: true, // Now generate insights
+            }),
+          });
+
+          const insightsData = await insightsRes.json();
+
+          if (insightsData.success) {
+            await fetchInsights();
+          }
+        } catch (insightError) {
+          console.error('Insight generation failed:', insightError);
+          // Don't show error, insights are optional
+        } finally {
+          setGeneratingInsights(false);
+        }
       } else {
         setError(data.error || 'Sync failed');
+        setSyncing(false);
       }
     } catch (error) {
       console.error('Sync failed:', error);
       setError('Sync failed. Please try again.');
-    } finally {
       setSyncing(false);
     }
   };
@@ -332,8 +362,28 @@ function GA4AnalysisContent() {
 
             {/* AI Insights */}
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h2 className="text-xl font-black text-brand-black mb-4">AI-Generated Insights</h2>
-              {insights.length > 0 ? (
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-black text-brand-black">AI-Generated Insights</h2>
+                {generatingInsights && (
+                  <div className="flex items-center gap-2 text-brand-gold">
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-current border-t-transparent"></div>
+                    <span className="text-xs font-bold">Generating insights...</span>
+                  </div>
+                )}
+              </div>
+              {generatingInsights && insights.length === 0 ? (
+                <div className="text-center py-12">
+                  <div className="animate-pulse mb-4">
+                    <div className="w-16 h-16 bg-brand-gold/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <svg className="w-8 h-8 text-brand-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                      </svg>
+                    </div>
+                  </div>
+                  <p className="text-brand-text-secondary font-medium mb-2">AI is analyzing your funnel data...</p>
+                  <p className="text-brand-text-tertiary text-sm">This may take 30-60 seconds</p>
+                </div>
+              ) : insights.length > 0 ? (
                 <FunnelInsightsList insights={insights} />
               ) : (
                 <div className="text-center py-8">
