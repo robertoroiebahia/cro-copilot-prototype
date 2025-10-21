@@ -148,8 +148,9 @@ export async function generateFunnelInsights(
     });
 
     // Extract response
-    const responseText = message.content[0].type === 'text'
-      ? message.content[0].text
+    const firstContent = message.content[0];
+    const responseText = firstContent?.type === 'text'
+      ? firstContent.text
       : '';
 
     // Parse insights
