@@ -230,7 +230,7 @@ export default function AnalysisDetailPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Left Column - GA4 Funnel or Analysis Data */}
           <div className="lg:sticky lg:top-8 lg:self-start space-y-6">
-            {analysis.research_type === 'ga_analysis' ? (
+            {(analysis as any).research_type === 'ga_analysis' ? (
               /* GA4 Funnel Visualization */
               <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-xl">
                 <div className="bg-gradient-to-r from-gray-900 to-gray-800 px-6 py-4 border-b border-gray-700">
@@ -273,7 +273,7 @@ export default function AnalysisDetailPage() {
                   <div className="space-y-4">
                     <div>
                       <div className="text-xs font-bold text-gray-600 uppercase tracking-wide mb-1">Research Type</div>
-                      <div className="text-sm font-medium text-gray-900 capitalize">{analysis.research_type?.replace(/_/g, ' ')}</div>
+                      <div className="text-sm font-medium text-gray-900 capitalize">{((analysis as any).research_type || 'unknown')?.replace(/_/g, ' ')}</div>
                     </div>
                     {analysis.metrics?.date_range && (
                       <div>

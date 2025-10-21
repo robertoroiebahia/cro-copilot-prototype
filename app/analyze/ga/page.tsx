@@ -117,7 +117,8 @@ function GA4AnalysisContent() {
       // Get selected date range
       const { start, end } = getDateRange(dateRange);
 
-      // Stage 1: Quick sync without insights
+      // Run sync with insights (will generate in background)
+      setGeneratingInsights(true);
       const res = await fetch('/api/ga4/sync', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -126,46 +127,22 @@ function GA4AnalysisContent() {
           type: 'custom',
           startDate: start,
           endDate: end,
-          generateInsights: false, // Skip insights for now
+          generateInsights: true, // Generate insights immediately
         }),
       });
 
       const data = await res.json();
 
       if (data.success) {
-        // Show funnel data immediately
+        // Show funnel data and insights when ready
         await fetchFunnel();
+        await fetchInsights();
         setSyncing(false);
-
-        // Stage 2: Generate insights in background
-        setGeneratingInsights(true);
-        try {
-          const insightsRes = await fetch('/api/ga4/sync', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              workspaceId: selectedWorkspaceId,
-              type: 'custom',
-              startDate: start,
-              endDate: end,
-              generateInsights: true, // Now generate insights
-            }),
-          });
-
-          const insightsData = await insightsRes.json();
-
-          if (insightsData.success) {
-            await fetchInsights();
-          }
-        } catch (insightError) {
-          console.error('Insight generation failed:', insightError);
-          // Don't show error, insights are optional
-        } finally {
-          setGeneratingInsights(false);
-        }
+        setGeneratingInsights(false);
       } else {
         setError(data.error || 'Sync failed');
         setSyncing(false);
+        setGeneratingInsights(false);
       }
     } catch (error) {
       console.error('Sync failed:', error);
