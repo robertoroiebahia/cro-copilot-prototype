@@ -91,6 +91,7 @@ export async function POST(request: NextRequest) {
     // Run GA4 analysis (fetches data, calculates funnels, stores as analysis, generates insights)
     const analysisResult = await runGA4Analysis(
       workspaceId,
+      user.id,
       startDate,
       endDate,
       generateInsights

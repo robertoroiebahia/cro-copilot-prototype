@@ -187,6 +187,7 @@ Generate insights now. Return ONLY the JSON array, no other text.`;
  */
 export async function runGA4Analysis(
   workspaceId: string,
+  userId: string,
   startDate: string,
   endDate: string,
   generateAIInsights: boolean = true
@@ -215,6 +216,7 @@ export async function runGA4Analysis(
     const { data: analysisRecord, error: analysisError } = await supabase
       .from('analyses')
       .insert({
+        user_id: userId,
         workspace_id: workspaceId,
         url: `GA4 Funnel Analysis (${startDate} to ${endDate})`,
         research_type: 'ga_analysis',
