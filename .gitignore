@@ -12,3 +12,28 @@ yarn-error.log*
 # Env files
 .env
 .env.local
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# TypeScript
+*.tsbuildinfo
+
+# Backup files
+*.sql.backup
+backup_*.sql
+*.bak
+
+# Test files
+test-*.js
+test-*.ts
+
+# Temporary documentation
+*_GUIDE.md
+*_MIGRATION.md
+*_SETUP.md
+*_SUMMARY.md
+*_PLAN.md
+*_ROADMAP.md
