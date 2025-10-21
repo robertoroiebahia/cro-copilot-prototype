@@ -740,7 +740,7 @@ function PageAnalysisContent() {
                 {/* Action Buttons */}
                 <div className="space-y-3">
                   <Link
-                    href={`/dashboard/results/${results.analysisId}`}
+                    href={`/dashboard/results/${results.dbAnalysisId || results.analysisId}`}
                     className="flex items-center justify-center gap-2 w-full px-6 py-4 bg-brand-gold hover:bg-black text-black hover:text-white font-black rounded-lg transition-all duration-300"
                     style={{
                       boxShadow: '0 4px 12px rgba(245, 197, 66, 0.3)'
