@@ -28,6 +28,10 @@ function InsightsContent() {
   const [selectedPriority, setSelectedPriority] = useState<'all' | 'critical' | 'high' | 'medium' | 'low'>('all');
   const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'confidence' | 'priority'>('priority');
 
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 20;
+
   useEffect(() => {
     if (!selectedWorkspaceId) return;
     fetchData();
@@ -108,6 +112,18 @@ function InsightsContent() {
 
     return filtered;
   }, [insights, searchQuery, selectedConfidence, selectedPillar, selectedPriority, sortBy]);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, selectedConfidence, selectedPillar, selectedPriority, sortBy]);
+
+  // Calculate pagination
+  const totalPages = Math.ceil(filteredInsights.length / itemsPerPage);
+  const paginatedInsights = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return filteredInsights.slice(startIndex, startIndex + itemsPerPage);
+  }, [filteredInsights, currentPage, itemsPerPage]);
 
   const stats = useMemo(() => {
     return {
@@ -297,7 +313,7 @@ function InsightsContent() {
 
             {/* Table Body */}
             <div className="divide-y divide-gray-200">
-              {filteredInsights.map((insight) => (
+              {paginatedInsights.map((insight) => (
                 <InsightRow
                   key={insight.id}
                   insight={insight}
@@ -309,10 +325,66 @@ function InsightsContent() {
           </div>
         )}
 
-        {/* Results count */}
-        {filteredInsights.length > 0 && (
-          <div className="mt-4 text-center text-sm text-brand-text-tertiary font-medium">
-            Showing {filteredInsights.length} of {insights.length} insights
+        {/* Pagination */}
+        {filteredInsights.length > itemsPerPage && (
+          <div className="mt-6 flex items-center justify-between">
+            <div className="text-sm text-brand-text-tertiary font-medium">
+              Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, filteredInsights.length)} of {filteredInsights.length} insights
+            </div>
+
+            <div className="flex items-center gap-2">
+              {/* Previous Button */}
+              <button
+                onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                disabled={currentPage === 1}
+                className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-bold text-brand-black disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors"
+              >
+                Previous
+              </button>
+
+              {/* Page Numbers */}
+              <div className="flex items-center gap-1">
+                {Array.from({ length: totalPages }, (_, i) => i + 1)
+                  .filter(page => {
+                    // Show first page, last page, current page, and pages around current
+                    if (page === 1 || page === totalPages) return true;
+                    if (Math.abs(page - currentPage) <= 1) return true;
+                    return false;
+                  })
+                  .map((page, idx, arr) => {
+                    // Add ellipsis if there's a gap
+                    const prevPage = arr[idx - 1];
+                    const showEllipsis = prevPage && page - prevPage > 1;
+
+                    return (
+                      <div key={page} className="flex items-center gap-1">
+                        {showEllipsis && (
+                          <span className="px-2 text-brand-text-tertiary">...</span>
+                        )}
+                        <button
+                          onClick={() => setCurrentPage(page)}
+                          className={`w-10 h-10 rounded-lg text-sm font-bold transition-colors ${
+                            currentPage === page
+                              ? 'bg-brand-gold text-brand-black'
+                              : 'border border-gray-300 text-brand-black hover:bg-gray-50'
+                          }`}
+                        >
+                          {page}
+                        </button>
+                      </div>
+                    );
+                  })}
+              </div>
+
+              {/* Next Button */}
+              <button
+                onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                disabled={currentPage === totalPages}
+                className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-bold text-brand-black disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 transition-colors"
+              >
+                Next
+              </button>
+            </div>
           </div>
         )}
       </div>
