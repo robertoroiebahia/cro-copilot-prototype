@@ -92,7 +92,7 @@ async function getGA4Client(workspaceId: string) {
 
   return {
     analyticsData,
-    propertyId: workspace.ga4_property_id,
+    propertyId: String(workspace.ga4_property_id),
   };
 }
 
