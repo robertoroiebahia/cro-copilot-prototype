@@ -148,63 +148,56 @@ function InsightsContent() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="bg-gradient-to-br from-purple-600 to-purple-800 text-white border-b-4 border-brand-gold">
-        <div className="max-w-7xl mx-auto px-8 py-8">
+      <div className="bg-white border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-8 py-6">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <div className="flex items-center gap-3 mb-2">
-                <div className="w-10 h-10 bg-white/20 backdrop-blur rounded-lg flex items-center justify-center">
-                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                  </svg>
-                </div>
-                <div>
-                  <h1 className="text-3xl font-black">Insights</h1>
-                  {selectedWorkspace && (
-                    <p className="text-purple-200 text-sm font-medium">{selectedWorkspace.name}</p>
-                  )}
-                </div>
+              <div className="flex items-center gap-3 mb-1">
+                <svg className="w-8 h-8 text-brand-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                </svg>
+                <h1 className="text-3xl font-black text-brand-black">Insights</h1>
+                {selectedWorkspace && (
+                  <span className="px-3 py-1 bg-brand-gold/20 text-brand-gold text-xs font-bold rounded-lg">
+                    {selectedWorkspace.name}
+                  </span>
+                )}
               </div>
-              <p className="text-purple-100 text-sm font-medium">
+              <p className="text-sm text-brand-text-secondary font-medium">
                 All insights from your research in one place
               </p>
             </div>
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => setIsModalOpen(true)}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-brand-gold hover:bg-black text-black hover:text-white text-sm font-black rounded-lg transition-all duration-300"
-              >
+            <button
+              onClick={() => setIsModalOpen(true)}
+              className="px-6 py-3 bg-brand-gold hover:bg-black text-brand-black hover:text-white font-black rounded-lg transition-all duration-300"
+              style={{ boxShadow: '0 4px 12px rgba(245, 197, 66, 0.3)' }}
+            >
+              <span className="flex items-center gap-2">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                 </svg>
                 Add Insight
-              </button>
-              <Link
-                href="/dashboard"
-                className="inline-flex items-center gap-2 px-4 py-2 border-2 border-gray-300 text-brand-text-secondary text-sm font-bold rounded-lg hover:border-brand-gold hover:text-brand-gold transition-all duration-300"
-              >
-                Back to Dashboard
-              </Link>
-            </div>
+              </span>
+            </button>
           </div>
 
           {/* Stats */}
           <div className="grid grid-cols-4 gap-4">
-            <div className="bg-white/20 backdrop-blur border border-white/30 rounded-lg p-4">
-              <div className="text-2xl font-black text-white">{stats.total}</div>
-              <div className="text-xs font-bold text-purple-100">Total</div>
+            <div className="border border-gray-200 rounded-lg p-4">
+              <div className="text-2xl font-black text-brand-black">{stats.total}</div>
+              <div className="text-xs font-bold text-gray-500">Total Insights</div>
             </div>
-            <div className="bg-white/20 backdrop-blur border border-white/30 rounded-lg p-4">
-              <div className="text-2xl font-black text-white">{stats.critical}</div>
-              <div className="text-xs font-bold text-purple-100">Critical</div>
+            <div className="border border-gray-200 rounded-lg p-4">
+              <div className="text-2xl font-black text-red-600">{stats.critical}</div>
+              <div className="text-xs font-bold text-gray-500">Critical</div>
             </div>
-            <div className="bg-white/20 backdrop-blur border border-white/30 rounded-lg p-4">
-              <div className="text-2xl font-black text-white">{stats.high}</div>
-              <div className="text-xs font-bold text-purple-100">High Priority</div>
+            <div className="border border-gray-200 rounded-lg p-4">
+              <div className="text-2xl font-black text-orange-600">{stats.high}</div>
+              <div className="text-xs font-bold text-gray-500">High Priority</div>
             </div>
-            <div className="bg-white/20 backdrop-blur border border-white/30 rounded-lg p-4">
-              <div className="text-2xl font-black text-white">{stats.validated}</div>
-              <div className="text-xs font-bold text-purple-100">Validated</div>
+            <div className="border border-gray-200 rounded-lg p-4">
+              <div className="text-2xl font-black text-green-600">{stats.validated}</div>
+              <div className="text-xs font-bold text-gray-500">Validated</div>
             </div>
           </div>
         </div>
