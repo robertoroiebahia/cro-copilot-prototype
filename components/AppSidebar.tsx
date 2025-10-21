@@ -144,24 +144,6 @@ export default function AppSidebar({ isCollapsed, onToggle }: SidebarProps) {
         />
 
         <NavItem
-          href="/analyze/heatmap"
-          label="Heatmaps"
-          icon={<HeatmapIcon />}
-          isActive={isActive('/analyze/heatmap')}
-          isCollapsed={isCollapsed}
-          disabled={!selectedWorkspaceId}
-        />
-
-        <NavItem
-          href="/analyze/user-testing"
-          label="User Testing"
-          icon={<UsersIcon />}
-          isActive={isActive('/analyze/user-testing')}
-          isCollapsed={isCollapsed}
-          disabled={!selectedWorkspaceId}
-        />
-
-        <NavItem
           href="/analyze/survey"
           label="Surveys"
           icon={<SurveyIcon />}
@@ -189,12 +171,33 @@ export default function AppSidebar({ isCollapsed, onToggle }: SidebarProps) {
         />
 
         <NavItem
+          href="/analyze/heatmap"
+          label="Heatmaps"
+          icon={<HeatmapIcon />}
+          isActive={isActive('/analyze/heatmap')}
+          isCollapsed={isCollapsed}
+          disabled={!selectedWorkspaceId}
+          comingSoon={true}
+        />
+
+        <NavItem
+          href="/analyze/user-testing"
+          label="User Testing"
+          icon={<UsersIcon />}
+          isActive={isActive('/analyze/user-testing')}
+          isCollapsed={isCollapsed}
+          disabled={!selectedWorkspaceId}
+          comingSoon={true}
+        />
+
+        <NavItem
           href="/analyze/competitor"
           label="Competitors"
           icon={<SearchIcon />}
           isActive={isActive('/analyze/competitor')}
           isCollapsed={isCollapsed}
           disabled={!selectedWorkspaceId}
+          comingSoon={true}
         />
 
         {/* Divider */}
@@ -359,7 +362,8 @@ function NavItem({
   icon,
   isActive,
   isCollapsed,
-  disabled = false
+  disabled = false,
+  comingSoon = false
 }: {
   href: string;
   label: string;
@@ -367,6 +371,7 @@ function NavItem({
   isActive: boolean;
   isCollapsed: boolean;
   disabled?: boolean;
+  comingSoon?: boolean;
 }) {
   if (disabled) {
     return (
@@ -379,6 +384,27 @@ function NavItem({
         </div>
         {!isCollapsed && (
           <span className="text-sm truncate text-gray-400">{label}</span>
+        )}
+      </div>
+    );
+  }
+
+  if (comingSoon) {
+    return (
+      <div
+        className="flex items-center gap-3 px-2 py-2 rounded-lg opacity-60 cursor-not-allowed"
+        title={isCollapsed ? `${label} - Coming Soon` : undefined}
+      >
+        <div className="flex-shrink-0 text-gray-400">
+          {icon}
+        </div>
+        {!isCollapsed && (
+          <div className="flex items-center gap-2 flex-1">
+            <span className="text-sm truncate text-gray-500">{label}</span>
+            <span className="px-1.5 py-0.5 bg-gray-200 text-gray-600 text-[10px] font-bold rounded uppercase tracking-wide">
+              Soon
+            </span>
+          </div>
         )}
       </div>
     );
