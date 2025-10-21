@@ -57,7 +57,6 @@ export default function AnalysisDetailPage() {
   const [insights, setInsights] = useState<Insight[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [expandedScreenshot, setExpandedScreenshot] = useState<string | null>(null);
   const [expandedInsight, setExpandedInsight] = useState<string | null>(null);
 
   const analysisId = Array.isArray(params?.id) ? params?.id[0] : params?.id;
@@ -141,25 +140,7 @@ export default function AnalysisDetailPage() {
     minute: '2-digit',
   });
 
-  const formatScreenshotSrc = (value?: string | null) => {
-    if (!value) {
-      return null;
-    }
-
-    if (value.startsWith('data:image')) {
-      return value;
-    }
-
-    if (/^https?:\/\//i.test(value)) {
-      return value;
-    }
-
-    return `data:image/jpeg;base64,${value}`;
-  };
-
-  // Try both field names for backwards compatibility
-  const screenshotUrl = (analysis.screenshots as any)?.full_page || analysis.screenshots?.mobileFullPage;
-  const mobileFullPageSrc = formatScreenshotSrc(screenshotUrl);
+  // Screenshots removed - no longer displaying screenshots for any analysis type
 
   const domain = (() => {
     try {
@@ -456,37 +437,6 @@ export default function AnalysisDetailPage() {
         </div>
       </div>
 
-      {/* Screenshot Modal */}
-      {expandedScreenshot && (
-        <div
-          className="fixed inset-0 z-50 bg-black/95 backdrop-blur-sm flex items-center justify-center p-4"
-          onClick={() => setExpandedScreenshot(null)}
-        >
-          <div className="relative max-w-6xl max-h-full overflow-auto">
-            <button
-              className="absolute -top-12 right-0 bg-brand-gold text-black rounded-lg px-4 py-2 font-black text-sm hover:bg-white transition-all duration-200 flex items-center gap-2"
-              style={{
-                boxShadow: '0 4px 12px rgba(245, 197, 66, 0.3)'
-              }}
-              onClick={() => setExpandedScreenshot(null)}
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-              Close
-            </button>
-            <img
-              src={expandedScreenshot}
-              alt="Expanded Screenshot"
-              className="max-w-full max-h-[90vh] object-contain rounded-lg"
-              style={{
-                boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4)'
-              }}
-              onClick={(e) => e.stopPropagation()}
-            />
-          </div>
-        </div>
-      )}
     </div>
   );
 }
