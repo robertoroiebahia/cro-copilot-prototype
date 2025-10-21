@@ -314,8 +314,8 @@ export async function calculateStandardFunnels(workspaceId: string) {
   results.push(
     await calculateFunnels(
       workspaceId,
-      last7Days.toISOString().split('T')[0],
-      today.toISOString().split('T')[0]
+      last7Days.toISOString().split('T')[0]!,
+      today.toISOString().split('T')[0]!
     )
   );
 
@@ -325,8 +325,8 @@ export async function calculateStandardFunnels(workspaceId: string) {
   results.push(
     await calculateFunnels(
       workspaceId,
-      last30Days.toISOString().split('T')[0],
-      today.toISOString().split('T')[0]
+      last30Days.toISOString().split('T')[0]!,
+      today.toISOString().split('T')[0]!
     )
   );
 
@@ -336,8 +336,8 @@ export async function calculateStandardFunnels(workspaceId: string) {
   results.push(
     await calculateFunnels(
       workspaceId,
-      last90Days.toISOString().split('T')[0],
-      today.toISOString().split('T')[0]
+      last90Days.toISOString().split('T')[0]!,
+      today.toISOString().split('T')[0]!
     )
   );
 
