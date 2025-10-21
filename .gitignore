@@ -37,3 +37,6 @@ test-*.ts
 *_SUMMARY.md
 *_PLAN.md
 *_ROADMAP.md
+
+# Supabase
+supabase/.temp/
