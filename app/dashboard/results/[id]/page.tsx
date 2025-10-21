@@ -242,13 +242,13 @@ export default function AnalysisDetailPage() {
                   </div>
                 </div>
                 <div className="p-6 bg-gray-50">
-                  {analysis.metrics?.funnels?.[0] ? (
+                  {(analysis.metrics as any)?.funnels?.[0] ? (
                     <GA4FunnelChart
                       data={{
-                        steps: analysis.metrics.funnels[0].funnel_data?.steps || [],
-                        overall_cvr: analysis.metrics.funnels[0].overall_cvr || 0,
-                        total_landing_users: analysis.metrics.funnels[0].total_landing_users || 0,
-                        total_purchases: analysis.metrics.funnels[0].total_purchases || 0,
+                        steps: (analysis.metrics as any).funnels[0].funnel_data?.steps || [],
+                        overall_cvr: (analysis.metrics as any).funnels[0].overall_cvr || 0,
+                        total_landing_users: (analysis.metrics as any).funnels[0].total_landing_users || 0,
+                        total_purchases: (analysis.metrics as any).funnels[0].total_purchases || 0,
                       }}
                     />
                   ) : (
@@ -275,11 +275,11 @@ export default function AnalysisDetailPage() {
                       <div className="text-xs font-bold text-gray-600 uppercase tracking-wide mb-1">Research Type</div>
                       <div className="text-sm font-medium text-gray-900 capitalize">{((analysis as any).research_type || 'unknown')?.replace(/_/g, ' ')}</div>
                     </div>
-                    {analysis.metrics?.date_range && (
+                    {(analysis.metrics as any)?.date_range && (
                       <div>
                         <div className="text-xs font-bold text-gray-600 uppercase tracking-wide mb-1">Date Range</div>
                         <div className="text-sm font-medium text-gray-900">
-                          {analysis.metrics.date_range.start} to {analysis.metrics.date_range.end}
+                          {(analysis.metrics as any).date_range.start} to {(analysis.metrics as any).date_range.end}
                         </div>
                       </div>
                     )}
