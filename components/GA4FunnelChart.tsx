@@ -19,7 +19,23 @@ interface GA4FunnelChartProps {
 }
 
 export function GA4FunnelChart({ data }: GA4FunnelChartProps) {
+  if (!data) {
+    return (
+      <div className="text-center py-8 text-gray-500">
+        No funnel data available
+      </div>
+    );
+  }
+
   const { steps, overall_cvr, total_landing_users, total_purchases } = data;
+
+  if (!steps || !Array.isArray(steps) || steps.length === 0) {
+    return (
+      <div className="text-center py-8 text-gray-500">
+        No funnel steps available
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -30,15 +46,15 @@ export function GA4FunnelChart({ data }: GA4FunnelChartProps) {
             <div className="text-xs font-bold text-brand-text-secondary uppercase tracking-wider mb-1">
               Overall Conversion Rate
             </div>
-            <div className="text-4xl font-black text-brand-black">{overall_cvr}%</div>
+            <div className="text-4xl font-black text-brand-black">{overall_cvr || 0}%</div>
           </div>
           <div className="text-right">
             <div className="text-base text-brand-text-secondary mb-1">
-              <span className="font-black text-brand-black text-2xl">{total_purchases.toLocaleString()}</span>
+              <span className="font-black text-brand-black text-2xl">{(total_purchases || 0).toLocaleString()}</span>
               <span className="ml-2 font-medium">purchases</span>
             </div>
             <div className="text-sm text-brand-text-tertiary font-medium">
-              from {total_landing_users.toLocaleString()} landing sessions
+              from {(total_landing_users || 0).toLocaleString()} landing sessions
             </div>
           </div>
         </div>

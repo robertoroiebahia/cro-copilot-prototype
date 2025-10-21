@@ -61,8 +61,16 @@ function GA4AnalysisContent() {
       );
       const data = await res.json();
 
-      if (data.success) {
-        setFunnelData(data.funnel);
+      if (data.success && data.funnel) {
+        // Transform funnel data to match component expectations
+        const funnel = data.funnel;
+        const transformedData = {
+          steps: funnel.funnel_data?.steps || [],
+          overall_cvr: funnel.overall_cvr || 0,
+          total_landing_users: funnel.total_landing_users || 0,
+          total_purchases: funnel.total_purchases || 0,
+        };
+        setFunnelData(transformedData);
       } else {
         // If funnel not found, it means no data has been synced yet
         if (data.error === 'Funnel not found') {
