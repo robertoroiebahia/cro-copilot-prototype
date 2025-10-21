@@ -167,83 +167,88 @@ export async function POST(request: NextRequest) {
         return allowedValues.includes(normalized) ? normalized : undefined;
       };
 
-      const insightsToSave = insights.map((insight) => ({
-        analysis_id: dbAnalysisId,
-        workspace_id: workspaceId, // ✅ Add workspace context
-        user_id: userId, // Keep for backward compatibility
-        insight_id: `INS-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`.toUpperCase(),
-        research_type: 'page_analysis',
-        source_type: 'automated',
-        source_url: url,
+      const insightsToSave = insights.map((insight) => {
+        // Type assertion to access comprehensive metadata
+        const comprehensive = (insight.metadata as any)?.comprehensive || {};
 
-        // Core fields
-        title: insight.title,
-        statement: insight.description,
-        growth_pillar: validateEnum(
-          insight.metadata?.comprehensive?.growth_pillar,
-          ['conversion', 'aov', 'frequency', 'retention', 'acquisition']
-        ) || 'conversion',
-        confidence_level: validateEnum(
-          insight.metadata?.comprehensive?.confidence_level,
-          ['high', 'medium', 'low']
-        ) || (insight.confidence > 75 ? 'high' : insight.confidence > 50 ? 'medium' : 'low'),
-        priority: validateEnum(
-          insight.metadata?.comprehensive?.priority,
-          ['critical', 'high', 'medium', 'low']
-        ) || (
-          insight.severity === 'critical' ? 'critical' :
-          insight.severity === 'high' ? 'high' :
-          insight.severity === 'medium' ? 'medium' : 'low'
-        ),
+        return {
+          analysis_id: dbAnalysisId,
+          workspace_id: workspaceId, // ✅ Add workspace context
+          user_id: userId, // Keep for backward compatibility
+          insight_id: `INS-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`.toUpperCase(),
+          research_type: 'page_analysis',
+          source_type: 'automated',
+          source_url: url,
 
-        // Evidence
-        evidence: insight.metadata?.comprehensive?.evidence || {
-          qualitative: {
-            quotes: insight.evidence?.map(e => e.content) || [],
-            sources: [insight.location.section],
+          // Core fields
+          title: insight.title,
+          statement: insight.description,
+          growth_pillar: validateEnum(
+            comprehensive.growth_pillar,
+            ['conversion', 'aov', 'frequency', 'retention', 'acquisition']
+          ) || 'conversion',
+          confidence_level: validateEnum(
+            comprehensive.confidence_level,
+            ['high', 'medium', 'low']
+          ) || (insight.confidence > 75 ? 'high' : insight.confidence > 50 ? 'medium' : 'low'),
+          priority: validateEnum(
+            comprehensive.priority,
+            ['critical', 'high', 'medium', 'low']
+          ) || (
+            insight.severity === 'critical' ? 'critical' :
+            insight.severity === 'high' ? 'high' :
+            insight.severity === 'medium' ? 'medium' : 'low'
+          ),
+
+          // Evidence
+          evidence: comprehensive.evidence || {
+            qualitative: {
+              quotes: insight.evidence?.map(e => e.content) || [],
+              sources: [insight.location.section],
+            },
           },
-        },
-        sources: {
-          primary: {
-            type: 'analytics',
-            name: 'Page Analysis',
-            date: new Date().toISOString(),
+          sources: {
+            primary: {
+              type: 'analytics',
+              name: 'Page Analysis',
+              date: new Date().toISOString(),
+            },
           },
-        },
 
-        // Context
-        customer_segment: insight.metadata?.comprehensive?.customer_segment,
-        journey_stage: validateEnum(
-          insight.metadata?.comprehensive?.journey_stage,
-          ['awareness', 'consideration', 'decision', 'post_purchase']
-        ),
-        page_location: insight.metadata?.comprehensive?.page_location || [insight.location.section],
-        device_type: validateEnum(
-          insight.metadata?.comprehensive?.device_type,
-          ['mobile', 'desktop', 'tablet', 'all']
-        ),
+          // Context
+          customer_segment: comprehensive.customer_segment,
+          journey_stage: validateEnum(
+            comprehensive.journey_stage,
+            ['awareness', 'consideration', 'decision', 'post_purchase']
+          ),
+          page_location: comprehensive.page_location || [insight.location.section],
+          device_type: validateEnum(
+            comprehensive.device_type,
+            ['mobile', 'desktop', 'tablet', 'all']
+          ),
 
-        // Categorization
-        friction_type: validateEnum(
-          insight.metadata?.comprehensive?.friction_type,
-          ['usability', 'trust', 'value_perception', 'information_gap', 'cognitive_load']
-        ),
-        psychology_principle: validateEnum(
-          insight.metadata?.comprehensive?.psychology_principle,
-          ['loss_aversion', 'social_proof', 'scarcity', 'authority', 'anchoring']
-        ),
-        tags: insight.metadata?.comprehensive?.tags,
-        affected_kpis: insight.metadata?.comprehensive?.affected_kpis,
-        current_performance: insight.metadata?.comprehensive?.current_performance,
+          // Categorization
+          friction_type: validateEnum(
+            comprehensive.friction_type,
+            ['usability', 'trust', 'value_perception', 'information_gap', 'cognitive_load']
+          ),
+          psychology_principle: validateEnum(
+            comprehensive.psychology_principle,
+            ['loss_aversion', 'social_proof', 'scarcity', 'authority', 'anchoring']
+          ),
+          tags: comprehensive.tags,
+          affected_kpis: comprehensive.affected_kpis,
+          current_performance: comprehensive.current_performance,
 
-        // Actions
-        suggested_actions: insight.metadata?.comprehensive?.suggested_actions,
-        validation_status: validateEnum(
-          insight.metadata?.comprehensive?.validation_status,
-          ['untested', 'testing', 'validated', 'invalidated']
-        ) || 'untested',
-        status: 'draft',
-      }));
+          // Actions
+          suggested_actions: comprehensive.suggested_actions,
+          validation_status: validateEnum(
+            comprehensive.validation_status,
+            ['untested', 'testing', 'validated', 'invalidated']
+          ) || 'untested',
+          status: 'draft',
+        };
+      });
 
       const { error: insightsError } = await supabase
         .from('insights')

@@ -277,12 +277,6 @@ function PageAnalysisContent() {
       if (data.insights && data.insights.length === 0) {
         responseWarnings.push('No insights extracted from the page');
       }
-      if (generateThemes && (!data.themes || data.themes.length === 0)) {
-        responseWarnings.push('No themes could be generated from insights');
-      }
-      if (generateHypotheses && (!data.hypotheses || data.hypotheses.length === 0)) {
-        responseWarnings.push('No hypotheses could be generated');
-      }
       setWarnings(responseWarnings);
 
       updateProgress('complete', 100, 'Analysis complete!');

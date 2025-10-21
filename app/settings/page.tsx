@@ -37,8 +37,6 @@ export default function SettingsPage() {
     );
   }
 
-  if (!user) return null;
-
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-4xl mx-auto px-8 py-8">

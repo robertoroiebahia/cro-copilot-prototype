@@ -20,11 +20,11 @@ function GA4AnalysisContent() {
   const [error, setError] = useState<string | null>(null);
 
   // Calculate date range
-  const getDateRange = (days: string) => {
-    const end = new Date().toISOString().split('T')[0];
+  const getDateRange = (days: string): { start: string; end: string } => {
+    const end = new Date().toISOString().split('T')[0]!;
     const start = new Date(Date.now() - parseInt(days) * 24 * 60 * 60 * 1000)
       .toISOString()
-      .split('T')[0];
+      .split('T')[0]!;
     return { start, end };
   };
 

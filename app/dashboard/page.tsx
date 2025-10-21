@@ -334,8 +334,18 @@ function DashboardContent() {
 }
 
 // Helper Components
-function StatCard({ title, value, icon, href, color }: any) {
-  const colorClasses = {
+type StatCardColor = 'blue' | 'purple' | 'green' | 'orange' | 'pink';
+
+interface StatCardProps {
+  title: string;
+  value: number | string;
+  icon: React.ReactNode;
+  href: string;
+  color: StatCardColor;
+}
+
+function StatCard({ title, value, icon, href, color }: StatCardProps) {
+  const colorClasses: Record<StatCardColor, string> = {
     blue: 'bg-blue-100 text-blue-600 border-blue-200',
     purple: 'bg-purple-100 text-purple-600 border-purple-200',
     green: 'bg-green-100 text-green-600 border-green-200',
@@ -357,8 +367,18 @@ function StatCard({ title, value, icon, href, color }: any) {
   );
 }
 
-function ActionCard({ title, description, icon, href, color }: any) {
-  const colorClasses = {
+type ActionCardColor = 'gold' | 'purple' | 'blue';
+
+interface ActionCardProps {
+  title: string;
+  description: string;
+  icon: React.ReactNode;
+  href: string;
+  color: ActionCardColor;
+}
+
+function ActionCard({ title, description, icon, href, color }: ActionCardProps) {
+  const colorClasses: Record<ActionCardColor, string> = {
     gold: 'bg-brand-gold/10 text-brand-gold border-brand-gold/20',
     purple: 'bg-purple-100 text-purple-600 border-purple-200',
     blue: 'bg-blue-100 text-blue-600 border-blue-200',
@@ -378,7 +398,13 @@ function ActionCard({ title, description, icon, href, color }: any) {
   );
 }
 
-function EmptyState({ icon, message, action }: any) {
+interface EmptyStateProps {
+  icon: React.ReactNode;
+  message: string;
+  action?: React.ReactNode;
+}
+
+function EmptyState({ icon, message, action }: EmptyStateProps) {
   return (
     <div className="text-center py-12">
       <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-400">

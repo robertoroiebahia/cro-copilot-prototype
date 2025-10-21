@@ -9,7 +9,12 @@ interface Workspace {
   description: string | null;
   website_url: string | null;
   ga4_property_id: string | null;
+  ga4_sync_enabled?: boolean;
+  ga4_last_sync_at?: string | null;
+  timezone?: string;
+  currency?: string;
   is_active: boolean;
+  created_at?: string;
 }
 
 interface WorkspaceContextType {
@@ -60,7 +65,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 
           if (validStored) {
             setSelectedWorkspaceId(stored);
-          } else {
+          } else if (data[0]) {
             setSelectedWorkspaceId(data[0].id);
             localStorage.setItem('selectedWorkspaceId', data[0].id);
           }

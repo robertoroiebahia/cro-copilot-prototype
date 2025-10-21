@@ -13,6 +13,7 @@ import {
   EffortEstimate,
 } from '../../types/insights';
 import { LLMError } from '../../utils/errors';
+import { PromptBuilder } from '../../utils/llm';
 import { Logger, createLogger, LogLevel } from '../../utils/logger';
 import { llmService } from './llm-service';
 import { buildPageAnalysisPrompt } from './prompts/page-analysis.prompt';

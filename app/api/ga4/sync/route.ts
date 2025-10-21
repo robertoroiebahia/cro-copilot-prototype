@@ -95,10 +95,10 @@ export async function POST(request: NextRequest) {
     let insightsResult;
     if (generateInsights) {
       // Generate for last 30 days
-      const endDate = new Date().toISOString().split('T')[0];
+      const endDate = new Date().toISOString().split('T')[0]!;
       const startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
         .toISOString()
-        .split('T')[0];
+        .split('T')[0]!;
 
       insightsResult = await generateFunnelInsights(workspaceId, startDate, endDate);
     }

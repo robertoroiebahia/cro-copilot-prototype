@@ -186,6 +186,8 @@ function calculateFunnel(events: any[], segment: SegmentConfig): FunnelData {
 
   for (let i = 0; i < stepConfigs.length; i++) {
     const config = stepConfigs[i];
+    if (!config) continue;
+
     const users = eventUsers[config.event] || 0;
     const landingUsers = eventUsers['session_start'] || 0;
 

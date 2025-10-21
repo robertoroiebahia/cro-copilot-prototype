@@ -10,12 +10,12 @@ interface Workspace {
   description: string | null;
   website_url: string | null;
   ga4_property_id: string | null;
-  ga4_sync_enabled: boolean;
-  ga4_last_sync_at: string | null;
-  timezone: string;
-  currency: string;
+  ga4_sync_enabled?: boolean;
+  ga4_last_sync_at?: string | null;
+  timezone?: string;
+  currency?: string;
   is_active: boolean;
-  created_at: string;
+  created_at?: string;
 }
 
 export default function WorkspacesPage() {
@@ -229,12 +229,16 @@ export default function WorkspacesPage() {
                       No GA4
                     </span>
                   )}
-                  <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded">
-                    {workspace.currency}
-                  </span>
-                  <span className="px-2 py-1 bg-purple-100 text-purple-700 text-xs font-medium rounded">
-                    {workspace.timezone}
-                  </span>
+                  {workspace.currency && (
+                    <span className="px-2 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded">
+                      {workspace.currency}
+                    </span>
+                  )}
+                  {workspace.timezone && (
+                    <span className="px-2 py-1 bg-purple-100 text-purple-700 text-xs font-medium rounded">
+                      {workspace.timezone}
+                    </span>
+                  )}
                 </div>
 
                 <div className="flex gap-2">
