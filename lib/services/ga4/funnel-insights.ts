@@ -115,7 +115,7 @@ export async function generateFunnelInsights(
   workspaceId: string,
   startDate: string,
   endDate: string
-): Promise<{ success: boolean; insightsCount: number; error?: string }> {
+): Promise<{ success: boolean; insightsCount: number; analysisId?: string; error?: string }> {
   try {
     // Get all funnels for date range
     const funnels = await getAllFunnels(workspaceId, startDate, endDate);

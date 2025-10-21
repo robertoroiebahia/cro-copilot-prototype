@@ -25,97 +25,57 @@ export function GA4FunnelChart({ data }: GA4FunnelChartProps) {
   const maxUsers = steps[0]?.users || 1;
 
   return (
-    <div className="space-y-6">
-      {/* Overall CVR */}
-      <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-6">
-        <div className="text-center">
-          <p className="text-sm font-bold text-gray-600 uppercase mb-2">
-            Overall Conversion Rate
-          </p>
-          <p className="text-5xl font-black text-green-600">{overall_cvr}%</p>
-          <p className="text-sm text-gray-500 mt-2">
-            {total_purchases.toLocaleString()} purchases from {total_landing_users.toLocaleString()} sessions
-          </p>
-        </div>
-      </div>
-
-      {/* Funnel Steps */}
-      <div className="space-y-4">
+    <div className="space-y-4">
+      {/* Compact Funnel Steps - Horizontal Layout */}
+      <div className="grid grid-cols-5 gap-2">
         {steps.map((step, index) => {
-          const width = (step.users / maxUsers) * 100;
           const isFirstStep = index === 0;
+          const isLastStep = index === steps.length - 1;
 
-          // Color based on drop-off rate
-          let colorClass = 'bg-green-500';
+          // Color based on drop-off rate - using brand colors
+          let barColor = 'bg-brand-gold';
+          let textColor = 'text-brand-black';
           if (step.drop_off_rate > 40) {
-            colorClass = 'bg-red-500';
+            barColor = 'bg-red-500';
+            textColor = 'text-white';
           } else if (step.drop_off_rate > 25) {
-            colorClass = 'bg-orange-500';
-          } else if (step.drop_off_rate > 15) {
-            colorClass = 'bg-yellow-500';
+            barColor = 'bg-orange-500';
+            textColor = 'text-white';
           }
 
           return (
-            <div key={step.event} className="space-y-2">
-              {/* Step Header */}
-              <div className="flex justify-between items-center">
-                <div className="flex items-center gap-3">
-                  <span className="flex items-center justify-center w-8 h-8 rounded-full bg-black text-white font-bold text-sm">
-                    {index + 1}
-                  </span>
-                  <div>
-                    <h3 className="font-bold text-lg">{step.name}</h3>
-                    <p className="text-xs text-gray-500">{step.event}</p>
+            <div key={step.event} className="relative">
+              {/* Compact Step Card */}
+              <div className={`${barColor} rounded-lg p-3 h-full flex flex-col justify-between`}>
+                <div>
+                  <div className="flex items-center gap-1 mb-2">
+                    <span className="flex items-center justify-center w-5 h-5 rounded-full bg-black text-white font-bold text-xs">
+                      {index + 1}
+                    </span>
+                    <span className={`text-xs font-black ${textColor}`}>{step.name}</span>
+                  </div>
+                  <div className={`text-2xl font-black ${textColor} mb-1`}>
+                    {step.users.toLocaleString()}
+                  </div>
+                  <div className={`text-xs font-bold ${textColor} opacity-80`}>
+                    {step.conversion_rate}% reach
                   </div>
                 </div>
 
-                <div className="text-right">
-                  <p className="text-2xl font-black">
-                    {step.users.toLocaleString()}
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    {step.conversion_rate}% of total
-                  </p>
-                </div>
+                {/* Drop-off indicator at bottom */}
+                {!isFirstStep && (
+                  <div className={`text-xs font-bold ${textColor} opacity-90 mt-2 pt-2 border-t border-current border-opacity-20`}>
+                    -{step.drop_off_rate}% drop
+                  </div>
+                )}
               </div>
 
-              {/* Funnel Bar */}
-              <div className="relative">
-                <div
-                  className={`h-16 ${colorClass} rounded-lg transition-all duration-500 flex items-center justify-between px-6`}
-                  style={{ width: `${Math.max(width, 10)}%` }}
-                >
-                  <span className="text-white font-bold">
-                    {step.conversion_rate}%
-                  </span>
-                  {!isFirstStep && (
-                    <span className="text-white text-sm">
-                      -{step.drop_off_rate}% from previous
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              {/* Drop-off indicator */}
-              {!isFirstStep && step.drop_off > 0 && (
-                <div className="flex items-center gap-2 text-sm text-gray-600 pl-12">
-                  <svg
-                    className="w-4 h-4 text-red-500"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M19 14l-7 7m0 0l-7-7m7 7V3"
-                    />
+              {/* Arrow between steps */}
+              {!isLastStep && (
+                <div className="absolute top-1/2 -right-1 transform -translate-y-1/2 translate-x-1/2 z-10">
+                  <svg className="w-4 h-4 text-brand-text-tertiary" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd" />
                   </svg>
-                  <span>
-                    <strong>{step.drop_off.toLocaleString()}</strong> users dropped off
-                    ({step.drop_off_rate}%)
-                  </span>
                 </div>
               )}
             </div>
@@ -123,25 +83,22 @@ export function GA4FunnelChart({ data }: GA4FunnelChartProps) {
         })}
       </div>
 
-      {/* Legend */}
-      <div className="bg-gray-50 rounded-lg p-4">
-        <p className="text-sm font-bold mb-3">Drop-off Rate Legend:</p>
-        <div className="grid grid-cols-4 gap-4">
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 bg-green-500 rounded"></div>
-            <span className="text-xs">Excellent (&lt;15%)</span>
+      {/* Overall Stats Bar - Compact */}
+      <div className="bg-gray-50 rounded-lg border border-gray-200 p-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="text-xs font-bold text-brand-text-secondary uppercase tracking-wide mb-1">
+              Overall Conversion Rate
+            </div>
+            <div className="text-3xl font-black text-brand-black">{overall_cvr}%</div>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 bg-yellow-500 rounded"></div>
-            <span className="text-xs">Good (15-25%)</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 bg-orange-500 rounded"></div>
-            <span className="text-xs">Fair (25-40%)</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 bg-red-500 rounded"></div>
-            <span className="text-xs">Poor (&gt;40%)</span>
+          <div className="text-right">
+            <div className="text-sm text-brand-text-secondary">
+              <span className="font-black text-brand-black">{total_purchases.toLocaleString()}</span> purchases
+            </div>
+            <div className="text-xs text-brand-text-tertiary">
+              from {total_landing_users.toLocaleString()} sessions
+            </div>
           </div>
         </div>
       </div>

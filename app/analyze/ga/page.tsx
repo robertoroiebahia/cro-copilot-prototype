@@ -162,135 +162,142 @@ function GA4AnalysisContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
-          <div>
-            <div className="flex items-center gap-3 mb-2">
-              <h1 className="text-3xl font-black text-brand-black">GA4 Funnel Analysis</h1>
-              {selectedWorkspace && (
-                <span className="px-3 py-1 bg-brand-gold/20 text-brand-gold text-sm font-bold rounded-lg">
-                  {selectedWorkspace.name}
-                </span>
-              )}
+    <div className="min-h-screen bg-gray-50">
+      {/* Header Section */}
+      <div className="bg-white border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-8 py-6">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <div className="flex items-center gap-3 mb-1">
+                <svg className="w-8 h-8 text-brand-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                </svg>
+                <h1 className="text-3xl font-black text-brand-black">GA4 Funnel Analysis</h1>
+                {selectedWorkspace && (
+                  <span className="px-3 py-1 bg-brand-gold/20 text-brand-gold text-xs font-bold rounded-lg">
+                    {selectedWorkspace.name}
+                  </span>
+                )}
+              </div>
+              <p className="text-sm text-brand-text-secondary font-medium">
+                Track conversion rates and identify optimization opportunities
+              </p>
             </div>
-            <p className="text-brand-text-secondary">
-              Track conversion rates across your purchase funnel
-            </p>
+
+            <button
+              onClick={handleSync}
+              disabled={syncing}
+              className="px-6 py-3 bg-brand-gold hover:bg-black text-brand-black hover:text-white font-black rounded-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              style={{ boxShadow: syncing ? 'none' : '0 4px 12px rgba(245, 197, 66, 0.3)' }}
+            >
+              {syncing ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-current border-t-transparent"></div>
+                  Syncing...
+                </>
+              ) : (
+                <>
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                  Sync Data
+                </>
+              )}
+            </button>
           </div>
 
-          <button
-            onClick={handleSync}
-            disabled={syncing}
-            className="px-6 py-3 bg-brand-gold text-brand-black font-bold rounded-lg hover:shadow-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-          >
-            {syncing ? (
-              <>
-                <div className="animate-spin rounded-full h-4 w-4 border-2 border-brand-black border-t-transparent"></div>
-                Syncing...
-              </>
-            ) : (
-              <>
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                </svg>
-                Sync Data
-              </>
-            )}
-          </button>
-        </div>
+          {/* Compact Filters Row */}
+          <div className="flex items-center gap-3">
+            <select
+              value={dateRange}
+              onChange={(e) => setDateRange(e.target.value)}
+              className="px-4 py-2 text-sm font-bold border border-gray-300 rounded-lg focus:outline-none focus:border-brand-gold transition-all bg-white"
+            >
+              <option value="7">Last 7 Days</option>
+              <option value="30">Last 30 Days</option>
+              <option value="90">Last 90 Days</option>
+            </select>
 
-        {/* Error Display */}
-        {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3">
-            <svg className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <select
+              value={selectedSegment}
+              onChange={(e) => setSelectedSegment(e.target.value)}
+              className="flex-1 px-4 py-2 text-sm font-bold border border-gray-300 rounded-lg focus:outline-none focus:border-brand-gold transition-all bg-white"
+            >
+              <optgroup label="All">
+                <option value="all_users">All Users</option>
+              </optgroup>
+              <optgroup label="Device">
+                <option value="device_mobile">Mobile</option>
+                <option value="device_desktop">Desktop</option>
+                <option value="device_tablet">Tablet</option>
+              </optgroup>
+              <optgroup label="Channel">
+                <option value="channel_direct">Direct</option>
+                <option value="channel_email">Email</option>
+                <option value="channel_organic">Organic Search</option>
+                <option value="channel_paid">Paid</option>
+                <option value="channel_social">Social</option>
+              </optgroup>
+              <optgroup label="User Type">
+                <option value="user_new">New Users</option>
+                <option value="user_returning">Returning Users</option>
+              </optgroup>
+              <optgroup label="Geography">
+                <option value="country_us">United States</option>
+                <option value="country_non_us">International</option>
+              </optgroup>
+              <optgroup label="Landing Page">
+                <option value="landing_homepage">Homepage</option>
+                <option value="landing_product">Product Page</option>
+                <option value="landing_collection">Collection Page</option>
+                <option value="landing_blog">Blog</option>
+              </optgroup>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      {/* Error Display */}
+      {error && (
+        <div className="max-w-7xl mx-auto px-8 pt-6">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
+            <svg className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            <div>
-              <p className="text-sm font-bold text-red-900">Error</p>
-              <p className="text-sm text-red-700">{error}</p>
+            <div className="flex-1">
+              <p className="text-sm font-bold text-red-900">{error}</p>
             </div>
-          </div>
-        )}
-
-        {/* Filters */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-          <h3 className="text-sm font-bold text-brand-black mb-4 uppercase tracking-wide">Filters</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Date Range */}
-            <div>
-              <label className="block text-sm font-bold text-brand-black mb-2">Date Range</label>
-              <select
-                value={dateRange}
-                onChange={(e) => setDateRange(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-gold focus:border-transparent"
-              >
-                <option value="7">Last 7 Days</option>
-                <option value="30">Last 30 Days</option>
-                <option value="90">Last 90 Days</option>
-              </select>
-            </div>
-
-            {/* Segment */}
-            <div>
-              <label className="block text-sm font-bold text-brand-black mb-2">Segment</label>
-              <select
-                value={selectedSegment}
-                onChange={(e) => setSelectedSegment(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-gold focus:border-transparent"
-              >
-                <optgroup label="All">
-                  <option value="all_users">All Users</option>
-                </optgroup>
-                <optgroup label="Device">
-                  <option value="device_mobile">Mobile</option>
-                  <option value="device_desktop">Desktop</option>
-                  <option value="device_tablet">Tablet</option>
-                </optgroup>
-                <optgroup label="Channel">
-                  <option value="channel_direct">Direct</option>
-                  <option value="channel_email">Email</option>
-                  <option value="channel_organic">Organic Search</option>
-                  <option value="channel_paid">Paid</option>
-                  <option value="channel_social">Social</option>
-                </optgroup>
-                <optgroup label="User Type">
-                  <option value="user_new">New Users</option>
-                  <option value="user_returning">Returning Users</option>
-                </optgroup>
-                <optgroup label="Geography">
-                  <option value="country_us">United States</option>
-                  <option value="country_non_us">International</option>
-                </optgroup>
-                <optgroup label="Landing Page">
-                  <option value="landing_homepage">Homepage</option>
-                  <option value="landing_product">Product Page</option>
-                  <option value="landing_collection">Collection Page</option>
-                  <option value="landing_blog">Blog</option>
-                </optgroup>
-              </select>
-            </div>
+            <button
+              onClick={() => setError(null)}
+              className="text-red-400 hover:text-red-600"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
           </div>
         </div>
+      )}
 
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-8 py-6">
         {loading ? (
           <div className="text-center py-16">
             <div className="animate-spin rounded-full h-12 w-12 border-4 border-brand-gold border-t-transparent mx-auto mb-4"></div>
             <p className="text-brand-text-secondary font-medium">Loading funnel data...</p>
           </div>
         ) : (
-          <>
+          <div className="space-y-6">
             {/* Funnel Visualization */}
             {funnelData && (
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
                 <h2 className="text-xl font-black text-brand-black mb-4">Conversion Funnel</h2>
                 <GA4FunnelChart data={funnelData} />
               </div>
             )}
 
             {/* Segment Comparison */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
               <h2 className="text-xl font-black text-brand-black mb-4">Segment Comparison</h2>
               <SegmentComparison dateRange={getDateRange(dateRange)} />
             </div>
@@ -311,7 +318,7 @@ function GA4AnalysisContent() {
                 </div>
               )}
             </div>
-          </>
+          </div>
         )}
       </div>
     </div>
