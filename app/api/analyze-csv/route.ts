@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth/require-auth';
 import { createClient } from '@/utils/supabase/server';
-import { parseCSV, validateCSVForResearchType, extractTextForAnalysis } from '@/lib/services/csv-parser';
+import { parseCSV, validateCSVForResearchType, extractTextForAnalysis } from '@/lib/services/data-processing/csv-parser';
 import { getCSVAnalysisPrompt } from '@/lib/services/ai/prompts/csv-analysis-prompts';
 import { llmService } from '@/lib/services/ai/llm-service';
 

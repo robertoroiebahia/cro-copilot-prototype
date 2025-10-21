@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAuth } from '@/lib/auth/require-auth';
 import { createClient } from '@/utils/supabase/server';
-import { getLatestGA4Analysis } from '@/lib/services/ga4/ga4-analysis';
+import { getLatestGA4Analysis } from '@/lib/services/analytics/ga4/ga4-analysis';
 
 export const dynamic = 'force-dynamic';
 

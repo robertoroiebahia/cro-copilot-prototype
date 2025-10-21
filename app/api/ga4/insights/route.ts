@@ -6,7 +6,7 @@ import {
   getInsightsByType,
   getCriticalInsights,
   generateFunnelInsights,
-} from '@/lib/services/ga4/funnel-insights';
+} from '@/lib/services/analytics/ga4/funnel-insights';
 
 export const dynamic = 'force-dynamic';
 
