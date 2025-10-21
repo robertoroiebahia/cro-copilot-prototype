@@ -182,21 +182,48 @@ export async function storeGA4Events(
 
   const supabase = createClient();
 
-  // Transform events for database
-  const dbEvents = events.map(event => ({
-    workspace_id: workspaceId,
-    event_date: event.event_date,
-    event_name: event.event_name,
-    event_count: event.event_count,
-    total_users: event.total_users,
-    sessions: event.sessions,
-    device_category: event.device_category,
-    channel: event.channel,
-    user_type: event.user_type,
-    country: event.country,
-    landing_page_path: event.landing_page_path,
-    landing_page_category: categorizeLandingPage(event.landing_page_path),
-  }));
+  // Transform and aggregate events to avoid duplicates within batch
+  const eventMap = new Map<string, any>();
+
+  for (const event of events) {
+    // Create unique key for deduplication
+    const key = [
+      workspaceId,
+      event.event_date,
+      event.event_name,
+      event.device_category || 'null',
+      event.channel || 'null',
+      event.user_type || 'null',
+      event.country || 'null',
+    ].join('|');
+
+    if (eventMap.has(key)) {
+      // Aggregate metrics if duplicate found
+      const existing = eventMap.get(key)!;
+      existing.event_count += event.event_count;
+      existing.total_users += event.total_users;
+      existing.sessions += event.sessions;
+    } else {
+      // Add new event
+      eventMap.set(key, {
+        workspace_id: workspaceId,
+        event_date: event.event_date,
+        event_name: event.event_name,
+        event_count: event.event_count,
+        total_users: event.total_users,
+        sessions: event.sessions,
+        device_category: event.device_category,
+        channel: event.channel,
+        user_type: event.user_type,
+        country: event.country,
+        landing_page_path: event.landing_page_path,
+        landing_page_category: categorizeLandingPage(event.landing_page_path),
+      });
+    }
+  }
+
+  // Convert map to array
+  const dbEvents = Array.from(eventMap.values());
 
   // Batch insert (Supabase handles upserts)
   const BATCH_SIZE = 1000;
