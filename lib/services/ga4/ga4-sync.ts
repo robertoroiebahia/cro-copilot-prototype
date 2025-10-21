@@ -122,7 +122,7 @@ export async function fetchGA4Events(
             { name: 'sessionDefaultChannelGroup' },
             { name: 'newVsReturning' },
             { name: 'country' },
-            { name: 'landingPagePath' },
+            { name: 'landingPage' },
           ],
           metrics: [
             { name: 'eventCount' },
