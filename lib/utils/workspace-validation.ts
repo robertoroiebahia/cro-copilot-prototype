@@ -172,7 +172,7 @@ export async function validateMultipleWorkspaces(
     .in('id', workspaceIds);
 
   if (error) {
-    logger.error('Multiple workspace validation failed', { error, userId });
+    logger.error('Multiple workspace validation failed', error instanceof Error ? error : new Error(String(error)), { userId });
     return {
       valid: [],
       invalid: workspaceIds,
@@ -262,7 +262,7 @@ export function withWorkspaceAccess<T = any>(
         params: routeContext?.params,
       });
     } catch (error) {
-      logger.error('Workspace access wrapper error', { error });
+      logger.error('Workspace access wrapper error', error instanceof Error ? error : new Error(String(error)));
       return NextResponse.json(
         { error: 'Internal server error' },
         { status: 500 }
