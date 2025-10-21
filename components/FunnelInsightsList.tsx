@@ -1,11 +1,6 @@
 'use client';
 
-const IMPACT_COLORS = {
-  critical: 'bg-red-100 text-red-800 border-red-200',
-  high: 'bg-orange-100 text-orange-800 border-orange-200',
-  medium: 'bg-yellow-100 text-yellow-800 border-yellow-200',
-  low: 'bg-blue-100 text-blue-800 border-blue-200',
-};
+import { useState } from 'react';
 
 const TYPE_LABELS = {
   gap_analysis: 'Gap Analysis',
@@ -16,6 +11,8 @@ const TYPE_LABELS = {
 };
 
 export function FunnelInsightsList({ insights }: { insights: any[] }) {
+  const [expandedInsight, setExpandedInsight] = useState<number | null>(null);
+
   if (insights.length === 0) {
     return (
       <div className="text-center py-8 text-gray-500">
@@ -25,59 +22,137 @@ export function FunnelInsightsList({ insights }: { insights: any[] }) {
   }
 
   return (
-    <div className="space-y-4">
-      {insights.map((insight, index) => (
-        <div
-          key={insight.id || index}
-          className={`border rounded-lg p-4 ${IMPACT_COLORS[insight.impact as keyof typeof IMPACT_COLORS]}`}
-        >
-          {/* Header */}
-          <div className="flex items-start justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-bold uppercase px-2 py-1 rounded bg-white bg-opacity-50">
-                {TYPE_LABELS[insight.insight_type as keyof typeof TYPE_LABELS]}
-              </span>
-              <span className="text-xs font-bold uppercase">
-                {insight.impact} Impact
-              </span>
-            </div>
-            <span className="text-xs">
-              Confidence: {insight.confidence}
-            </span>
-          </div>
-
-          {/* Observation */}
-          <p className="text-sm font-medium mb-3">{insight.observation}</p>
-
-          {/* Data Points */}
-          {insight.data_points && (
-            <div className="bg-white bg-opacity-50 rounded p-3 text-xs space-y-1">
-              {Object.entries(insight.data_points).map(([key, value]) => (
-                <div key={key} className="flex justify-between">
-                  <span className="font-medium">{key}:</span>
-                  <span>{typeof value === 'number' ? value.toLocaleString() : String(value)}</span>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {/* Segments */}
-          {(insight.primary_segment || insight.comparison_segment) && (
-            <div className="mt-3 text-xs">
-              {insight.primary_segment && (
-                <span className="mr-3">
-                  <strong>Primary:</strong> {insight.primary_segment}
-                </span>
-              )}
-              {insight.comparison_segment && (
-                <span>
-                  <strong>vs.</strong> {insight.comparison_segment}
-                </span>
-              )}
-            </div>
-          )}
+    <div className="border border-gray-200 rounded-lg overflow-hidden">
+      {/* Table Header */}
+      <div className="bg-gray-50 border-b border-gray-200 px-6 py-3">
+        <div className="grid grid-cols-12 gap-4 text-xs font-black text-brand-text-tertiary uppercase tracking-wide">
+          <div className="col-span-1">Impact</div>
+          <div className="col-span-2">Type</div>
+          <div className="col-span-6">Observation</div>
+          <div className="col-span-2">Segment</div>
+          <div className="col-span-1">Confidence</div>
         </div>
-      ))}
+      </div>
+
+      {/* Table Body */}
+      <div className="divide-y divide-gray-200">
+        {insights.map((insight, index) => {
+          const isExpanded = expandedInsight === index;
+
+          const impactConfig = {
+            critical: { label: 'CRIT', color: 'bg-red-500 text-white' },
+            high: { label: 'HIGH', color: 'bg-orange-500 text-white' },
+            medium: { label: 'MED', color: 'bg-blue-500 text-white' },
+            low: { label: 'LOW', color: 'bg-gray-400 text-white' },
+          }[insight.impact];
+
+          const confidenceConfig = {
+            high: { label: 'High', color: 'text-green-700' },
+            medium: { label: 'Med', color: 'text-yellow-700' },
+            low: { label: 'Low', color: 'text-red-700' },
+          }[insight.confidence];
+
+          return (
+            <div key={insight.id || index} className="hover:bg-gray-50 transition-colors">
+              {/* Main Row */}
+              <button
+                onClick={() => setExpandedInsight(isExpanded ? null : index)}
+                className="w-full px-6 py-4 text-left"
+              >
+                <div className="grid grid-cols-12 gap-4 items-start">
+                  {/* Impact */}
+                  <div className="col-span-1">
+                    <span className={`inline-block px-2 py-1 rounded text-xs font-black ${impactConfig?.color}`}>
+                      {impactConfig?.label}
+                    </span>
+                  </div>
+
+                  {/* Type */}
+                  <div className="col-span-2">
+                    <span className="text-xs font-bold text-brand-text-secondary">
+                      {TYPE_LABELS[insight.insight_type as keyof typeof TYPE_LABELS]}
+                    </span>
+                  </div>
+
+                  {/* Observation */}
+                  <div className="col-span-6">
+                    <p className="text-sm font-medium text-brand-black line-clamp-2">
+                      {insight.observation}
+                    </p>
+                  </div>
+
+                  {/* Segment */}
+                  <div className="col-span-2">
+                    <span className="text-xs font-medium text-brand-text-secondary">
+                      {insight.primary_segment || 'All Users'}
+                    </span>
+                  </div>
+
+                  {/* Confidence */}
+                  <div className="col-span-1">
+                    <span className={`text-xs font-bold ${confidenceConfig?.color}`}>
+                      {confidenceConfig?.label}
+                    </span>
+                  </div>
+                </div>
+              </button>
+
+              {/* Expanded Details */}
+              {isExpanded && (
+                <div className="px-6 pb-4 bg-gray-50 border-t border-gray-200">
+                  <div className="mt-4 space-y-4">
+                    {/* Full Observation */}
+                    <div>
+                      <h4 className="text-xs font-black text-brand-text-tertiary uppercase mb-2">Full Observation</h4>
+                      <p className="text-sm text-brand-black font-medium">{insight.observation}</p>
+                    </div>
+
+                    {/* Data Points */}
+                    {insight.data_points && Object.keys(insight.data_points).length > 0 && (
+                      <div>
+                        <h4 className="text-xs font-black text-brand-text-tertiary uppercase mb-2">Data Points</h4>
+                        <div className="bg-white rounded-lg border border-gray-200 p-3">
+                          <div className="grid grid-cols-2 gap-3 text-xs">
+                            {Object.entries(insight.data_points).map(([key, value]) => (
+                              <div key={key} className="flex justify-between">
+                                <span className="font-bold text-brand-text-secondary">{key}:</span>
+                                <span className="font-medium text-brand-black">
+                                  {typeof value === 'number' ? value.toLocaleString() : String(value)}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Segments Comparison */}
+                    {(insight.primary_segment || insight.comparison_segment) && (
+                      <div>
+                        <h4 className="text-xs font-black text-brand-text-tertiary uppercase mb-2">Segments</h4>
+                        <div className="flex gap-4 text-xs">
+                          {insight.primary_segment && (
+                            <div>
+                              <span className="font-bold text-brand-text-secondary">Primary:</span>
+                              <span className="ml-2 font-medium text-brand-black">{insight.primary_segment}</span>
+                            </div>
+                          )}
+                          {insight.comparison_segment && (
+                            <div>
+                              <span className="font-bold text-brand-text-secondary">vs.</span>
+                              <span className="ml-2 font-medium text-brand-black">{insight.comparison_segment}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }

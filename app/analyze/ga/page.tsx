@@ -18,6 +18,7 @@ function GA4AnalysisContent() {
   const [dateRange, setDateRange] = useState('30');
   const [ga4Configured, setGa4Configured] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [segmentComparisonExpanded, setSegmentComparisonExpanded] = useState(false);
 
   // Calculate date range
   const getDateRange = (days: string): { start: string; end: string } => {
@@ -296,10 +297,29 @@ function GA4AnalysisContent() {
               </div>
             )}
 
-            {/* Segment Comparison */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <h2 className="text-xl font-black text-brand-black mb-4">Segment Comparison</h2>
-              <SegmentComparison dateRange={getDateRange(dateRange)} />
+            {/* Segment Comparison - Collapsible */}
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+              <button
+                onClick={() => setSegmentComparisonExpanded(!segmentComparisonExpanded)}
+                className="w-full px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
+              >
+                <h2 className="text-xl font-black text-brand-black">Segment Comparison</h2>
+                <svg
+                  className={`w-5 h-5 text-brand-text-secondary transition-transform ${segmentComparisonExpanded ? 'rotate-180' : ''}`}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              {segmentComparisonExpanded && (
+                <div className="px-6 pb-6 border-t border-gray-200">
+                  <div className="mt-4">
+                    <SegmentComparison dateRange={getDateRange(dateRange)} />
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* AI Insights */}
