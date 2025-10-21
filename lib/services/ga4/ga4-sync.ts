@@ -281,7 +281,7 @@ export async function syncInitialData(workspaceId: string) {
  */
 export async function syncDailyData(workspaceId: string) {
   const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000);
-  const dateStr = yesterday.toISOString().split('T')[0];
+  const dateStr = yesterday.toISOString().split('T')[0]!;
 
   return syncGA4Data(workspaceId, dateStr, dateStr);
 }
