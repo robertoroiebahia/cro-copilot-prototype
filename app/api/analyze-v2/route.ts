@@ -250,14 +250,32 @@ export async function POST(request: NextRequest) {
         };
       });
 
-      const { error: insightsError } = await supabase
+      logger.info('Attempting to save insights', {
+        count: insightsToSave.length,
+        sampleInsight: insightsToSave[0],
+        workspaceId,
+        dbAnalysisId
+      });
+
+      const { error: insightsError, data: savedInsights } = await supabase
         .from('insights')
-        .insert(insightsToSave);
+        .insert(insightsToSave)
+        .select();
 
       if (insightsError) {
-        logger.error('Failed to save insights', insightsError);
+        logger.error('Failed to save insights', {
+          error: insightsError,
+          message: insightsError.message,
+          details: insightsError.details,
+          hint: insightsError.hint,
+          code: insightsError.code,
+        });
+        // Don't fail the entire request, but log detailed error
       } else {
-        logger.info('Insights saved to database', { count: insightsToSave.length });
+        logger.info('Insights saved to database', {
+          count: savedInsights?.length || 0,
+          savedIds: savedInsights?.map(i => i.id)
+        });
       }
     }
 

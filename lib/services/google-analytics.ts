@@ -96,11 +96,33 @@ export async function getGA4Properties() {
     auth: oauth2Client,
   });
 
-  // List properties with filter to get all properties across all accounts
-  const response = await analyticsAdmin.properties.list({
-    filter: 'parent:accounts/*',
-  });
-  return response.data.properties || [];
+  // First, get all accounts the user has access to
+  const accountsResponse = await analyticsAdmin.accounts.list();
+  const accounts = accountsResponse.data.accounts || [];
+
+  if (accounts.length === 0) {
+    return [];
+  }
+
+  // Then fetch properties for each account
+  const allProperties: any[] = [];
+
+  for (const account of accounts) {
+    try {
+      const propertiesResponse = await analyticsAdmin.properties.list({
+        filter: `parent:${account.name}`,
+      });
+
+      if (propertiesResponse.data.properties) {
+        allProperties.push(...propertiesResponse.data.properties);
+      }
+    } catch (error) {
+      // Skip accounts that fail (might not have permissions)
+      console.warn(`Failed to fetch properties for account ${account.name}:`, error);
+    }
+  }
+
+  return allProperties;
 }
 
 /**
