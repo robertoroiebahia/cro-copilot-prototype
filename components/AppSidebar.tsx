@@ -180,10 +180,10 @@ export default function AppSidebar({ isCollapsed, onToggle }: SidebarProps) {
         />
 
         <NavItem
-          href="/analyze/on-site-poll"
+          href="/analyze/onsite-poll"
           label="On-Site Poll"
           icon={<PollIcon />}
-          isActive={isActive('/analyze/on-site-poll')}
+          isActive={isActive('/analyze/onsite-poll')}
           isCollapsed={isCollapsed}
           disabled={!selectedWorkspaceId}
         />
