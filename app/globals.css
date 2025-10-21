@@ -98,6 +98,21 @@
     border-color: #F5C542; /* brand-gold */
   }
 
+  /* Brand Select/Dropdown - Custom Arrow */
+  select {
+    @apply cursor-pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%23525252' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E");
+    background-position: right 0.5rem center;
+    background-repeat: no-repeat;
+    background-size: 1.25em 1.25em;
+    padding-right: 2.5rem;
+  }
+
+  select:hover {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%23F5C542' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M6 8l4 4 4-4'/%3E%3C/svg%3E");
+  }
+
   /* Brand Badge */
   .badge {
     @apply inline-flex items-center px-3 py-1 rounded text-xs font-bold border;
