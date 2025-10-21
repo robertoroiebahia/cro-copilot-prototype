@@ -45,14 +45,14 @@ export function FunnelInsightsList({ insights }: { insights: any[] }) {
             medium: { label: 'MED', color: 'bg-blue-500 text-white' },
             low: { label: 'LOW', color: 'bg-gray-400 text-white' },
           };
-          const impactConfig = impactLookup[insight.impact] || impactLookup.medium;
+          const impactConfig = impactLookup[insight.impact] ?? { label: 'MED', color: 'bg-blue-500 text-white' };
 
           const confidenceLookup: Record<string, { label: string; color: string }> = {
             high: { label: 'High', color: 'text-green-700' },
             medium: { label: 'Med', color: 'text-yellow-700' },
             low: { label: 'Low', color: 'text-red-700' },
           };
-          const confidenceConfig = confidenceLookup[insight.confidence] || confidenceLookup.medium;
+          const confidenceConfig = confidenceLookup[insight.confidence] ?? { label: 'Med', color: 'text-yellow-700' };
 
           return (
             <div key={insight.id || index} className="hover:bg-gray-50 transition-colors">
