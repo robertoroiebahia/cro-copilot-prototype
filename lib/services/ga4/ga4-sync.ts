@@ -148,6 +148,19 @@ export async function fetchGA4Events(
           const dimensions = row.dimensionValues || [];
           const metrics = row.metricValues || [];
 
+          // Normalize user_type to match database constraint
+          let userType: string | null = dimensions[4]?.value?.toLowerCase() || null;
+          if (userType) {
+            // GA4 returns 'new' or 'returning' but sometimes with different casing
+            if (userType.includes('new')) {
+              userType = 'new';
+            } else if (userType.includes('return')) {
+              userType = 'returning';
+            } else {
+              userType = null; // Invalid value, set to null
+            }
+          }
+
           events.push({
             event_date: dimensions[0]?.value || '',
             event_name: eventName,
@@ -156,7 +169,7 @@ export async function fetchGA4Events(
             sessions: parseInt(metrics[2]?.value || '0'),
             device_category: dimensions[2]?.value?.toLowerCase() || null,
             channel: dimensions[3]?.value || null,
-            user_type: dimensions[4]?.value?.toLowerCase() || null,
+            user_type: userType,
             country: dimensions[5]?.value || null,
             landing_page_path: dimensions[6]?.value || null,
           });
