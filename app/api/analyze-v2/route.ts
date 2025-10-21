@@ -263,13 +263,15 @@ export async function POST(request: NextRequest) {
         .select();
 
       if (insightsError) {
-        logger.error('Failed to save insights', {
-          error: insightsError,
-          message: insightsError.message,
-          details: insightsError.details,
-          hint: insightsError.hint,
-          code: insightsError.code,
-        });
+        logger.error(
+          'Failed to save insights',
+          new Error(insightsError.message),
+          {
+            details: insightsError.details,
+            hint: insightsError.hint,
+            code: insightsError.code,
+          }
+        );
         // Don't fail the entire request, but log detailed error
       } else {
         logger.info('Insights saved to database', {
