@@ -204,10 +204,58 @@ export async function runGA4Analysis(
       };
     }
 
-    // Step 2: Calculate funnels (in memory)
-    console.log('Calculating funnels...');
-    const mainFunnel = calculateFunnelFromEvents(events, 'All Users');
-    const funnels = [mainFunnel];
+    // Step 2: Calculate funnels (in memory) for different segments
+    console.log('Calculating funnels for all segments...');
+    const funnels: FunnelData[] = [];
+
+    // Main "All Users" funnel
+    funnels.push(calculateFunnelFromEvents(events, 'All Users'));
+
+    // Device segments
+    const mobileEvents = events.filter(e => e.device_category === 'mobile');
+    const desktopEvents = events.filter(e => e.device_category === 'desktop');
+    const tabletEvents = events.filter(e => e.device_category === 'tablet');
+
+    if (mobileEvents.length > 0) {
+      funnels.push(calculateFunnelFromEvents(mobileEvents, 'Mobile'));
+    }
+    if (desktopEvents.length > 0) {
+      funnels.push(calculateFunnelFromEvents(desktopEvents, 'Desktop'));
+    }
+    if (tabletEvents.length > 0) {
+      funnels.push(calculateFunnelFromEvents(tabletEvents, 'Tablet'));
+    }
+
+    // User type segments
+    const newUserEvents = events.filter(e => e.user_type === 'new');
+    const returningUserEvents = events.filter(e => e.user_type === 'returning');
+
+    if (newUserEvents.length > 0) {
+      funnels.push(calculateFunnelFromEvents(newUserEvents, 'New Users'));
+    }
+    if (returningUserEvents.length > 0) {
+      funnels.push(calculateFunnelFromEvents(returningUserEvents, 'Returning Users'));
+    }
+
+    // Top channels (if data available)
+    const channels = new Set(events.map(e => e.channel).filter(Boolean));
+    for (const channel of channels) {
+      const channelEvents = events.filter(e => e.channel === channel);
+      if (channelEvents.length > 100) { // Only include channels with significant traffic
+        funnels.push(calculateFunnelFromEvents(
+          channelEvents,
+          channel || 'Unknown Channel'
+        ));
+      }
+    }
+
+    // Ensure we have at least one funnel
+    if (funnels.length === 0) {
+      return {
+        success: false,
+        error: 'No funnel data could be calculated from the events',
+      };
+    }
 
     // Step 3: Create analysis record
     console.log('Creating analysis record...');
@@ -222,9 +270,9 @@ export async function runGA4Analysis(
         research_type: 'ga_analysis',
         metrics: {
           date_range: { start: startDate, end: endDate },
-          overall_cvr: mainFunnel.overall_cvr,
-          total_landing_users: mainFunnel.total_landing_users,
-          total_purchases: mainFunnel.total_purchases,
+          overall_cvr: funnels[0]!.overall_cvr,
+          total_landing_users: funnels[0]!.total_landing_users,
+          total_purchases: funnels[0]!.total_purchases,
           funnels: funnels, // Store funnel data here
           events_analyzed: events.length,
         },
@@ -233,7 +281,7 @@ export async function runGA4Analysis(
           segments: funnels.map(f => f.segment_label),
         },
         summary: {
-          overall_cvr: `${mainFunnel.overall_cvr}%`,
+          overall_cvr: `${funnels[0]!.overall_cvr}%`,
           date_range: `${startDate} to ${endDate}`,
         },
         status: 'completed',

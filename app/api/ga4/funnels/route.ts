@@ -85,10 +85,8 @@ export async function GET(request: NextRequest) {
       });
     }
 
-    // Return all funnels (currently just "All Users")
-    const mainFunnel = funnels[0];
-
-    if (!mainFunnel) {
+    // Return all funnels for segment comparison
+    if (funnels.length === 0) {
       return NextResponse.json(
         { error: 'No funnel data in analysis' },
         { status: 404 }
@@ -97,7 +95,8 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      funnel: mainFunnel,
+      funnel: funnels[0], // Main funnel for single view
+      funnels: funnels,   // All funnels for segment comparison
       analysisId: analysis.id,
       dateRange: analysis.metrics?.date_range,
     });
