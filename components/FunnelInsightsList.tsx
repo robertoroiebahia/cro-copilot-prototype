@@ -39,18 +39,20 @@ export function FunnelInsightsList({ insights }: { insights: any[] }) {
         {insights.map((insight, index) => {
           const isExpanded = expandedInsight === index;
 
-          const impactConfig = {
+          const impactLookup: Record<string, { label: string; color: string }> = {
             critical: { label: 'CRIT', color: 'bg-red-500 text-white' },
             high: { label: 'HIGH', color: 'bg-orange-500 text-white' },
             medium: { label: 'MED', color: 'bg-blue-500 text-white' },
             low: { label: 'LOW', color: 'bg-gray-400 text-white' },
-          }[insight.impact];
+          };
+          const impactConfig = impactLookup[insight.impact] || impactLookup.medium;
 
-          const confidenceConfig = {
+          const confidenceLookup: Record<string, { label: string; color: string }> = {
             high: { label: 'High', color: 'text-green-700' },
             medium: { label: 'Med', color: 'text-yellow-700' },
             low: { label: 'Low', color: 'text-red-700' },
-          }[insight.confidence];
+          };
+          const confidenceConfig = confidenceLookup[insight.confidence] || confidenceLookup.medium;
 
           return (
             <div key={insight.id || index} className="hover:bg-gray-50 transition-colors">
@@ -62,15 +64,15 @@ export function FunnelInsightsList({ insights }: { insights: any[] }) {
                 <div className="grid grid-cols-12 gap-4 items-start">
                   {/* Impact */}
                   <div className="col-span-1">
-                    <span className={`inline-block px-2 py-1 rounded text-xs font-black ${impactConfig?.color}`}>
-                      {impactConfig?.label}
+                    <span className={`inline-block px-2 py-1 rounded text-xs font-black ${impactConfig.color}`}>
+                      {impactConfig.label}
                     </span>
                   </div>
 
                   {/* Type */}
                   <div className="col-span-2">
                     <span className="text-xs font-bold text-brand-text-secondary">
-                      {TYPE_LABELS[insight.insight_type as keyof typeof TYPE_LABELS]}
+                      {TYPE_LABELS[insight.insight_type as keyof typeof TYPE_LABELS] || insight.insight_type}
                     </span>
                   </div>
 
@@ -90,8 +92,8 @@ export function FunnelInsightsList({ insights }: { insights: any[] }) {
 
                   {/* Confidence */}
                   <div className="col-span-1">
-                    <span className={`text-xs font-bold ${confidenceConfig?.color}`}>
-                      {confidenceConfig?.label}
+                    <span className={`text-xs font-bold ${confidenceConfig.color}`}>
+                      {confidenceConfig.label}
                     </span>
                   </div>
                 </div>
