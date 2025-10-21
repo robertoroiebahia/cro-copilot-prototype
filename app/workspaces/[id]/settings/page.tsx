@@ -122,12 +122,20 @@ export default function WorkspaceSettingsPage() {
     setSuccess(null);
 
     try {
+      // Get the current user's session to retrieve the refresh token
+      const { data: { session } } = await supabase.auth.getSession();
+
+      if (!session?.provider_refresh_token) {
+        throw new Error('Google Analytics access token not found. Please sign out and sign in with Google again.');
+      }
+
       const res = await fetch(`/api/ga4/settings`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           workspaceId,
           propertyId: selectedPropertyId,
+          refreshToken: session.provider_refresh_token,
         }),
       });
 
