@@ -13,6 +13,8 @@ export type ResearchType =
   | 'heatmap_analysis'     // Heatmap & session recording analysis
   | 'user_testing'         // Moderated/unmoderated user testing
   | 'competitor_analysis'  // Competitive research
+  | 'review_mining'        // Customer review analysis
+  | 'onsite_poll'          // On-site poll analysis
   | 'other';               // Other research methodologies
 
 export const RESEARCH_TYPE_LABELS: Record<ResearchType, string> = {
@@ -22,6 +24,8 @@ export const RESEARCH_TYPE_LABELS: Record<ResearchType, string> = {
   heatmap_analysis: 'Heatmap Analysis',
   user_testing: 'User Testing',
   competitor_analysis: 'Competitor Analysis',
+  review_mining: 'Review Mining',
+  onsite_poll: 'On-Site Poll',
   other: 'Other Research',
 };
 
@@ -32,6 +36,8 @@ export const RESEARCH_TYPE_ICONS: Record<ResearchType, string> = {
   heatmap_analysis: 'HM',
   user_testing: 'UT',
   competitor_analysis: 'CA',
+  review_mining: 'RM',
+  onsite_poll: 'OP',
   other: 'OR',
 };
 

@@ -245,6 +245,8 @@ function AllAnalysesContent() {
                 <option value="page_analysis">Page Analysis</option>
                 <option value="ga_analysis">Google Analytics</option>
                 <option value="survey_analysis">Survey Analysis</option>
+                <option value="review_mining">Review Mining</option>
+                <option value="onsite_poll">On-Site Poll</option>
                 <option value="heatmap_analysis">Heatmap Analysis</option>
                 <option value="user_testing">User Testing</option>
                 <option value="competitor_analysis">Competitor Analysis</option>
