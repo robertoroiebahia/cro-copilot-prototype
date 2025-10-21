@@ -55,7 +55,7 @@ function categorizeLandingPage(path: string | null): string {
 /**
  * Get GA4 client with workspace credentials
  */
-async function getGA4Client(workspaceId: string) {
+async function getGA4Client(workspaceId: string): Promise<{ analyticsData: any; propertyId: string }> {
   const supabase = createClient();
 
   // Get workspace GA4 credentials
