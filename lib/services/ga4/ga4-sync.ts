@@ -268,10 +268,10 @@ export async function syncGA4Data(
  * Sync last 90 days for initial sync
  */
 export async function syncInitialData(workspaceId: string) {
-  const endDate = new Date().toISOString().split('T')[0];
+  const endDate = new Date().toISOString().split('T')[0]!;
   const startDate = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000)
     .toISOString()
-    .split('T')[0];
+    .split('T')[0]!;
 
   return syncGA4Data(workspaceId, startDate, endDate);
 }
