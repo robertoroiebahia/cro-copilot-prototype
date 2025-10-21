@@ -16,21 +16,75 @@ function GA4AnalysisContent() {
   const [insights, setInsights] = useState<any[]>([]);
   const [selectedSegment, setSelectedSegment] = useState('all_users');
   const [dateRange, setDateRange] = useState('30');
+  const [customStartDate, setCustomStartDate] = useState('');
+  const [customEndDate, setCustomEndDate] = useState('');
+  const [useCustomDates, setUseCustomDates] = useState(false);
   const [ga4Configured, setGa4Configured] = useState(false);
+  const [currentPropertyId, setCurrentPropertyId] = useState<string | null>(null);
+  const [availableProperties, setAvailableProperties] = useState<any[]>([]);
+  const [loadingProperties, setLoadingProperties] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [segmentComparisonExpanded, setSegmentComparisonExpanded] = useState(false);
   const [generatingInsights, setGeneratingInsights] = useState(false);
 
   // Calculate date range
-  const getDateRange = (days: string): { start: string; end: string } => {
+  const getDateRange = (): { start: string; end: string } => {
+    if (useCustomDates && customStartDate && customEndDate) {
+      return { start: customStartDate, end: customEndDate };
+    }
     const end = new Date().toISOString().split('T')[0]!;
-    const start = new Date(Date.now() - parseInt(days) * 24 * 60 * 60 * 1000)
+    const start = new Date(Date.now() - parseInt(dateRange) * 24 * 60 * 60 * 1000)
       .toISOString()
       .split('T')[0]!;
     return { start, end };
   };
 
-  // Check GA4 configuration
+  // Fetch available GA4 properties
+  const fetchAvailableProperties = async () => {
+    setLoadingProperties(true);
+    try {
+      const res = await fetch('/api/google-analytics/properties');
+      const data = await res.json();
+      if (data.success && data.properties) {
+        setAvailableProperties(data.properties);
+      }
+    } catch (error) {
+      console.error('Failed to fetch properties:', error);
+    } finally {
+      setLoadingProperties(false);
+    }
+  };
+
+  // Handle property change
+  const handlePropertyChange = async (propertyId: string) => {
+    if (!selectedWorkspaceId || propertyId === currentPropertyId) return;
+
+    try {
+      const res = await fetch('/api/ga4/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          workspaceId: selectedWorkspaceId,
+          propertyId: propertyId,
+        }),
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        setCurrentPropertyId(propertyId);
+        // Refresh data with new property
+        await fetchFunnel();
+        await fetchInsights();
+      } else {
+        setError(data.error || 'Failed to update property');
+      }
+    } catch (error) {
+      console.error('Failed to change property:', error);
+      setError('Failed to change property');
+    }
+  };
+
+  // Check GA4 configuration and fetch properties
   useEffect(() => {
     if (!selectedWorkspaceId) return;
 
@@ -39,6 +93,9 @@ function GA4AnalysisContent() {
       .then(data => {
         if (data.success) {
           setGa4Configured(data.settings?.isConfigured || false);
+          setCurrentPropertyId(data.settings?.propertyId || null);
+          // Fetch available properties for switching
+          fetchAvailableProperties();
         } else {
           setError(data.error);
         }
@@ -56,7 +113,7 @@ function GA4AnalysisContent() {
     setLoading(true);
     setError(null);
     try {
-      const { start, end } = getDateRange(dateRange);
+      const { start, end } = getDateRange();
       const res = await fetch(
         `/api/ga4/funnels?workspaceId=${selectedWorkspaceId}&startDate=${start}&endDate=${end}&segment=${selectedSegment}`
       );
@@ -115,7 +172,7 @@ function GA4AnalysisContent() {
 
     try {
       // Get selected date range
-      const { start, end } = getDateRange(dateRange);
+      const { start, end } = getDateRange();
 
       // Run sync with insights (will generate in background)
       setGeneratingInsights(true);
@@ -157,7 +214,7 @@ function GA4AnalysisContent() {
       fetchFunnel();
       fetchInsights();
     }
-  }, [selectedSegment, dateRange, ga4Configured, selectedWorkspaceId]);
+  }, [selectedSegment, dateRange, customStartDate, customEndDate, useCustomDates, ga4Configured, selectedWorkspaceId]);
 
   // GA4 not configured
   if (!ga4Configured) {
@@ -230,53 +287,128 @@ function GA4AnalysisContent() {
             </button>
           </div>
 
-          {/* Compact Filters Row */}
-          <div className="flex items-center gap-3">
-            <select
-              value={dateRange}
-              onChange={(e) => setDateRange(e.target.value)}
-              className="px-4 py-2 text-sm font-bold border border-gray-300 rounded-lg focus:outline-none focus:border-brand-gold transition-all bg-white"
-            >
-              <option value="7">Last 7 Days</option>
-              <option value="30">Last 30 Days</option>
-              <option value="90">Last 90 Days</option>
-            </select>
+          {/* Improved Filters Section */}
+          <div className="space-y-4">
+            {/* GA4 Property Selector */}
+            {availableProperties.length > 0 && (
+              <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                <label className="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-2">
+                  GA4 Property
+                </label>
+                <select
+                  value={currentPropertyId || ''}
+                  onChange={(e) => handlePropertyChange(e.target.value)}
+                  disabled={loadingProperties}
+                  className="w-full px-4 py-2 text-sm font-bold border border-gray-300 rounded-lg focus:outline-none focus:border-brand-gold transition-all bg-white disabled:opacity-50"
+                >
+                  {availableProperties.map((property) => (
+                    <option key={property.name} value={property.name?.split('/')[1]}>
+                      {property.displayName} ({property.name?.split('/')[1]})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
 
-            <select
-              value={selectedSegment}
-              onChange={(e) => setSelectedSegment(e.target.value)}
-              className="flex-1 px-4 py-2 text-sm font-bold border border-gray-300 rounded-lg focus:outline-none focus:border-brand-gold transition-all bg-white"
-            >
-              <optgroup label="All">
-                <option value="all_users">All Users</option>
-              </optgroup>
-              <optgroup label="Device">
-                <option value="device_mobile">Mobile</option>
-                <option value="device_desktop">Desktop</option>
-                <option value="device_tablet">Tablet</option>
-              </optgroup>
-              <optgroup label="Channel">
-                <option value="channel_direct">Direct</option>
-                <option value="channel_email">Email</option>
-                <option value="channel_organic">Organic Search</option>
-                <option value="channel_paid">Paid</option>
-                <option value="channel_social">Social</option>
-              </optgroup>
-              <optgroup label="User Type">
-                <option value="user_new">New Users</option>
-                <option value="user_returning">Returning Users</option>
-              </optgroup>
-              <optgroup label="Geography">
-                <option value="country_us">United States</option>
-                <option value="country_non_us">International</option>
-              </optgroup>
-              <optgroup label="Landing Page">
-                <option value="landing_homepage">Homepage</option>
-                <option value="landing_product">Product Page</option>
-                <option value="landing_collection">Collection Page</option>
-                <option value="landing_blog">Blog</option>
-              </optgroup>
-            </select>
+            {/* Date Range and Segment Filters */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {/* Date Range Selector */}
+              <div>
+                <label className="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-2">
+                  Date Range
+                </label>
+                <div className="space-y-2">
+                  <select
+                    value={useCustomDates ? 'custom' : dateRange}
+                    onChange={(e) => {
+                      if (e.target.value === 'custom') {
+                        setUseCustomDates(true);
+                        // Set default custom dates to last 30 days
+                        const end = new Date().toISOString().split('T')[0]!;
+                        const start = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]!;
+                        setCustomEndDate(end);
+                        setCustomStartDate(start);
+                      } else {
+                        setUseCustomDates(false);
+                        setDateRange(e.target.value);
+                      }
+                    }}
+                    className="w-full px-4 py-2 text-sm font-bold border border-gray-300 rounded-lg focus:outline-none focus:border-brand-gold transition-all bg-white"
+                  >
+                    <option value="7">Last 7 Days</option>
+                    <option value="30">Last 30 Days</option>
+                    <option value="90">Last 90 Days</option>
+                    <option value="custom">Custom Range</option>
+                  </select>
+
+                  {/* Custom Date Inputs */}
+                  {useCustomDates && (
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="block text-xs text-gray-500 mb-1">Start Date</label>
+                        <input
+                          type="date"
+                          value={customStartDate}
+                          onChange={(e) => setCustomStartDate(e.target.value)}
+                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-brand-gold transition-all"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-gray-500 mb-1">End Date</label>
+                        <input
+                          type="date"
+                          value={customEndDate}
+                          onChange={(e) => setCustomEndDate(e.target.value)}
+                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-brand-gold transition-all"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Segment Selector */}
+              <div>
+                <label className="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-2">
+                  Segment
+                </label>
+                <select
+                  value={selectedSegment}
+                  onChange={(e) => setSelectedSegment(e.target.value)}
+                  className="w-full px-4 py-2 text-sm font-bold border border-gray-300 rounded-lg focus:outline-none focus:border-brand-gold transition-all bg-white"
+                >
+                  <optgroup label="All">
+                    <option value="all_users">All Users</option>
+                  </optgroup>
+                  <optgroup label="Device">
+                    <option value="device_mobile">Mobile</option>
+                    <option value="device_desktop">Desktop</option>
+                    <option value="device_tablet">Tablet</option>
+                  </optgroup>
+                  <optgroup label="Channel">
+                    <option value="channel_direct">Direct</option>
+                    <option value="channel_email">Email</option>
+                    <option value="channel_organic">Organic Search</option>
+                    <option value="channel_paid">Paid</option>
+                    <option value="channel_social">Social</option>
+                  </optgroup>
+                  <optgroup label="User Type">
+                    <option value="user_new">New Users</option>
+                    <option value="user_returning">Returning Users</option>
+                  </optgroup>
+                  <optgroup label="Geography">
+                    <option value="country_us">United States</option>
+                    <option value="country_non_us">International</option>
+                  </optgroup>
+                  <optgroup label="Landing Page">
+                    <option value="landing_homepage">Homepage</option>
+                    <option value="landing_product">Product Page</option>
+                    <option value="landing_collection">Collection Page</option>
+                    <option value="landing_blog">Blog</option>
+                  </optgroup>
+                </select>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -339,7 +471,7 @@ function GA4AnalysisContent() {
               {segmentComparisonExpanded && (
                 <div className="px-6 pb-6 border-t border-gray-200">
                   <div className="mt-4">
-                    <SegmentComparison dateRange={getDateRange(dateRange)} />
+                    <SegmentComparison dateRange={getDateRange()} />
                   </div>
                 </div>
               )}
