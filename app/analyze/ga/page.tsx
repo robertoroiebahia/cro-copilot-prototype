@@ -63,7 +63,12 @@ function GA4AnalysisContent() {
       if (data.success) {
         setFunnelData(data.funnel);
       } else {
-        setError(data.error || 'Failed to load funnel data');
+        // If funnel not found, it means no data has been synced yet
+        if (data.error === 'Funnel not found') {
+          setError('No funnel data available yet. Click "Sync Data" to fetch data from Google Analytics.');
+        } else {
+          setError(data.error || 'Failed to load funnel data');
+        }
       }
     } catch (error) {
       console.error('Failed to fetch funnel:', error);
