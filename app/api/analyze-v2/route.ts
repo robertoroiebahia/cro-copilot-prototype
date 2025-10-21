@@ -174,7 +174,6 @@ export async function POST(request: NextRequest) {
         return {
           analysis_id: dbAnalysisId,
           workspace_id: workspaceId, // ✅ Add workspace context
-          user_id: userId, // Keep for backward compatibility
           insight_id: `INS-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`.toUpperCase(),
           research_type: 'page_analysis',
           source_type: 'automated',
