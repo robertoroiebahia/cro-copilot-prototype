@@ -1,10 +1,6 @@
-import Anthropic from '@anthropic-ai/sdk';
 import { createClient } from '@/utils/supabase/server';
 import { getAllFunnels, FunnelData } from './funnel-calculator';
-
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-});
+import { llmService } from '@/lib/services/ai/llm-service';
 
 export interface FunnelInsight {
   insight_type: 'gap_analysis' | 'segment_comparison' | 'drop_off' | 'anomaly' | 'temporal_pattern';
@@ -135,26 +131,23 @@ export async function generateFunnelInsights(
     // Build prompt
     const prompt = buildInsightPrompt(funnels);
 
-    // Call Claude
-    const message = await anthropic.messages.create({
-      model: 'claude-3-5-sonnet-20241022',
-      max_tokens: 4000,
-      messages: [
-        {
-          role: 'user',
-          content: prompt,
-        },
-      ],
+    // Call LLM service (uses latest model automatically)
+    const response = await llmService.execute<FunnelInsight[]>({
+      prompt,
+      provider: 'claude', // Use Claude for consistency with rest of system
+      maxTokens: 4000,
     });
 
-    // Extract response
-    const firstContent = message.content[0];
-    const responseText = firstContent?.type === 'text'
-      ? firstContent.text
-      : '';
+    if (!response.success || !response.data) {
+      return {
+        success: false,
+        insightsCount: 0,
+        error: response.error || 'Failed to generate insights',
+      };
+    }
 
-    // Parse insights
-    const insights = parseInsights(responseText);
+    // Get insights from response
+    const insights = response.data;
 
     if (insights.length === 0) {
       return {
