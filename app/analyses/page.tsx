@@ -19,6 +19,19 @@ interface Analysis {
   insights_count?: number;
 }
 
+// Color mapping for research types
+const RESEARCH_TYPE_COLORS: Record<ResearchType, { bg: string; text: string }> = {
+  page_analysis: { bg: 'bg-blue-100', text: 'text-blue-700' },
+  ga_analysis: { bg: 'bg-purple-100', text: 'text-purple-700' },
+  survey_analysis: { bg: 'bg-green-100', text: 'text-green-700' },
+  heatmap_analysis: { bg: 'bg-orange-100', text: 'text-orange-700' },
+  user_testing: { bg: 'bg-pink-100', text: 'text-pink-700' },
+  competitor_analysis: { bg: 'bg-teal-100', text: 'text-teal-700' },
+  review_mining: { bg: 'bg-indigo-100', text: 'text-indigo-700' },
+  onsite_poll: { bg: 'bg-cyan-100', text: 'text-cyan-700' },
+  other: { bg: 'bg-gray-100', text: 'text-gray-700' },
+};
+
 function AllAnalysesContent() {
   const router = useRouter();
   const supabase = createClient();
@@ -147,46 +160,30 @@ function AllAnalysesContent() {
                 View all your research across all methodologies
               </p>
             </div>
-            <div className="flex items-center gap-3">
-              <Link
-                href="/analyze"
-                className="inline-flex items-center gap-2 px-4 py-2 bg-brand-gold hover:bg-black text-black hover:text-white text-sm font-black rounded-lg transition-all duration-300"
-                style={{
-                  boxShadow: '0 4px 12px rgba(245, 197, 66, 0.3)'
-                }}
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                </svg>
-                New Page Analysis
-              </Link>
-              <Link
-                href="/dashboard"
-                className="inline-flex items-center gap-2 px-4 py-2 border-2 border-gray-300 text-brand-text-secondary text-sm font-bold rounded-lg hover:border-brand-gold hover:text-brand-gold transition-all duration-300"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                </svg>
-                Back to Dashboard
-              </Link>
-            </div>
+            <Link
+              href="/dashboard"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-brand-gold hover:bg-black text-black hover:text-white font-black rounded-lg transition-all duration-300"
+              style={{ boxShadow: '0 4px 12px rgba(245, 197, 66, 0.3)' }}
+            >
+              Back to Dashboard
+            </Link>
           </div>
 
           {/* Stats Overview */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <div className="bg-gradient-to-br from-blue-50 to-blue-100/50 border border-blue-200 rounded-lg p-4">
+            <div className="border border-gray-200 rounded-lg p-4">
               <div className="text-2xl font-black text-brand-black mb-1">{stats.total}</div>
-              <div className="text-xs font-bold text-brand-text-secondary">Total Analyses</div>
+              <div className="text-xs font-bold text-gray-500">Total Analyses</div>
             </div>
-            <div className="bg-gradient-to-br from-green-50 to-green-100/50 border border-green-200 rounded-lg p-4">
-              <div className="text-2xl font-black text-brand-black mb-1">{stats.totalInsights}</div>
-              <div className="text-xs font-bold text-brand-text-secondary">Total Insights</div>
+            <div className="border border-gray-200 rounded-lg p-4">
+              <div className="text-2xl font-black text-brand-gold mb-1">{stats.totalInsights}</div>
+              <div className="text-xs font-bold text-gray-500">Total Insights</div>
             </div>
-            <div className="bg-gradient-to-br from-purple-50 to-purple-100/50 border border-purple-200 rounded-lg p-4">
+            <div className="border border-gray-200 rounded-lg p-4">
               <div className="text-2xl font-black text-brand-black mb-1">
                 {Object.keys(stats.byType).length}
               </div>
-              <div className="text-xs font-bold text-brand-text-secondary">Research Types Used</div>
+              <div className="text-xs font-bold text-gray-500">Research Types</div>
             </div>
           </div>
 
@@ -289,11 +286,9 @@ function AllAnalysesContent() {
                 <Link
                   href="/analyze"
                   className="inline-flex items-center gap-2 px-6 py-3 bg-brand-gold text-brand-black text-sm font-black rounded-lg hover:bg-black hover:text-white transition-all duration-300"
+                  style={{ boxShadow: '0 4px 12px rgba(245, 197, 66, 0.3)' }}
                 >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                  </svg>
-                  New Page Analysis
+                  Run New Analysis
                 </Link>
               )}
             </div>
@@ -309,7 +304,7 @@ function AllAnalysesContent() {
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
-                      <span className="text-xs font-black px-2 py-1 bg-blue-100 text-blue-700 rounded">
+                      <span className={`text-xs font-black px-2 py-1 ${RESEARCH_TYPE_COLORS[analysis.research_type]?.bg || 'bg-gray-100'} ${RESEARCH_TYPE_COLORS[analysis.research_type]?.text || 'text-gray-700'} rounded`}>
                         {RESEARCH_TYPE_ICONS[analysis.research_type] || 'OR'}
                       </span>
                       <div>
@@ -317,7 +312,7 @@ function AllAnalysesContent() {
                           <h3 className="text-sm font-bold text-brand-black group-hover:text-brand-gold transition-colors">
                             {analysis.name || analysis.url}
                           </h3>
-                          <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs font-bold rounded">
+                          <span className={`px-2 py-0.5 ${RESEARCH_TYPE_COLORS[analysis.research_type]?.bg || 'bg-gray-100'} ${RESEARCH_TYPE_COLORS[analysis.research_type]?.text || 'text-gray-700'} text-xs font-bold rounded`}>
                             {RESEARCH_TYPE_LABELS[analysis.research_type]}
                           </span>
                         </div>
