@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useWorkspace } from '@/components/WorkspaceContext';
 
 interface Workspace {
@@ -250,20 +251,12 @@ export default function WorkspacesPage() {
                       Select
                     </button>
                   )}
-                  <button
-                    onClick={() => openEditModal(workspace)}
-                    className="flex-1 px-3 py-2 bg-gray-100 text-brand-black font-medium text-sm rounded hover:bg-gray-200 transition-colors"
+                  <Link
+                    href={`/workspaces/${workspace.id}/settings`}
+                    className="flex-1 px-3 py-2 bg-brand-gold/10 text-brand-gold font-medium text-sm rounded hover:bg-brand-gold/20 transition-colors text-center"
                   >
-                    Edit
-                  </button>
-                  {workspaces.length > 1 && (
-                    <button
-                      onClick={() => handleDelete(workspace.id)}
-                      className="px-3 py-2 bg-red-100 text-red-700 font-medium text-sm rounded hover:bg-red-200 transition-colors"
-                    >
-                      Delete
-                    </button>
-                  )}
+                    Settings
+                  </Link>
                 </div>
               </div>
             </div>

@@ -146,10 +146,10 @@ function GA4AnalysisContent() {
           </p>
           <p className="text-brand-gold font-bold mb-6">{selectedWorkspace?.name}</p>
           <Link
-            href="/settings"
+            href={selectedWorkspaceId ? `/workspaces/${selectedWorkspaceId}/settings` : '/workspaces'}
             className="inline-block px-6 py-3 bg-brand-gold text-brand-black font-bold rounded-lg hover:shadow-lg transition-all duration-200"
           >
-            Configure GA4
+            Configure GA4 for this Workspace
           </Link>
         </div>
       </div>
