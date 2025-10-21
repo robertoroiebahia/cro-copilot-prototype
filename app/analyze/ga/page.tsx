@@ -111,15 +111,21 @@ function GA4AnalysisContent() {
     setSyncing(true);
     setError(null);
     setGeneratingInsights(false);
+    setInsights([]); // Clear previous insights
 
     try {
+      // Get selected date range
+      const { start, end } = getDateRange(dateRange);
+
       // Stage 1: Quick sync without insights
       const res = await fetch('/api/ga4/sync', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           workspaceId: selectedWorkspaceId,
-          type: 'daily',
+          type: 'custom',
+          startDate: start,
+          endDate: end,
           generateInsights: false, // Skip insights for now
         }),
       });
@@ -139,7 +145,9 @@ function GA4AnalysisContent() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               workspaceId: selectedWorkspaceId,
-              type: 'daily',
+              type: 'custom',
+              startDate: start,
+              endDate: end,
               generateInsights: true, // Now generate insights
             }),
           });

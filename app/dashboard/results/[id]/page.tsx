@@ -7,6 +7,7 @@ import Link from 'next/link';
 import type { Analysis } from '@/lib/types/database.types';
 import type { Insight } from '@/lib/types/insights.types';
 import { createClient } from '@/utils/supabase/client';
+import { GA4FunnelChart } from '@/components/GA4FunnelChart';
 
 const LoadingState = () => (
   <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white flex items-center justify-center ">
@@ -246,45 +247,75 @@ export default function AnalysisDetailPage() {
       {/* Main Content - Side by Side Layout */}
       <div className="max-w-[1800px] mx-auto px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Left Column - Screenshot */}
+          {/* Left Column - GA4 Funnel or Analysis Data */}
           <div className="lg:sticky lg:top-8 lg:self-start space-y-6">
-            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-xl">
-              <div className="bg-gradient-to-r from-gray-900 to-gray-800 px-6 py-4 border-b border-gray-700">
-                <div className="flex items-center gap-3">
-                  <svg className="w-5 h-5 text-brand-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                  <h2 className="text-lg font-black text-white">Page Screenshot</h2>
+            {analysis.research_type === 'ga_analysis' ? (
+              /* GA4 Funnel Visualization */
+              <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-xl">
+                <div className="bg-gradient-to-r from-gray-900 to-gray-800 px-6 py-4 border-b border-gray-700">
+                  <div className="flex items-center gap-3">
+                    <svg className="w-5 h-5 text-brand-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                    <h2 className="text-lg font-black text-white">Conversion Funnel</h2>
+                  </div>
+                </div>
+                <div className="p-6 bg-gray-50">
+                  {analysis.metrics?.funnels?.[0] ? (
+                    <GA4FunnelChart
+                      data={{
+                        steps: analysis.metrics.funnels[0].funnel_data?.steps || [],
+                        overall_cvr: analysis.metrics.funnels[0].overall_cvr || 0,
+                        total_landing_users: analysis.metrics.funnels[0].total_landing_users || 0,
+                        total_purchases: analysis.metrics.funnels[0].total_purchases || 0,
+                      }}
+                    />
+                  ) : (
+                    <div className="text-center py-8 text-gray-500">
+                      No funnel data available
+                    </div>
+                  )}
                 </div>
               </div>
-              <div className="p-4 bg-gray-50">
-                {mobileFullPageSrc ? (
-                  <div className="relative group">
-                    <img
-                      src={mobileFullPageSrc}
-                      alt="Page Screenshot"
-                      className="w-full rounded-lg border-2 border-gray-300 cursor-pointer transition-all duration-300 group-hover:border-brand-gold group-hover:shadow-2xl"
-                      onClick={() => setExpandedScreenshot(mobileFullPageSrc)}
-                    />
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-all duration-300 rounded-lg flex items-center justify-center opacity-0 group-hover:opacity-100">
-                      <div className="bg-brand-gold text-black px-4 py-2 rounded-lg font-black text-sm">
-                        Click to enlarge
+            ) : (
+              /* Analysis Summary for other types */
+              <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-xl">
+                <div className="bg-gradient-to-r from-gray-900 to-gray-800 px-6 py-4 border-b border-gray-700">
+                  <div className="flex items-center gap-3">
+                    <svg className="w-5 h-5 text-brand-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    <h2 className="text-lg font-black text-white">Analysis Summary</h2>
+                  </div>
+                </div>
+                <div className="p-6 bg-gray-50">
+                  <div className="space-y-4">
+                    <div>
+                      <div className="text-xs font-bold text-gray-600 uppercase tracking-wide mb-1">Research Type</div>
+                      <div className="text-sm font-medium text-gray-900 capitalize">{analysis.research_type?.replace(/_/g, ' ')}</div>
+                    </div>
+                    {analysis.metrics?.date_range && (
+                      <div>
+                        <div className="text-xs font-bold text-gray-600 uppercase tracking-wide mb-1">Date Range</div>
+                        <div className="text-sm font-medium text-gray-900">
+                          {analysis.metrics.date_range.start} to {analysis.metrics.date_range.end}
+                        </div>
                       </div>
-                    </div>
+                    )}
+                    {analysis.summary && (
+                      <div>
+                        <div className="text-xs font-bold text-gray-600 uppercase tracking-wide mb-1">Summary</div>
+                        <div className="text-sm font-medium text-gray-900">
+                          {typeof analysis.summary === 'string'
+                            ? analysis.summary
+                            : JSON.stringify(analysis.summary, null, 2)}
+                        </div>
+                      </div>
+                    )}
                   </div>
-                ) : (
-                  <div className="flex items-center justify-center bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 p-12">
-                    <div className="text-center">
-                      <svg className="w-16 h-16 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                      </svg>
-                      <p className="text-sm text-gray-600 font-bold">No screenshot available</p>
-                      <p className="text-xs text-gray-500 mt-1">Screenshot was not captured for this analysis</p>
-                    </div>
-                  </div>
-                )}
+                </div>
               </div>
-            </div>
+            )}
           </div>
 
           {/* Right Column - Insights */}

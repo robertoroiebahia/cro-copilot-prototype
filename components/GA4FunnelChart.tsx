@@ -68,20 +68,10 @@ export function GA4FunnelChart({ data }: GA4FunnelChartProps) {
             const isLastStep = index === steps.length - 1;
             const previousStep = index > 0 ? steps[index - 1] : null;
 
-            // Dynamic color based on drop-off severity
-            let barColor = 'bg-brand-gold';
-            let textColor = 'text-brand-black';
-            let borderColor = 'border-brand-gold/20';
-
-            if (step.drop_off_rate > 40) {
-              barColor = 'bg-red-500';
-              textColor = 'text-white';
-              borderColor = 'border-red-600';
-            } else if (step.drop_off_rate > 25) {
-              barColor = 'bg-orange-500';
-              textColor = 'text-white';
-              borderColor = 'border-orange-600';
-            }
+            // Consistent brand gold color for all steps
+            const barColor = 'bg-brand-gold';
+            const textColor = 'text-brand-black';
+            const borderColor = 'border-brand-gold/30';
 
             return (
               <div key={step.event} className="relative">
