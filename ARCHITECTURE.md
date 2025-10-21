@@ -18,57 +18,88 @@
 ```
 /app                          # Next.js 14 App Router
   /api                        # API routes
-    /analyze                  # Analysis endpoints
+    /analyze-v2               # Page analysis endpoint
     /analyze-csv              # CSV analysis endpoint
     /ga4                      # GA4-specific endpoints
+      /sync                   # Sync GA4 data
+      /funnels                # Get funnel data
+      /insights               # Get/generate insights
+      /settings               # GA4 connection settings
+    /google-analytics         # GA integration settings
     /workspaces               # Workspace management
+    /experiments              # Experiment management
+    /insights                 # Insights management
+    /auth                     # Authentication callbacks
+    /chat                     # AI chat endpoint
+
   /analyze                    # Analysis pages
     /page.tsx                 # Main page analysis
     /ga                       # GA4 funnel analysis
-    /survey                   # Survey analysis
-    /onsite-poll              # Onsite poll analysis
-    /review-mining            # Review mining
-  /dashboard                  # Dashboard pages
-  /insights                   # Insights pages
-  /themes                     # Themes pages
-  /hypotheses                 # Hypotheses pages
-  /experiments                # Experiments pages
+    /survey                   # Survey analysis (CSV upload)
+    /onsite-poll              # Onsite poll analysis (CSV upload)
+    /review-mining            # Review mining (CSV upload)
+    /heatmap                  # Heatmap analysis (coming soon)
+    /user-testing             # User testing (coming soon)
+    /competitor               # Competitor analysis (coming soon)
+
+  /analyses                   # All analyses view
+  /dashboard                  # Dashboard & results pages
+    /[id]                     # Individual analysis results
+  /insights                   # Insights library
+  /themes                     # Themes clustering
+  /hypotheses                 # Hypotheses management
+  /experiments                # Experiments tracking
+  /research                   # Research hub (all methods overview)
+  /workspaces                 # Workspace management
+    /[id]/settings            # Workspace settings
+  /settings                   # User settings
+  /login                      # Authentication
+  /signup                     # Authentication
 
 /components                   # React components (presentational)
-  /AppSidebar.tsx            # Layout components
-  /CSVUploadAnalysis.tsx     # Feature components
-  /WorkspaceContext.tsx      # Context providers
+  /AppSidebar.tsx             # Main navigation sidebar
+  /CSVUploadAnalysis.tsx      # Reusable CSV upload component
+  /WorkspaceContext.tsx       # Workspace state management
+  /WorkspaceGuard.tsx         # Workspace auth guard
+  /AIChat.tsx                 # AI chat interface
+  /GA4FunnelChart.tsx         # GA4 funnel visualization
+  /ManualInsightModal.tsx     # Manual insight creation
 
-/lib                         # Core business logic
-  /auth                      # Authentication utilities
-  /services                  # Business logic services
-    /ai                      # AI-related services
-      /claude-insights.ts    # Claude AI service
-      /gpt-insights.ts       # GPT AI service
-      /llm-service.ts        # Universal LLM abstraction
-      /prompts               # AI prompts organized by feature
+/lib                          # Core business logic
+  /auth                       # Authentication utilities
+  /services                   # Business logic services
+    /ai                       # AI-related services
+      /llm-service.ts         # Universal LLM abstraction
+      /claude-insights.ts     # Claude AI service
+      /gpt-insights.ts        # GPT AI service
+      /prompts                # AI prompts organized by feature
         /csv-analysis-prompts.ts
         /page-analysis-prompts.ts
-    /ga4                     # GA4 specific services
-      /ga4-sync.ts           # GA4 data fetching
-      /ga4-analysis.ts       # GA4 funnel analysis
-    /firecrawl-client.ts     # External API clients
-    /csv-parser.ts           # CSV parsing utilities
-  /types                     # TypeScript types
-    /database.types.ts       # Database schema types
-    /insights.types.ts       # Domain types
-  /utils                     # Generic utilities
-    /validators.ts           # Input validation
+    /analytics                # Analytics integrations
+      /ga4                    # GA4 specific services
+        /ga4-client.ts        # GA4 API client
+        /ga4-sync.ts          # GA4 data fetching
+        /ga4-analysis.ts      # GA4 funnel calculations
+        /funnel-insights.ts   # Funnel insight generation
+    /data-processing          # Data processing services
+      /csv-parser.ts          # CSV parsing & validation
+    /external                 # External API clients
+      /firecrawl-client.ts    # Firecrawl screenshot service
+  /types                      # TypeScript types
+    /database.types.ts        # Database schema types (generated)
+    /insights.types.ts        # Domain types (hand-written)
+  /utils                      # Generic utilities
+    /validators.ts            # Input validation
 
-/utils                       # Next.js specific utilities
-  /supabase                  # Supabase client utilities
+/utils                        # Next.js specific utilities
+  /supabase                   # Supabase client utilities
     /client.ts
     /server.ts
 
-/supabase                    # Database migrations & config
-  /migrations                # SQL migrations
+/supabase                     # Database migrations & config
+  /migrations                 # SQL migrations
 
-/public                      # Static assets
+/public                       # Static assets
 ```
 
 ---
@@ -89,15 +120,15 @@ lib/services/
   │       ├── csv-analysis-prompts.ts
   │       └── page-analysis-prompts.ts
   ├── data-processing/             # Data processing services
-  │   ├── csv-parser.ts            # CSV parsing
-  │   └── markdown-parser.ts       # Markdown parsing
+  │   └── csv-parser.ts            # CSV parsing & validation
   ├── analytics/                   # Analytics integrations
   │   └── ga4/
   │       ├── ga4-client.ts        # GA4 API client
   │       ├── ga4-sync.ts          # Data fetching
-  │       └── ga4-analysis.ts      # Funnel calculations
+  │       ├── ga4-analysis.ts      # Funnel calculations
+  │       └── funnel-insights.ts   # Insight generation
   └── external/                    # External API clients
-      └── firecrawl-client.ts
+      └── firecrawl-client.ts      # Firecrawl screenshot service
 ```
 
 ### 2. Service Pattern Template
