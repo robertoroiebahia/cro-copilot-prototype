@@ -147,16 +147,16 @@ function AllAnalysesContent() {
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <div className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-8 py-8">
+        <div className="max-w-7xl mx-auto padding-container-lg">
           <div className="flex items-center justify-between mb-8">
             <div>
               <div className="flex items-center gap-3 mb-2">
                 <svg className="w-8 h-8 text-brand-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
                 </svg>
-                <h1 className="text-3xl font-black text-brand-black">All Analyses</h1>
+                <h1 className="heading-page">All Analyses</h1>
               </div>
-              <p className="text-sm text-brand-text-secondary font-medium">
+              <p className="text-body-secondary">
                 View all your research across all methodologies
               </p>
             </div>
@@ -171,26 +171,26 @@ function AllAnalysesContent() {
 
           {/* Stats Overview */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <div className="border border-gray-200 rounded-lg p-4">
-              <div className="text-2xl font-black text-brand-black mb-1">{stats.total}</div>
-              <div className="text-xs font-bold text-gray-500">Total Analyses</div>
+            <div className="border border-gray-200 rounded-lg padding-container-sm">
+              <div className="text-stat-medium mb-1">{stats.total}</div>
+              <div className="text-label">Total Analyses</div>
             </div>
-            <div className="border border-gray-200 rounded-lg p-4">
-              <div className="text-2xl font-black text-brand-gold mb-1">{stats.totalInsights}</div>
-              <div className="text-xs font-bold text-gray-500">Total Insights</div>
+            <div className="border border-gray-200 rounded-lg padding-container-sm">
+              <div className="text-stat-medium text-brand-gold mb-1">{stats.totalInsights}</div>
+              <div className="text-label">Total Insights</div>
             </div>
-            <div className="border border-gray-200 rounded-lg p-4">
-              <div className="text-2xl font-black text-brand-black mb-1">
+            <div className="border border-gray-200 rounded-lg padding-container-sm">
+              <div className="text-stat-medium mb-1">
                 {Object.keys(stats.byType).length}
               </div>
-              <div className="text-xs font-bold text-gray-500">Research Types</div>
+              <div className="text-label">Research Types</div>
             </div>
           </div>
 
           {/* Research Type Breakdown */}
           {Object.keys(stats.byType).length > 0 && (
-            <div className="bg-gray-50 rounded-lg border border-gray-200 p-4">
-              <h3 className="text-xs font-black text-brand-text-secondary uppercase tracking-wide mb-3">
+            <div className="bg-gray-50 rounded-lg border border-gray-200 padding-container-sm">
+              <h3 className="text-label mb-3">
                 Analyses by Type
               </h3>
               <div className="flex flex-wrap gap-3">
@@ -201,8 +201,8 @@ function AllAnalysesContent() {
                   >
                     <span className="text-xs font-black px-2 py-1 bg-gray-100 text-gray-700 rounded">{RESEARCH_TYPE_ICONS[type as ResearchType] || 'OR'}</span>
                     <div>
-                      <div className="text-sm font-bold text-brand-black">{count}</div>
-                      <div className="text-xs text-brand-text-tertiary">
+                      <div className="text-body-secondary font-bold text-brand-black">{count}</div>
+                      <div className="text-caption">
                         {RESEARCH_TYPE_LABELS[type as ResearchType] || type}
                       </div>
                     </div>
@@ -215,8 +215,8 @@ function AllAnalysesContent() {
       </div>
 
       {/* Filters & Search */}
-      <div className="max-w-7xl mx-auto px-8 py-6">
-        <div className="bg-white rounded-lg border border-gray-200 p-4 mb-6">
+      <div className="max-w-7xl mx-auto padding-container-lg">
+        <div className="bg-white rounded-lg border border-gray-200 padding-container-sm mb-6">
           <div className="flex flex-col lg:flex-row gap-4">
             {/* Search */}
             <div className="flex-1">
@@ -280,8 +280,8 @@ function AllAnalysesContent() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
               </div>
-              <h3 className="text-xl font-black text-brand-black mb-2">No analyses found</h3>
-              <p className="text-sm text-brand-text-secondary mb-6">
+              <h3 className="heading-component mb-2">No analyses found</h3>
+              <p className="text-body-secondary mb-6">
                 {searchQuery ? 'Try adjusting your search or filters' : 'Run your first analysis to get started'}
               </p>
               {!searchQuery && (
@@ -301,7 +301,7 @@ function AllAnalysesContent() {
               <Link
                 key={analysis.id}
                 href={`/dashboard/results/${analysis.id}`}
-                className="bg-white rounded-lg border border-gray-200 p-6 hover:shadow-lg hover:border-brand-gold/30 transition-all duration-300 group"
+                className="bg-white rounded-lg border border-gray-200 padding-container-md hover:shadow-lg hover:border-brand-gold/30 transition-all duration-300 group"
               >
                 <div className="flex items-start justify-between gap-4">
                   <div className="flex-1">
@@ -311,17 +311,17 @@ function AllAnalysesContent() {
                       </span>
                       <div>
                         <div className="flex items-center gap-2">
-                          <h3 className="text-sm font-bold text-brand-black group-hover:text-brand-gold transition-colors">
+                          <h3 className="text-body-secondary font-bold text-brand-black group-hover:text-brand-gold transition-colors">
                             {analysis.name || analysis.url}
                           </h3>
                           <span className={`px-2 py-0.5 ${RESEARCH_TYPE_COLORS[analysis.research_type]?.bg || 'bg-gray-100'} ${RESEARCH_TYPE_COLORS[analysis.research_type]?.text || 'text-gray-700'} text-xs font-bold rounded`}>
                             {RESEARCH_TYPE_LABELS[analysis.research_type]}
                           </span>
                         </div>
-                        <p className="text-xs text-brand-text-tertiary mt-1">{analysis.url}</p>
+                        <p className="text-caption mt-1">{analysis.url}</p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-4 text-xs text-brand-text-tertiary">
+                    <div className="flex items-center gap-4 text-caption">
                       <span>
                         <span className="font-bold">{analysis.insights_count || 0}</span> insights
                       </span>
