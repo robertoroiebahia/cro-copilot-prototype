@@ -45,6 +45,10 @@ function AllAnalysesContent() {
   const [selectedResearchType, setSelectedResearchType] = useState<'all' | ResearchType>('all');
   const [sortBy, setSortBy] = useState<'newest' | 'oldest'>('newest');
 
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
   useEffect(() => {
     if (!selectedWorkspaceId) return;
     fetchData();
@@ -118,6 +122,20 @@ function AllAnalysesContent() {
     return filtered;
   }, [analyses, searchQuery, selectedResearchType, sortBy]);
 
+  // Paginated results
+  const paginatedAnalyses = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return filteredAnalyses.slice(startIndex, endIndex);
+  }, [filteredAnalyses, currentPage, itemsPerPage]);
+
+  const totalPages = Math.ceil(filteredAnalyses.length / itemsPerPage);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, selectedResearchType, sortBy]);
+
   // Calculate stats
   const stats = useMemo(() => {
     const total = analyses.length;
@@ -162,10 +180,9 @@ function AllAnalysesContent() {
             </div>
             <Link
               href="/dashboard"
-              className="inline-flex items-center gap-2 px-6 py-3 bg-brand-gold hover:bg-black text-black hover:text-white font-black rounded-lg transition-all duration-300"
-              style={{ boxShadow: '0 4px 12px rgba(245, 197, 66, 0.3)' }}
+              className="inline-flex items-center gap-2 px-6 py-3 bg-white hover:bg-gray-50 text-brand-black font-bold rounded-lg transition-all duration-200 border-2 border-gray-200 hover:border-brand-black"
             >
-              Back to Dashboard
+              ← Back to Dashboard
             </Link>
           </div>
 
@@ -191,23 +208,35 @@ function AllAnalysesContent() {
           {Object.keys(stats.byType).length > 0 && (
             <div className="bg-gray-50 rounded-lg border border-gray-200 padding-container-sm">
               <h3 className="text-label mb-3">
-                Analyses by Type
+                Analyses by Type (Click to filter)
               </h3>
               <div className="flex flex-wrap gap-3">
-                {Object.entries(stats.byType).map(([type, count]) => (
-                  <div
-                    key={type}
-                    className="flex items-center gap-2 px-3 py-2 bg-white rounded-lg border border-gray-200"
-                  >
-                    <span className="text-xs font-black px-2 py-1 bg-gray-100 text-gray-700 rounded">{RESEARCH_TYPE_ICONS[type as ResearchType] || 'OR'}</span>
-                    <div>
-                      <div className="text-body-secondary font-bold text-brand-black">{count}</div>
-                      <div className="text-caption">
-                        {RESEARCH_TYPE_LABELS[type as ResearchType] || type}
+                {Object.entries(stats.byType).map(([type, count]) => {
+                  const isSelected = selectedResearchType === type;
+                  const colors = RESEARCH_TYPE_COLORS[type as ResearchType] || { bg: 'bg-gray-100', text: 'text-gray-700' };
+
+                  return (
+                    <button
+                      key={type}
+                      onClick={() => setSelectedResearchType(isSelected ? 'all' : type as ResearchType)}
+                      className={`flex items-center gap-2 px-3 py-2 rounded-lg border-2 transition-all duration-200 hover:shadow-md ${
+                        isSelected
+                          ? 'bg-white border-brand-gold shadow-md'
+                          : 'bg-white border-gray-200 hover:border-gray-300'
+                      }`}
+                    >
+                      <span className={`text-xs font-black px-2 py-1 ${colors.bg} ${colors.text} rounded`}>
+                        {RESEARCH_TYPE_ICONS[type as ResearchType] || 'OR'}
+                      </span>
+                      <div>
+                        <div className="text-body-secondary font-bold text-brand-black">{count}</div>
+                        <div className="text-caption text-left">
+                          {RESEARCH_TYPE_LABELS[type as ResearchType] || type}
+                        </div>
                       </div>
-                    </div>
-                  </div>
-                ))}
+                    </button>
+                  );
+                })}
               </div>
             </div>
           )}
@@ -217,9 +246,9 @@ function AllAnalysesContent() {
       {/* Filters & Search */}
       <div className="max-w-7xl mx-auto padding-container-lg">
         <div className="bg-white rounded-lg border border-gray-200 padding-container-sm mb-6">
-          <div className="flex flex-col lg:flex-row gap-4">
-            {/* Search */}
-            <div className="flex-1">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+            {/* Search - Takes more space */}
+            <div className="lg:col-span-6">
               <div className="relative">
                 <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -234,14 +263,14 @@ function AllAnalysesContent() {
               </div>
             </div>
 
-            {/* Filters */}
-            <div className="flex gap-2 flex-wrap">
+            {/* Filters - Fixed width dropdowns */}
+            <div className="lg:col-span-6 flex gap-3">
               <select
                 value={selectedResearchType}
                 onChange={(e) => setSelectedResearchType(e.target.value as any)}
-                className="px-4 py-2.5 border border-gray-300 rounded-lg text-sm font-bold focus:outline-none focus:border-brand-gold transition-all bg-white"
+                className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm font-medium focus:outline-none focus:border-brand-gold transition-all bg-white hover:border-gray-400"
               >
-                <option value="all">All Research Types</option>
+                <option value="all">All Types</option>
                 <option value="page_analysis">Page Analysis</option>
                 <option value="ga_analysis">Google Analytics</option>
                 <option value="survey_analysis">Survey Analysis</option>
@@ -256,7 +285,7 @@ function AllAnalysesContent() {
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as any)}
-                className="px-4 py-2.5 border border-gray-300 rounded-lg text-sm font-bold focus:outline-none focus:border-brand-gold transition-all bg-white"
+                className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm font-medium focus:outline-none focus:border-brand-gold transition-all bg-white hover:border-gray-400"
               >
                 <option value="newest">Newest First</option>
                 <option value="oldest">Oldest First</option>
@@ -296,8 +325,14 @@ function AllAnalysesContent() {
             </div>
           </div>
         ) : (
-          <div className="grid gap-4">
-            {filteredAnalyses.map((analysis) => (
+          <>
+            {/* Results count */}
+            <div className="mb-4 text-body-secondary">
+              Showing {((currentPage - 1) * itemsPerPage) + 1}-{Math.min(currentPage * itemsPerPage, filteredAnalyses.length)} of {filteredAnalyses.length} analyses
+            </div>
+
+            <div className="grid gap-4">
+              {paginatedAnalyses.map((analysis) => (
               <Link
                 key={analysis.id}
                 href={`/dashboard/results/${analysis.id}`}
@@ -340,8 +375,61 @@ function AllAnalysesContent() {
                   </svg>
                 </div>
               </Link>
-            ))}
-          </div>
+              ))}
+            </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="mt-8 flex items-center justify-center gap-2">
+                <button
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="px-4 py-2 border-2 border-gray-300 rounded-lg font-medium text-sm disabled:opacity-40 disabled:cursor-not-allowed hover:border-brand-black transition-all"
+                >
+                  ← Previous
+                </button>
+
+                <div className="flex gap-1">
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
+                    // Show first, last, current, and pages around current
+                    const showPage = page === 1 ||
+                                    page === totalPages ||
+                                    (page >= currentPage - 1 && page <= currentPage + 1);
+
+                    if (!showPage) {
+                      // Show ellipsis
+                      if (page === currentPage - 2 || page === currentPage + 2) {
+                        return <span key={page} className="px-3 py-2 text-gray-400">...</span>;
+                      }
+                      return null;
+                    }
+
+                    return (
+                      <button
+                        key={page}
+                        onClick={() => setCurrentPage(page)}
+                        className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${
+                          currentPage === page
+                            ? 'bg-brand-black text-white'
+                            : 'border-2 border-gray-300 hover:border-brand-black'
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <button
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  className="px-4 py-2 border-2 border-gray-300 rounded-lg font-medium text-sm disabled:opacity-40 disabled:cursor-not-allowed hover:border-brand-black transition-all"
+                >
+                  Next →
+                </button>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>
