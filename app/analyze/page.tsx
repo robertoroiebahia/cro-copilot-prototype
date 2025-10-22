@@ -321,62 +321,21 @@ function PageAnalysisContent() {
     <div className="min-h-screen bg-gray-50">
       {/* Page Header */}
       <div className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-8 py-8">
-          <nav className="flex items-center gap-2 text-sm mb-4">
-            <Link href="/dashboard" className="text-brand-text-tertiary hover:text-brand-gold transition-all duration-200 font-bold">
-              Dashboard
-            </Link>
-            <svg className="w-4 h-4 text-brand-text-tertiary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
-            <span className="text-brand-black font-black">Page Analysis</span>
-          </nav>
-
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-brand-gold rounded-lg flex items-center justify-center">
-                <svg className="w-5 h-5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                </svg>
-              </div>
-              <div>
-                <h1 className="text-3xl font-black text-brand-black">Page Analysis</h1>
-                <p className="text-sm text-brand-text-secondary font-medium">AI-powered CRO insights from your landing pages</p>
-              </div>
-            </div>
-            <Link
-              href="/analyses"
-              className="inline-flex items-center gap-2 px-4 py-2 border-2 border-gray-300 text-brand-text-secondary text-sm font-bold rounded-lg hover:border-brand-gold hover:text-brand-gold transition-all duration-300"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+        <div className="max-w-7xl mx-auto px-6 py-6">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+              <svg className="w-5 h-5 text-blue-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
               </svg>
-              View All Analyses
-            </Link>
-          </div>
-
-          {/* Stats Overview */}
-          {!historyLoading && totalPageAnalyses > 0 && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="bg-gradient-to-br from-blue-50 to-blue-100/50 border border-blue-200 rounded-lg p-4">
-                <div className="text-2xl font-black text-brand-black mb-1">{totalPageAnalyses}</div>
-                <div className="text-xs font-bold text-brand-text-secondary">Page Analyses</div>
-              </div>
-              <div className="bg-gradient-to-br from-green-50 to-green-100/50 border border-green-200 rounded-lg p-4">
-                <div className="text-2xl font-black text-brand-black mb-1">{totalInsights}</div>
-                <div className="text-xs font-bold text-brand-text-secondary">Total Insights</div>
-              </div>
-              <div className="bg-gradient-to-br from-purple-50 to-purple-100/50 border border-purple-200 rounded-lg p-4">
-                <div className="text-2xl font-black text-brand-black mb-1">{avgInsightsPerAnalysis}</div>
-                <div className="text-xs font-bold text-brand-text-secondary">Avg Insights/Analysis</div>
-              </div>
             </div>
-          )}
+            <h1 className="heading-page">Page Analysis</h1>
+          </div>
+          <p className="text-body-secondary">AI-powered CRO insights from your landing pages</p>
         </div>
       </div>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-8 py-8">
+      <main className="max-w-7xl mx-auto px-6 py-6">
         <div className="grid lg:grid-cols-3 gap-8">
           {/* Left Sidebar - Form */}
           <div className="lg:col-span-1">

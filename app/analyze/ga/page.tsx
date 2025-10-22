@@ -246,21 +246,18 @@ function GA4AnalysisContent() {
     <div className="min-h-screen bg-gray-50">
       {/* Header Section */}
       <div className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-8 py-6">
-          <div className="flex items-center justify-between mb-4">
+        <div className="max-w-7xl mx-auto px-6 py-6">
+          <div className="flex items-center justify-between mb-6">
             <div>
-              <div className="flex items-center gap-3 mb-1">
-                <svg className="w-8 h-8 text-brand-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                </svg>
-                <h1 className="text-3xl font-black text-brand-black">GA4 Funnel Analysis</h1>
-                {selectedWorkspace && (
-                  <span className="px-3 py-1 bg-brand-gold/20 text-brand-gold text-xs font-bold rounded-lg">
-                    {selectedWorkspace.name}
-                  </span>
-                )}
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
+                  <svg className="w-5 h-5 text-purple-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  </svg>
+                </div>
+                <h1 className="heading-page">Google Analytics</h1>
               </div>
-              <p className="text-sm text-brand-text-secondary font-medium">
+              <p className="text-body-secondary">
                 Track conversion rates and identify optimization opportunities
               </p>
             </div>
@@ -268,8 +265,7 @@ function GA4AnalysisContent() {
             <button
               onClick={handleSync}
               disabled={syncing}
-              className="px-6 py-3 bg-brand-gold hover:bg-black text-brand-black hover:text-white font-black rounded-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-              style={{ boxShadow: syncing ? 'none' : '0 4px 12px rgba(245, 197, 66, 0.3)' }}
+              className="btn-primary flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {syncing ? (
                 <>

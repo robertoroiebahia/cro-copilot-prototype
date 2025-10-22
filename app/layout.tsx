@@ -2,6 +2,8 @@
 
 import type { Metadata } from 'next'
 import AppSidebar from '@/components/AppSidebar'
+import MobileHeader from '@/components/MobileHeader'
+import MobileSubNav from '@/components/MobileSubNav'
 import { WorkspaceProvider } from '@/components/WorkspaceContext'
 import './globals.css'
 import { useState, useEffect } from 'react'
@@ -14,6 +16,7 @@ export default function RootLayout({
 }) {
   const pathname = usePathname();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // Check if we should show the sidebar
   const showSidebar = pathname &&
@@ -44,15 +47,30 @@ export default function RootLayout({
       </head>
       <body className="bg-gray-50">
         <WorkspaceProvider>
+          {/* Mobile Header - Sticky at top on mobile */}
+          {showSidebar && <MobileHeader onMenuToggle={setIsMobileMenuOpen} />}
+
+          {/* Mobile Sub-Navigation - Contextual tabs below header (hidden when menu open) */}
+          {showSidebar && !isMobileMenuOpen && <MobileSubNav />}
+
+          {/* Desktop Sidebar - Hidden on mobile (< 1024px), visible on desktop */}
           {showSidebar && (
-            <AppSidebar
-              isCollapsed={isSidebarCollapsed}
-              onToggle={handleToggleSidebar}
-            />
+            <div className="hidden lg:block">
+              <AppSidebar
+                isCollapsed={isSidebarCollapsed}
+                onToggle={handleToggleSidebar}
+              />
+            </div>
           )}
+
+          {/* Main Content */}
           <main
             className={`min-h-screen transition-all duration-300 ${
-              showSidebar ? (isSidebarCollapsed ? 'ml-20' : 'ml-64') : ''
+              showSidebar ? 'lg:ml-64 lg:ml-20' : ''
+            } ${
+              showSidebar && isSidebarCollapsed ? 'lg:ml-20' : ''
+            } ${
+              showSidebar && !isSidebarCollapsed ? 'lg:ml-64' : ''
             }`}
           >
             {children}

@@ -118,10 +118,10 @@ export default function AppSidebar({ isCollapsed, onToggle }: SidebarProps) {
         {/* Divider */}
         {!isCollapsed && <div className="h-px bg-gray-200 my-2" />}
 
-        {/* Research Section */}
+        {/* Research Methods Section */}
         {!isCollapsed && (
           <div className="px-2 py-1 text-xs font-bold text-gray-400 uppercase tracking-wider">
-            Research
+            Research Methods
           </div>
         )}
 
@@ -219,6 +219,16 @@ export default function AppSidebar({ isCollapsed, onToggle }: SidebarProps) {
           disabled={!selectedWorkspaceId}
         />
 
+        {/* Divider */}
+        {!isCollapsed && <div className="h-px bg-gray-200 my-2" />}
+
+        {/* Insights & Strategy Section */}
+        {!isCollapsed && (
+          <div className="px-2 py-1 text-xs font-bold text-gray-400 uppercase tracking-wider">
+            Insights & Strategy
+          </div>
+        )}
+
         <NavItem
           href="/insights"
           label="Insights"
@@ -237,16 +247,6 @@ export default function AppSidebar({ isCollapsed, onToggle }: SidebarProps) {
           disabled={!selectedWorkspaceId}
         />
 
-        {/* Divider */}
-        {!isCollapsed && <div className="h-px bg-gray-200 my-2" />}
-
-        {/* Testing Section */}
-        {!isCollapsed && (
-          <div className="px-2 py-1 text-xs font-bold text-gray-400 uppercase tracking-wider">
-            Testing
-          </div>
-        )}
-
         <NavItem
           href="/hypotheses"
           label="Hypotheses"
@@ -263,18 +263,6 @@ export default function AppSidebar({ isCollapsed, onToggle }: SidebarProps) {
           isActive={isActive('/experiments')}
           isCollapsed={isCollapsed}
           disabled={!selectedWorkspaceId}
-        />
-
-        {/* Divider */}
-        {!isCollapsed && <div className="h-px bg-gray-200 my-2" />}
-
-        {/* Settings */}
-        <NavItem
-          href="/workspaces"
-          label="Workspaces"
-          icon={<FolderIcon />}
-          isActive={isActive('/workspaces')}
-          isCollapsed={isCollapsed}
         />
 
         <NavItem

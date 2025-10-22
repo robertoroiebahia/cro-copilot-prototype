@@ -165,38 +165,33 @@ function AllAnalysesContent() {
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <div className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto padding-container-lg">
-          <div className="flex items-center justify-between mb-8">
-            <div>
-              <div className="flex items-center gap-3 mb-2">
-                <svg className="w-8 h-8 text-brand-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
-                </svg>
-                <h1 className="heading-page">All Analyses</h1>
-              </div>
-              <p className="text-body-secondary">
-                View all your research across all methodologies
-              </p>
+        <div className="max-w-7xl mx-auto px-6 py-6">
+          {/* Title */}
+          <div className="mb-6">
+            <div className="flex items-center gap-3 mb-2">
+              <svg className="w-6 h-6 text-brand-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+              </svg>
+              <h1 className="heading-page">All Analyses</h1>
             </div>
-            <Link
-              href="/dashboard"
-              className="inline-flex items-center gap-2 px-6 py-3 bg-white hover:bg-gray-50 text-brand-black font-bold rounded-lg transition-all duration-200 border-2 border-gray-200 hover:border-brand-black"
-            >
-              ← Back to Dashboard
-            </Link>
+            <p className="text-body-secondary">
+              View all your research across all methodologies
+            </p>
           </div>
 
-          {/* Stats Overview */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <div className="border border-gray-200 rounded-lg padding-container-sm">
+          {/* Stats Overview - Horizontal */}
+          <div className="flex items-center gap-8 mb-6">
+            <div>
               <div className="text-stat-medium mb-1">{stats.total}</div>
               <div className="text-label">Total Analyses</div>
             </div>
-            <div className="border border-gray-200 rounded-lg padding-container-sm">
+            <div className="h-12 w-px bg-gray-200"></div>
+            <div>
               <div className="text-stat-medium text-brand-gold mb-1">{stats.totalInsights}</div>
               <div className="text-label">Total Insights</div>
             </div>
-            <div className="border border-gray-200 rounded-lg padding-container-sm">
+            <div className="h-12 w-px bg-gray-200"></div>
+            <div>
               <div className="text-stat-medium mb-1">
                 {Object.keys(stats.byType).length}
               </div>
@@ -244,9 +239,9 @@ function AllAnalysesContent() {
       </div>
 
       {/* Filters & Search */}
-      <div className="max-w-7xl mx-auto padding-container-lg">
-        <div className="bg-white rounded-lg border border-gray-200 padding-container-sm mb-6">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+      <div className="max-w-7xl mx-auto px-6 py-6">
+        <div className="bg-white rounded-lg border border-gray-200 p-4 mb-6">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
             {/* Search - Takes more space */}
             <div className="lg:col-span-6">
               <div className="relative">
@@ -263,12 +258,12 @@ function AllAnalysesContent() {
               </div>
             </div>
 
-            {/* Filters - Fixed width dropdowns */}
+            {/* Filters - Fixed width dropdowns with proper padding for arrow */}
             <div className="lg:col-span-6 flex gap-3">
               <select
                 value={selectedResearchType}
                 onChange={(e) => setSelectedResearchType(e.target.value as any)}
-                className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm font-medium focus:outline-none focus:border-brand-gold transition-all bg-white hover:border-gray-400"
+                className="flex-1 pl-4 pr-10 py-2.5 border border-gray-300 rounded-lg text-sm font-medium focus:outline-none focus:border-brand-gold transition-all bg-white hover:border-gray-400"
               >
                 <option value="all">All Types</option>
                 <option value="page_analysis">Page Analysis</option>
@@ -285,7 +280,7 @@ function AllAnalysesContent() {
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as any)}
-                className="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm font-medium focus:outline-none focus:border-brand-gold transition-all bg-white hover:border-gray-400"
+                className="flex-1 pl-4 pr-10 py-2.5 border border-gray-300 rounded-lg text-sm font-medium focus:outline-none focus:border-brand-gold transition-all bg-white hover:border-gray-400"
               >
                 <option value="newest">Newest First</option>
                 <option value="oldest">Oldest First</option>
@@ -316,8 +311,7 @@ function AllAnalysesContent() {
               {!searchQuery && (
                 <Link
                   href="/analyze"
-                  className="inline-flex items-center gap-2 px-6 py-3 bg-brand-gold text-brand-black text-sm font-black rounded-lg hover:bg-black hover:text-white transition-all duration-300"
-                  style={{ boxShadow: '0 4px 12px rgba(245, 197, 66, 0.3)' }}
+                  className="btn-primary inline-flex items-center gap-2"
                 >
                   Run New Analysis
                 </Link>
@@ -331,36 +325,34 @@ function AllAnalysesContent() {
               Showing {((currentPage - 1) * itemsPerPage) + 1}-{Math.min(currentPage * itemsPerPage, filteredAnalyses.length)} of {filteredAnalyses.length} analyses
             </div>
 
-            <div className="grid gap-4">
+            <div className="space-y-3">
               {paginatedAnalyses.map((analysis) => (
               <Link
                 key={analysis.id}
                 href={`/dashboard/results/${analysis.id}`}
-                className="bg-white rounded-lg border border-gray-200 padding-container-md hover:shadow-lg hover:border-brand-gold/30 transition-all duration-300 group"
+                className="block bg-white rounded-lg border border-gray-200 p-5 hover:shadow-lg hover:border-brand-gold/30 transition-all duration-200 group"
               >
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <span className={`text-xs font-black px-2 py-1 ${RESEARCH_TYPE_COLORS[analysis.research_type]?.bg || 'bg-gray-100'} ${RESEARCH_TYPE_COLORS[analysis.research_type]?.text || 'text-gray-700'} rounded`}>
+                <div className="flex items-center justify-between gap-6">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-3 mb-3">
+                      <span className={`text-xs font-black px-2.5 py-1 ${RESEARCH_TYPE_COLORS[analysis.research_type]?.bg || 'bg-gray-100'} ${RESEARCH_TYPE_COLORS[analysis.research_type]?.text || 'text-gray-700'} rounded`}>
                         {RESEARCH_TYPE_ICONS[analysis.research_type] || 'OR'}
                       </span>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <h3 className="text-body-secondary font-bold text-brand-black group-hover:text-brand-gold transition-colors">
-                            {analysis.name || analysis.url}
-                          </h3>
-                          <span className={`px-2 py-0.5 ${RESEARCH_TYPE_COLORS[analysis.research_type]?.bg || 'bg-gray-100'} ${RESEARCH_TYPE_COLORS[analysis.research_type]?.text || 'text-gray-700'} text-xs font-bold rounded`}>
-                            {RESEARCH_TYPE_LABELS[analysis.research_type]}
-                          </span>
-                        </div>
-                        <p className="text-caption mt-1">{analysis.url}</p>
-                      </div>
+                      <span className={`px-2.5 py-1 ${RESEARCH_TYPE_COLORS[analysis.research_type]?.bg || 'bg-gray-100'} ${RESEARCH_TYPE_COLORS[analysis.research_type]?.text || 'text-gray-700'} text-xs font-bold rounded`}>
+                        {RESEARCH_TYPE_LABELS[analysis.research_type]}
+                      </span>
                     </div>
+
+                    <h3 className="text-base font-bold text-brand-black group-hover:text-brand-gold transition-colors mb-1 truncate">
+                      {analysis.name || analysis.url}
+                    </h3>
+                    <p className="text-caption mb-3 truncate">{analysis.url}</p>
+
                     <div className="flex items-center gap-4 text-caption">
                       <span>
-                        <span className="font-bold">{analysis.insights_count || 0}</span> insights
+                        <span className="font-bold text-brand-black">{analysis.insights_count || 0}</span> insights
                       </span>
-                      <span>•</span>
+                      <span className="text-gray-300">•</span>
                       <span>
                         {new Date(analysis.created_at).toLocaleDateString('en-US', {
                           month: 'short',
@@ -370,7 +362,8 @@ function AllAnalysesContent() {
                       </span>
                     </div>
                   </div>
-                  <svg className="w-5 h-5 text-gray-400 group-hover:text-brand-gold transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+
+                  <svg className="w-5 h-5 text-gray-400 group-hover:text-brand-gold transition-colors flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                   </svg>
                 </div>
@@ -380,16 +373,16 @@ function AllAnalysesContent() {
 
             {/* Pagination */}
             {totalPages > 1 && (
-              <div className="mt-8 flex items-center justify-center gap-2">
+              <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-2">
                 <button
                   onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                   disabled={currentPage === 1}
-                  className="px-4 py-2 border-2 border-gray-300 rounded-lg font-medium text-sm disabled:opacity-40 disabled:cursor-not-allowed hover:border-brand-black transition-all"
+                  className="btn-secondary-sm w-full sm:w-auto"
                 >
                   ← Previous
                 </button>
 
-                <div className="flex gap-1">
+                <div className="flex gap-1 flex-wrap justify-center">
                   {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
                     // Show first, last, current, and pages around current
                     const showPage = page === 1 ||
@@ -408,11 +401,7 @@ function AllAnalysesContent() {
                       <button
                         key={page}
                         onClick={() => setCurrentPage(page)}
-                        className={`px-4 py-2 rounded-lg font-medium text-sm transition-all ${
-                          currentPage === page
-                            ? 'bg-brand-black text-white'
-                            : 'border-2 border-gray-300 hover:border-brand-black'
-                        }`}
+                        className={currentPage === page ? 'btn-primary-sm' : 'btn-secondary-sm'}
                       >
                         {page}
                       </button>
@@ -423,7 +412,7 @@ function AllAnalysesContent() {
                 <button
                   onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                   disabled={currentPage === totalPages}
-                  className="px-4 py-2 border-2 border-gray-300 rounded-lg font-medium text-sm disabled:opacity-40 disabled:cursor-not-allowed hover:border-brand-black transition-all"
+                  className="btn-secondary-sm w-full sm:w-auto"
                 >
                   Next →
                 </button>
