@@ -1,9 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
-import { useState, useEffect, useRef } from 'react';
-import { createClient } from '@/utils/supabase/client';
+import { usePathname } from 'next/navigation';
+import { useState, useRef, useEffect } from 'react';
+import { useAuth } from '@/lib/auth/AuthProvider';
 import WorkspaceSelector from './WorkspaceSelector';
 import { useWorkspace } from './WorkspaceContext';
 
@@ -14,32 +14,10 @@ interface SidebarProps {
 
 export default function AppSidebar({ isCollapsed, onToggle }: SidebarProps) {
   const pathname = usePathname();
-  const router = useRouter();
+  const { user, signOut } = useAuth();
   const { selectedWorkspaceId } = useWorkspace();
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [userEmail, setUserEmail] = useState<string | null>(null);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const supabase = createClient();
-
-    const checkAuth = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setIsLoggedIn(!!session);
-      setUserEmail(session?.user?.email || null);
-    };
-    checkAuth();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setIsLoggedIn(!!session);
-      setUserEmail(session?.user?.email || null);
-    });
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, []);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -58,12 +36,8 @@ export default function AppSidebar({ isCollapsed, onToggle }: SidebarProps) {
   }, [showUserMenu]);
 
   const handleSignOut = async () => {
-    const supabase = createClient();
-    await supabase.auth.signOut();
-    setIsLoggedIn(false);
-    setUserEmail(null);
     setShowUserMenu(false);
-    router.push('/');
+    await signOut();
   };
 
   const isActive = (path: string) => {
@@ -74,7 +48,7 @@ export default function AppSidebar({ isCollapsed, onToggle }: SidebarProps) {
     return null;
   }
 
-  if (!isLoggedIn) {
+  if (!user) {
     return null;
   }
 
@@ -280,17 +254,17 @@ export default function AppSidebar({ isCollapsed, onToggle }: SidebarProps) {
           <button
             onClick={() => setShowUserMenu(!showUserMenu)}
             className="w-full flex items-center gap-2 px-2 py-2 rounded-lg hover:bg-gray-100 transition-all"
-            title={isCollapsed ? userEmail || 'Account' : undefined}
+            title={isCollapsed ? user?.email || 'Account' : undefined}
           >
             <div className="w-8 h-8 bg-brand-gold rounded-lg flex items-center justify-center flex-shrink-0">
               <span className="text-sm font-bold text-brand-black">
-                {userEmail?.charAt(0).toUpperCase() || 'U'}
+                {user?.email?.charAt(0).toUpperCase() || 'U'}
               </span>
             </div>
             {!isCollapsed && (
               <>
                 <div className="flex-1 text-left overflow-hidden">
-                  <div className="text-sm font-bold text-brand-black truncate">{userEmail || 'User'}</div>
+                  <div className="text-sm font-bold text-brand-black truncate">{user?.email || 'User'}</div>
                   <div className="text-xs text-gray-500">Account</div>
                 </div>
                 <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">

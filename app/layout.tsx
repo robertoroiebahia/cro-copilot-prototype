@@ -4,6 +4,7 @@ import type { Metadata } from 'next'
 import AppSidebar from '@/components/AppSidebar'
 import MobileHeader from '@/components/MobileHeader'
 import MobileSubNav from '@/components/MobileSubNav'
+import { AuthProvider } from '@/lib/auth/AuthProvider'
 import { WorkspaceProvider } from '@/components/WorkspaceContext'
 import './globals.css'
 import { useState, useEffect } from 'react'
@@ -46,9 +47,10 @@ export default function RootLayout({
         <meta name="description" content="AI-powered funnel analysis for DTC brands. Turn any landing page into a conversion machine." />
       </head>
       <body className="bg-gray-50">
-        <WorkspaceProvider>
-          {/* Mobile Header - Sticky at top on mobile */}
-          {showSidebar && <MobileHeader onMenuToggle={setIsMobileMenuOpen} />}
+        <AuthProvider>
+          <WorkspaceProvider>
+            {/* Mobile Header - Sticky at top on mobile */}
+            {showSidebar && <MobileHeader onMenuToggle={setIsMobileMenuOpen} />}
 
           {/* Mobile Sub-Navigation - Contextual tabs below header (hidden when menu open) */}
           {showSidebar && !isMobileMenuOpen && <MobileSubNav />}
@@ -75,7 +77,8 @@ export default function RootLayout({
           >
             {children}
           </main>
-        </WorkspaceProvider>
+          </WorkspaceProvider>
+        </AuthProvider>
       </body>
     </html>
   )

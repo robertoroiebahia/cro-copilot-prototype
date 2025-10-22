@@ -43,15 +43,6 @@ function InsightsContent() {
     setLoading(true);
     setError(null);
 
-    const { data: { user: currentUser }, error: authError } = await supabase.auth.getUser();
-
-    if (authError || !currentUser) {
-      router.replace('/login');
-      return;
-    }
-
-    setUser(currentUser);
-
     // Fetch all insights for this workspace
     const { data, error: insightsError } = await supabase
       .from('insights')

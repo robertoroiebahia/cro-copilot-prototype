@@ -55,7 +55,6 @@ function PageAnalysisContent() {
   // History state
   const [pageAnalyses, setPageAnalyses] = useState<PageAnalysis[]>([]);
   const [historyLoading, setHistoryLoading] = useState(true);
-  const [showHistory, setShowHistory] = useState(false);
 
   // Fetch workspace page analysis history
   useEffect(() => {
@@ -430,17 +429,7 @@ function PageAnalysisContent() {
                     boxShadow: '0 4px 16px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04)'
                   }}
                 >
-                  <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-xl font-black text-brand-black">Recent Page Analyses</h2>
-                    {pageAnalyses.length > 0 && (
-                      <button
-                        onClick={() => setShowHistory(!showHistory)}
-                        className="text-sm font-bold text-brand-gold hover:text-black transition-colors"
-                      >
-                        {showHistory ? 'Hide' : 'Show'} History
-                      </button>
-                    )}
-                  </div>
+                  <h2 className="text-xl font-black text-brand-black mb-6">Recent Page Analyses</h2>
 
                   {pageAnalyses.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-12">
@@ -456,9 +445,9 @@ function PageAnalysisContent() {
                         Enter a landing page URL and click "Analyze Page" to get AI-powered CRO recommendations
                       </p>
                     </div>
-                  ) : showHistory ? (
+                  ) : (
                     <div className="space-y-3">
-                      {pageAnalyses.map((analysis) => (
+                      {pageAnalyses.slice(0, 5).map((analysis) => (
                         <Link
                           key={analysis.id}
                           href={`/dashboard/results/${analysis.id}`}
@@ -493,32 +482,16 @@ function PageAnalysisContent() {
                           </div>
                         </Link>
                       ))}
-                      {pageAnalyses.length >= 10 && (
+                      {pageAnalyses.length > 5 && (
                         <Link
                           href="/analyses?type=page_analysis"
-                          className="block text-center py-3 text-sm font-bold text-brand-gold hover:text-black transition-colors"
+                          className="block text-center py-4 px-6 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300 hover:border-brand-gold hover:bg-brand-gold/5 transition-all duration-300 group"
                         >
-                          View All Page Analyses →
+                          <span className="text-sm font-bold text-brand-text-secondary group-hover:text-brand-gold transition-colors">
+                            View All {pageAnalyses.length} Page Analyses →
+                          </span>
                         </Link>
                       )}
-                    </div>
-                  ) : (
-                    <div className="text-center py-8">
-                      <p className="text-sm text-brand-text-secondary font-medium mb-4">
-                        You have {pageAnalyses.length} page {pageAnalyses.length === 1 ? 'analysis' : 'analyses'}
-                      </p>
-                      <button
-                        onClick={() => setShowHistory(true)}
-                        className="inline-flex items-center gap-2 px-6 py-3 bg-brand-gold hover:bg-black text-black hover:text-white font-black rounded-lg transition-all duration-300"
-                        style={{
-                          boxShadow: '0 4px 12px rgba(245, 197, 66, 0.3)'
-                        }}
-                      >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" />
-                        </svg>
-                        View History
-                      </button>
                     </div>
                   )}
                 </div>
@@ -727,7 +700,6 @@ function PageAnalysisContent() {
                         setUrl('');
                         setError('');
                         setWarnings([]);
-                        setShowHistory(false);
                       }}
                       className="flex items-center justify-center gap-2 px-4 py-3 border-2 border-gray-300 text-brand-text-secondary text-sm font-bold rounded-lg hover:border-brand-gold hover:text-brand-gold transition-all duration-300"
                     >

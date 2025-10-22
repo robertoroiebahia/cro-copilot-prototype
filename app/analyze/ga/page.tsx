@@ -247,44 +247,47 @@ function GA4AnalysisContent() {
       {/* Header Section */}
       <div className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-6 py-6">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <div className="flex items-center gap-3 mb-2">
-                <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
-                  <svg className="w-5 h-5 text-purple-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                  </svg>
-                </div>
-                <h1 className="heading-page">Google Analytics</h1>
-              </div>
-              <p className="text-body-secondary">
-                Track conversion rates and identify optimization opportunities
-              </p>
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
+              <svg className="w-5 h-5 text-purple-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+              </svg>
             </div>
-
-            <button
-              onClick={handleSync}
-              disabled={syncing}
-              className="btn-primary flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {syncing ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-current border-t-transparent"></div>
-                  Syncing...
-                </>
-              ) : (
-                <>
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                  </svg>
-                  Sync Data
-                </>
-              )}
-            </button>
+            <h1 className="heading-page">Google Analytics</h1>
           </div>
+          <p className="text-body-secondary">
+            Track conversion rates and identify optimization opportunities
+          </p>
+        </div>
+      </div>
 
-          {/* Improved Filters Section */}
-          <div className="space-y-4">
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto px-6 py-6">
+        {/* Sync Data Button */}
+        <div className="mb-6 flex justify-end">
+          <button
+            onClick={handleSync}
+            disabled={syncing}
+            className="btn-primary flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {syncing ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-2 border-current border-t-transparent"></div>
+                Syncing...
+              </>
+            ) : (
+              <>
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                Sync Data
+              </>
+            )}
+          </button>
+        </div>
+
+        {/* Improved Filters Section */}
+        <div className="space-y-4">
             {/* GA4 Property Selector */}
             {availableProperties.length > 0 && (
               <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
@@ -405,13 +408,10 @@ function GA4AnalysisContent() {
                 </select>
               </div>
             </div>
-          </div>
         </div>
-      </div>
 
-      {/* Error Display */}
-      {error && (
-        <div className="max-w-7xl mx-auto px-8 pt-6">
+        {/* Error Display */}
+        {error && (
           <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
             <svg className="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -428,18 +428,17 @@ function GA4AnalysisContent() {
               </svg>
             </button>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-8 py-6">
-        {loading ? (
-          <div className="text-center py-16">
-            <div className="animate-spin rounded-full h-12 w-12 border-4 border-brand-gold border-t-transparent mx-auto mb-4"></div>
-            <p className="text-brand-text-secondary font-medium">Loading funnel data...</p>
-          </div>
-        ) : (
-          <div className="space-y-6">
+        {/* Content Area */}
+        <div className="pt-6">
+          {loading ? (
+            <div className="text-center py-16">
+              <div className="animate-spin rounded-full h-12 w-12 border-4 border-brand-gold border-t-transparent mx-auto mb-4"></div>
+              <p className="text-brand-text-secondary font-medium">Loading funnel data...</p>
+            </div>
+          ) : (
+            <div className="space-y-6">
             {/* Funnel Visualization */}
             {funnelData && (
               <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
@@ -511,7 +510,8 @@ function GA4AnalysisContent() {
             </div>
           </div>
         )}
-      </div>
+        </div>
+      </main>
     </div>
   );
 }

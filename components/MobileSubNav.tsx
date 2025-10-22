@@ -16,7 +16,7 @@ export default function MobileSubNav() {
           { label: 'All', href: '/analyses' },
           { label: 'Page', href: '/analyze' },
           { label: 'GA4', href: '/analyze/ga' },
-          { label: 'Surveys', href: '/analyze/surveys' },
+          { label: 'Surveys', href: '/analyze/survey' },
           { label: 'Reviews', href: '/analyze/review-mining' },
           { label: 'Polls', href: '/analyze/onsite-poll' },
         ],
