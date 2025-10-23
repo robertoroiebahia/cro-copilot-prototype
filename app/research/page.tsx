@@ -2,9 +2,14 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
 import { useWorkspace } from '@/components/WorkspaceContext';
+import { useSubscription } from '@/lib/billing/useSubscription';
 import WorkspaceGuard from '@/components/WorkspaceGuard';
+import ProBadge from '@/components/ProBadge';
+import UpgradeModal from '@/components/UpgradeModal';
+import UsageLimitBanner from '@/components/UsageLimitBanner';
 import type { ResearchType } from '@/lib/types/insights.types';
 
 interface ResearchMethodology {
@@ -17,13 +22,20 @@ interface ResearchMethodology {
   gradientTo: string;
   path: string;
   count: number;
+  isPro?: boolean; // Premium feature flag
 }
 
 function ResearchContent() {
+  const router = useRouter();
   const supabase = createClient();
   const { selectedWorkspaceId, selectedWorkspace } = useWorkspace();
+  const { subscription, isPro, isFree, loading: subLoading } = useSubscription();
+
   const [loading, setLoading] = useState(true);
   const [analysisStats, setAnalysisStats] = useState<Record<string, number>>({});
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [selectedFeature, setSelectedFeature] = useState<string>('');
+  const [currentUsage, setCurrentUsage] = useState(0);
 
   const researchMethodologies: ResearchMethodology[] = [
     {
@@ -36,6 +48,7 @@ function ResearchContent() {
       gradientTo: 'to-blue-700',
       path: '/analyze',
       count: analysisStats['page_analysis'] || 0,
+      isPro: false, // Free
     },
     {
       id: 'ga_analysis',
@@ -47,6 +60,7 @@ function ResearchContent() {
       gradientTo: 'to-orange-700',
       path: '/analyze/ga',
       count: analysisStats['ga_analysis'] || 0,
+      isPro: false, // Free
     },
     {
       id: 'heatmap_analysis',
@@ -58,6 +72,7 @@ function ResearchContent() {
       gradientTo: 'to-red-700',
       path: '/analyze/heatmap',
       count: analysisStats['heatmap_analysis'] || 0,
+      isPro: true, // Pro only
     },
     {
       id: 'user_testing',
@@ -69,6 +84,7 @@ function ResearchContent() {
       gradientTo: 'to-purple-700',
       path: '/analyze/user-testing',
       count: analysisStats['user_testing'] || 0,
+      isPro: true, // Pro only
     },
     {
       id: 'survey_analysis',
@@ -80,23 +96,26 @@ function ResearchContent() {
       gradientTo: 'to-green-700',
       path: '/analyze/survey',
       count: analysisStats['survey_analysis'] || 0,
+      isPro: true, // Pro only
     },
     {
-      id: 'competitor_analysis',
-      name: 'Competitor Analysis',
-      description: 'Benchmark your pages against competitors and industry leaders',
-      icon: '🎯',
-      color: 'indigo',
-      gradientFrom: 'from-indigo-500',
-      gradientTo: 'to-indigo-700',
-      path: '/analyze/competitor',
-      count: analysisStats['competitor_analysis'] || 0,
+      id: 'review_mining',
+      name: 'Review Mining',
+      description: 'Extract insights from customer reviews and ratings',
+      icon: '⭐',
+      color: 'yellow',
+      gradientFrom: 'from-yellow-500',
+      gradientTo: 'to-yellow-700',
+      path: '/analyze/review-mining',
+      count: analysisStats['review_mining'] || 0,
+      isPro: true, // Pro only
     },
   ];
 
   useEffect(() => {
     if (!selectedWorkspaceId) return;
     fetchAnalysisStats();
+    fetchCurrentUsage();
   }, [selectedWorkspaceId]);
 
   const fetchAnalysisStats = async () => {
@@ -125,8 +144,35 @@ function ResearchContent() {
     }
   };
 
+  const fetchCurrentUsage = async () => {
+    if (!selectedWorkspaceId) return;
+
+    try {
+      const response = await fetch(`/api/usage?workspaceId=${selectedWorkspaceId}`);
+      if (response.ok) {
+        const data = await response.json();
+        setCurrentUsage(data.analyses_count || 0);
+      }
+    } catch (err) {
+      console.error('Error fetching usage:', err);
+    }
+  };
+
+  const handleMethodologyClick = (method: ResearchMethodology, e: React.MouseEvent) => {
+    // If Pro feature and user is Free, show upgrade modal
+    if (method.isPro && isFree) {
+      e.preventDefault();
+      setSelectedFeature(method.name);
+      setShowUpgradeModal(true);
+      return;
+    }
+
+    // Otherwise, navigate normally (Link handles it)
+  };
+
   const totalAnalyses = Object.values(analysisStats).reduce((sum, count) => sum + count, 0);
   const methodologiesUsed = Object.keys(analysisStats).length;
+  const analysesLimit = subscription?.limits.analyses_per_month || 5;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -168,6 +214,16 @@ function ResearchContent() {
 
       {/* Research Methodologies Grid */}
       <div className="max-w-7xl mx-auto px-8 py-12">
+        {/* Usage Limit Banner */}
+        {!subLoading && (
+          <UsageLimitBanner
+            resourceType="analyses"
+            current={currentUsage}
+            limit={analysesLimit}
+            period="month"
+          />
+        )}
+
         <div className="mb-8">
           <h2 className="text-2xl font-black text-brand-black mb-2">Choose Your Research Method</h2>
           <p className="text-brand-text-secondary">
@@ -182,48 +238,77 @@ function ResearchContent() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {researchMethodologies.map((method) => (
-              <Link
-                key={method.id}
-                href={method.path}
-                className="group relative bg-white rounded-2xl border-2 border-gray-200 hover:border-brand-gold overflow-hidden transition-all duration-300 hover:shadow-2xl hover:scale-105"
-              >
-                {/* Gradient Background on Hover */}
-                <div className={`absolute inset-0 bg-gradient-to-br ${method.gradientFrom} ${method.gradientTo} opacity-0 group-hover:opacity-10 transition-opacity duration-300`}></div>
+            {researchMethodologies.map((method) => {
+              const isLocked = method.isPro && isFree;
 
-                <div className="relative p-8">
-                  {/* Icon & Badge */}
-                  <div className="flex items-start justify-between mb-6">
-                    <div className={`text-6xl transform group-hover:scale-110 transition-transform duration-300`}>
-                      {method.icon}
-                    </div>
-                    {method.count > 0 && (
-                      <div className="px-3 py-1 bg-brand-gold/10 border border-brand-gold/20 rounded-full">
-                        <span className="text-xs font-black text-brand-gold">{method.count} analyses</span>
+              return (
+                <Link
+                  key={method.id}
+                  href={isLocked ? '#' : method.path}
+                  onClick={(e) => handleMethodologyClick(method, e)}
+                  className={`
+                    group relative bg-white rounded-2xl border-2 border-gray-200 overflow-hidden transition-all duration-300
+                    ${isLocked
+                      ? 'cursor-pointer hover:border-brand-gold/50 hover:shadow-lg'
+                      : 'hover:border-brand-gold hover:shadow-2xl hover:scale-105'
+                    }
+                  `}
+                >
+                  {/* Gradient Background on Hover */}
+                  <div className={`absolute inset-0 bg-gradient-to-br ${method.gradientFrom} ${method.gradientTo} opacity-0 group-hover:opacity-10 transition-opacity duration-300`}></div>
+
+                  {/* Lock Overlay for Premium Features (Free Users) */}
+                  {isLocked && (
+                    <div className="absolute inset-0 bg-black/5 backdrop-blur-[2px] z-10 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                      <div className="bg-white rounded-full p-4 shadow-lg">
+                        <svg className="w-8 h-8 text-brand-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                        </svg>
                       </div>
-                    )}
+                    </div>
+                  )}
+
+                  <div className="relative p-8">
+                    {/* Icon & Badge */}
+                    <div className="flex items-start justify-between mb-6">
+                      <div className={`text-6xl transform group-hover:scale-110 transition-transform duration-300 ${isLocked ? 'opacity-60' : ''}`}>
+                        {method.icon}
+                      </div>
+                      <div className="flex flex-col items-end gap-2">
+                        {method.isPro && <ProBadge size="sm" tooltip />}
+                        {method.count > 0 && (
+                          <div className="px-3 py-1 bg-brand-gold/10 border border-brand-gold/20 rounded-full">
+                            <span className="text-xs font-black text-brand-gold">{method.count} analyses</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Title */}
+                    <h3 className={`text-2xl font-black mb-3 transition-colors ${
+                      isLocked
+                        ? 'text-gray-700 group-hover:text-brand-gold'
+                        : 'text-brand-black group-hover:text-brand-gold'
+                    }`}>
+                      {method.name}
+                    </h3>
+
+                    {/* Description */}
+                    <p className="text-sm text-brand-text-secondary leading-relaxed mb-6">
+                      {method.description}
+                    </p>
+
+                    {/* CTA */}
+                    <div className="flex items-center gap-2 text-brand-gold font-bold text-sm">
+                      <span>{isLocked ? 'Unlock with Pro' : 'Start Analysis'}</span>
+                      <svg className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </div>
                   </div>
-
-                  {/* Title */}
-                  <h3 className="text-2xl font-black text-brand-black mb-3 group-hover:text-brand-gold transition-colors">
-                    {method.name}
-                  </h3>
-
-                  {/* Description */}
-                  <p className="text-sm text-brand-text-secondary leading-relaxed mb-6">
-                    {method.description}
-                  </p>
-
-                  {/* CTA */}
-                  <div className="flex items-center gap-2 text-brand-gold font-bold text-sm">
-                    <span>Start Analysis</span>
-                    <svg className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
-                  </div>
-                </div>
-              </Link>
-            ))}
+                </Link>
+              );
+            })}
           </div>
         )}
 
@@ -286,6 +371,14 @@ function ResearchContent() {
           </Link>
         </div>
       </div>
+
+      {/* Upgrade Modal */}
+      <UpgradeModal
+        open={showUpgradeModal}
+        onClose={() => setShowUpgradeModal(false)}
+        feature={selectedFeature}
+        limitType="feature"
+      />
     </div>
   );
 }
