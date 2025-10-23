@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useWorkspace } from '@/components/WorkspaceContext';
 import WorkspaceGuard from '@/components/WorkspaceGuard';
+import QuickWinsChecklist from '@/components/QuickWinsChecklist';
 import { createClient } from '@/utils/supabase/client';
 
 interface DashboardStats {
@@ -139,6 +140,11 @@ function DashboardContent() {
       </div>
 
       <div className="max-w-7xl mx-auto px-8 py-8">
+        {/* Quick Wins Checklist */}
+        <div className="mb-8">
+          <QuickWinsChecklist />
+        </div>
+
         {/* Quick Stats */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
           <StatCard

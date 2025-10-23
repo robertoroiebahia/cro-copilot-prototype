@@ -13,6 +13,7 @@ import { logger } from '@/lib/utils/logger';
 import { AppError, ValidationError, ErrorHandler } from '@/lib/utils/errors';
 import { rateLimit } from '@/lib/utils/rate-limit';
 import { validateWorkspaceAccess } from '@/lib/utils/workspace-validation';
+import { checkCanCreate, trackResourceCreation } from '@/lib/billing/usage-middleware';
 
 /**
  * POST /api/analyze-v2
@@ -75,6 +76,13 @@ export async function POST(request: NextRequest) {
     const validation = await validateWorkspaceAccess(workspaceId, userId);
     if (!validation.valid) {
       return validation.error!;
+    }
+
+    // ✅ Check usage limits BEFORE starting analysis
+    const usageCheck = await checkCanCreate(userId, workspaceId, 'analyses');
+    if (!usageCheck.allowed) {
+      logger.warn('Usage limit exceeded for analyses', { userId, workspaceId });
+      return usageCheck.error!;
     }
 
     logger.info('Starting analysis v2', { url, userId, workspaceId });
@@ -157,6 +165,11 @@ export async function POST(request: NextRequest) {
 
     const dbAnalysisId = savedAnalysis?.id || null;
     logger.info('Analysis saved to database', { dbAnalysisId, workspaceId });
+
+    // ✅ Track analysis creation for usage limits
+    if (dbAnalysisId) {
+      await trackResourceCreation(userId, workspaceId, 'analyses', 'page_analysis');
+    }
 
     // ✅ Save insights to database
     if (dbAnalysisId && insights.length > 0) {
@@ -277,6 +290,11 @@ export async function POST(request: NextRequest) {
           count: savedInsights?.length || 0,
           savedIds: savedInsights?.map(i => i.id)
         });
+
+        // ✅ Track insights creation for usage limits (bulk operation)
+        if (savedInsights && savedInsights.length > 0) {
+          await trackResourceCreation(userId, workspaceId, 'insights', 'page_analysis', savedInsights.length);
+        }
       }
     }
 

@@ -9,6 +9,7 @@ import { RESEARCH_TYPE_LABELS } from '@/lib/types/insights.types';
 import { ManualInsightModal } from '@/components/ManualInsightModal';
 import { useWorkspace } from '@/components/WorkspaceContext';
 import WorkspaceGuard from '@/components/WorkspaceGuard';
+import EmptyState from '@/components/EmptyState';
 
 function InsightsContent() {
   const router = useRouter();
@@ -27,6 +28,7 @@ function InsightsContent() {
   const [selectedPillar, setSelectedPillar] = useState<'all' | string>('all');
   const [selectedPriority, setSelectedPriority] = useState<'all' | 'critical' | 'high' | 'medium' | 'low'>('all');
   const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'confidence' | 'priority'>('priority');
+  const [showFilters, setShowFilters] = useState(false);
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -121,7 +123,7 @@ function InsightsContent() {
       total: insights.length,
       critical: insights.filter(i => i.priority === 'critical').length,
       high: insights.filter(i => i.priority === 'high').length,
-      validated: insights.filter(i => i.validation_status === 'validated').length,
+      highConfidence: insights.filter(i => i.confidence_level === 'high').length,
     };
   }, [insights]);
 
@@ -140,123 +142,168 @@ function InsightsContent() {
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <div className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-8 py-6">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <div className="flex items-center gap-3 mb-1">
-                <svg className="w-8 h-8 text-brand-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                </svg>
-                <h1 className="text-3xl font-black text-brand-black">Insights</h1>
-                {selectedWorkspace && (
-                  <span className="px-3 py-1 bg-brand-gold/20 text-brand-gold text-xs font-bold rounded-lg">
-                    {selectedWorkspace.name}
-                  </span>
-                )}
-              </div>
-              <p className="text-sm text-brand-text-secondary font-medium">
-                All insights from your research in one place
-              </p>
+        <div className="max-w-7xl mx-auto px-6 py-6">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-8 h-8 bg-yellow-100 rounded-lg flex items-center justify-center">
+              <svg className="w-5 h-5 text-yellow-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+              </svg>
             </div>
-            <button
-              onClick={() => setIsModalOpen(true)}
-              className="px-6 py-3 bg-brand-gold hover:bg-black text-brand-black hover:text-white font-black rounded-lg transition-all duration-300"
-              style={{ boxShadow: '0 4px 12px rgba(245, 197, 66, 0.3)' }}
-            >
-              <span className="flex items-center gap-2">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                </svg>
-                Add Insight
-              </span>
-            </button>
+            <h1 className="heading-page">Insights</h1>
           </div>
-
-          {/* Stats */}
-          <div className="grid grid-cols-4 gap-4">
-            <div className="border border-gray-200 rounded-lg p-4">
-              <div className="text-2xl font-black text-brand-black">{stats.total}</div>
-              <div className="text-xs font-bold text-gray-500">Total Insights</div>
-            </div>
-            <div className="border border-gray-200 rounded-lg p-4">
-              <div className="text-2xl font-black text-red-600">{stats.critical}</div>
-              <div className="text-xs font-bold text-gray-500">Critical</div>
-            </div>
-            <div className="border border-gray-200 rounded-lg p-4">
-              <div className="text-2xl font-black text-orange-600">{stats.high}</div>
-              <div className="text-xs font-bold text-gray-500">High Priority</div>
-            </div>
-            <div className="border border-gray-200 rounded-lg p-4">
-              <div className="text-2xl font-black text-green-600">{stats.validated}</div>
-              <div className="text-xs font-bold text-gray-500">Validated</div>
-            </div>
-          </div>
+          <p className="text-body-secondary">All insights from your research in one place</p>
         </div>
       </div>
 
-      {/* Filters */}
-      <div className="max-w-7xl mx-auto px-8 py-6">
-        <div className="bg-white rounded-lg border border-gray-200 p-4 mb-6">
-          <div className="flex flex-col lg:flex-row gap-4">
-            {/* Search */}
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto px-6 py-6">
+        {/* Stats & Add Button - 2 Column Layout */}
+        <div className="mb-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Left Column - Stats */}
+            <div className="bg-white rounded-lg border border-gray-200 p-6">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                <div>
+                  <div className="text-2xl sm:text-3xl font-black text-gray-900 mb-1">{stats.total}</div>
+                  <div className="text-xs font-bold text-gray-600 uppercase tracking-wide">Total</div>
+                </div>
+                <div>
+                  <div className="text-2xl sm:text-3xl font-black text-red-600 mb-1">{stats.critical}</div>
+                  <div className="text-xs font-bold text-gray-600 uppercase tracking-wide">Critical</div>
+                </div>
+                <div>
+                  <div className="text-2xl sm:text-3xl font-black text-orange-600 mb-1">{stats.high}</div>
+                  <div className="text-xs font-bold text-gray-600 uppercase tracking-wide">High</div>
+                </div>
+                <div>
+                  <div className="text-2xl sm:text-3xl font-black text-green-600 mb-1">{stats.highConfidence}</div>
+                  <div className="text-xs font-bold text-gray-600 uppercase tracking-wide">Confident</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Right Column - Add Insight Button */}
+            <div className="bg-white rounded-lg border border-gray-200 p-6 flex items-center justify-center">
+              <button
+                onClick={() => setIsModalOpen(true)}
+                className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-gradient-to-r from-gray-900 to-gray-800 hover:from-gray-800 hover:to-gray-700 text-white font-bold rounded-xl shadow-lg shadow-gray-900/20 hover:shadow-xl hover:shadow-gray-900/30 transition-all duration-200 hover:-translate-y-0.5"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+                Add Manual Insight
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Search & Filter Toggle */}
+        <div className="mb-6">
+          <div className="flex gap-3">
+            {/* Search Input */}
             <div className="flex-1">
               <input
                 type="text"
                 placeholder="Search insights..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:border-brand-gold transition-all text-sm font-medium"
+                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-brand-gold transition-all text-sm font-medium placeholder-gray-400"
               />
             </div>
 
-            {/* Filter dropdowns */}
-            <select
-              value={selectedPriority}
-              onChange={(e) => setSelectedPriority(e.target.value as any)}
-              className="px-4 py-2.5 border border-gray-300 rounded-lg text-sm font-bold focus:outline-none focus:border-brand-gold bg-white"
+            {/* Filter Toggle Button */}
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className={`px-6 py-3 border-2 rounded-xl font-bold text-sm transition-all duration-200 flex items-center gap-2 ${
+                showFilters
+                  ? 'bg-brand-gold border-brand-gold text-black'
+                  : 'bg-white border-gray-200 text-gray-700 hover:border-brand-gold'
+              }`}
             >
-              <option value="all">All Priorities</option>
-              <option value="critical">Critical</option>
-              <option value="high">High</option>
-              <option value="medium">Medium</option>
-              <option value="low">Low</option>
-            </select>
-
-            <select
-              value={selectedConfidence}
-              onChange={(e) => setSelectedConfidence(e.target.value as any)}
-              className="px-4 py-2.5 border border-gray-300 rounded-lg text-sm font-bold focus:outline-none focus:border-brand-gold bg-white"
-            >
-              <option value="all">All Confidence</option>
-              <option value="high">High</option>
-              <option value="medium">Medium</option>
-              <option value="low">Low</option>
-            </select>
-
-            <select
-              value={selectedPillar}
-              onChange={(e) => setSelectedPillar(e.target.value)}
-              className="px-4 py-2.5 border border-gray-300 rounded-lg text-sm font-bold focus:outline-none focus:border-brand-gold bg-white"
-            >
-              <option value="all">All Pillars</option>
-              <option value="conversion">Conversion</option>
-              <option value="aov">AOV</option>
-              <option value="frequency">Frequency</option>
-              <option value="retention">Retention</option>
-              <option value="acquisition">Acquisition</option>
-            </select>
-
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value as any)}
-              className="px-4 py-2.5 border border-gray-300 rounded-lg text-sm font-bold focus:outline-none focus:border-brand-gold bg-white"
-            >
-              <option value="priority">Priority</option>
-              <option value="newest">Newest</option>
-              <option value="oldest">Oldest</option>
-              <option value="confidence">Confidence</option>
-            </select>
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+              </svg>
+              <span className="hidden sm:inline">Filters</span>
+              {(selectedPriority !== 'all' || selectedConfidence !== 'all' || selectedPillar !== 'all' || sortBy !== 'priority') && (
+                <span className="w-2 h-2 bg-red-500 rounded-full"></span>
+              )}
+            </button>
           </div>
+
+          {/* Collapsible Filters */}
+          {showFilters && (
+            <div className="mt-3 bg-white rounded-xl border-2 border-gray-200 p-4 animate-in slide-in-from-top duration-200">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                {/* Priority Filter */}
+                <select
+                  value={selectedPriority}
+                  onChange={(e) => setSelectedPriority(e.target.value as any)}
+                  className="px-4 py-2.5 border border-gray-300 rounded-lg text-sm font-bold focus:outline-none focus:border-brand-gold bg-white"
+                >
+                  <option value="all">All Priorities</option>
+                  <option value="critical">Critical</option>
+                  <option value="high">High</option>
+                  <option value="medium">Medium</option>
+                  <option value="low">Low</option>
+                </select>
+
+                {/* Confidence Filter */}
+                <select
+                  value={selectedConfidence}
+                  onChange={(e) => setSelectedConfidence(e.target.value as any)}
+                  className="px-4 py-2.5 border border-gray-300 rounded-lg text-sm font-bold focus:outline-none focus:border-brand-gold bg-white"
+                >
+                  <option value="all">All Confidence</option>
+                  <option value="high">High</option>
+                  <option value="medium">Medium</option>
+                  <option value="low">Low</option>
+                </select>
+
+                {/* Pillar Filter */}
+                <select
+                  value={selectedPillar}
+                  onChange={(e) => setSelectedPillar(e.target.value)}
+                  className="px-4 py-2.5 border border-gray-300 rounded-lg text-sm font-bold focus:outline-none focus:border-brand-gold bg-white"
+                >
+                  <option value="all">All Pillars</option>
+                  <option value="conversion">Conversion</option>
+                  <option value="aov">AOV</option>
+                  <option value="frequency">Frequency</option>
+                  <option value="retention">Retention</option>
+                  <option value="acquisition">Acquisition</option>
+                </select>
+
+                {/* Sort By */}
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value as any)}
+                  className="px-4 py-2.5 border border-gray-300 rounded-lg text-sm font-bold focus:outline-none focus:border-brand-gold bg-white"
+                >
+                  <option value="priority">Priority</option>
+                  <option value="newest">Newest</option>
+                  <option value="oldest">Oldest</option>
+                  <option value="confidence">Confidence</option>
+                </select>
+              </div>
+
+              {/* Clear Filters Button */}
+              {(selectedPriority !== 'all' || selectedConfidence !== 'all' || selectedPillar !== 'all' || sortBy !== 'priority') && (
+                <div className="mt-3 pt-3 border-t border-gray-200">
+                  <button
+                    onClick={() => {
+                      setSelectedPriority('all');
+                      setSelectedConfidence('all');
+                      setSelectedPillar('all');
+                      setSortBy('priority');
+                    }}
+                    className="text-sm font-bold text-gray-600 hover:text-brand-gold transition-colors"
+                  >
+                    Clear all filters
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Insights Table */}
@@ -267,29 +314,34 @@ function InsightsContent() {
         )}
 
         {filteredInsights.length === 0 ? (
-          <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
-            <h3 className="text-xl font-black text-brand-black mb-2">No insights found</h3>
-            <p className="text-sm text-brand-text-secondary mb-6">
-              {searchQuery ? 'Try adjusting your search or filters' : 'Run an analysis to generate insights'}
-            </p>
-            {!searchQuery && (
-              <Link
-                href="/analyze"
-                className="inline-flex items-center gap-2 px-6 py-3 bg-brand-gold text-brand-black text-sm font-black rounded-lg hover:bg-black hover:text-white transition-all duration-300"
-              >
-                New Analysis
-              </Link>
-            )}
-          </div>
+          <EmptyState
+            icon={
+              <svg className="w-6 h-6 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+              </svg>
+            }
+            title={searchQuery ? "No insights match your search" : "No insights yet"}
+            description={
+              searchQuery
+                ? "Try adjusting your search or filters to find what you're looking for"
+                : "Generate insights by running your first analysis. Our AI will extract key learnings from your research data."
+            }
+            actionLabel={!searchQuery ? "Start Analysis" : undefined}
+            actionHref={!searchQuery ? "/analyze" : undefined}
+            secondaryActionLabel="Clear Filters"
+            secondaryActionHref="#"
+            illustration="lightbulb"
+          />
         ) : (
           <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-            {/* Table Header */}
-            <div className="bg-gray-50 border-b border-gray-200 px-6 py-3">
-              <div className="grid grid-cols-12 gap-4 text-xs font-black text-brand-text-tertiary uppercase tracking-wide">
+            {/* Table Header - Desktop Only */}
+            <div className="hidden lg:block bg-gray-50 border-b border-gray-200 px-6 py-3">
+              <div className="grid grid-cols-12 gap-6 text-xs font-black text-brand-text-tertiary uppercase tracking-wide">
                 <div className="col-span-1">Priority</div>
-                <div className="col-span-5">Insight</div>
+                <div className="col-span-4">Insight</div>
+                <div className="col-span-2">Source</div>
                 <div className="col-span-2">Segment</div>
-                <div className="col-span-2">Pillar</div>
+                <div className="col-span-1">Pillar</div>
                 <div className="col-span-1">Confidence</div>
                 <div className="col-span-1">Status</div>
               </div>
@@ -371,7 +423,7 @@ function InsightsContent() {
             </div>
           </div>
         )}
-      </div>
+      </main>
 
       {/* Manual Insight Modal */}
       <ManualInsightModal
@@ -420,12 +472,12 @@ function InsightRow({ insight, isExpanded, onToggle }: {
 
   return (
     <div className="hover:bg-gray-50 transition-colors">
-      {/* Main Row */}
+      {/* Desktop Table Row */}
       <button
         onClick={onToggle}
-        className="w-full px-6 py-4 text-left"
+        className="hidden lg:block w-full px-6 py-4 text-left"
       >
-        <div className="grid grid-cols-12 gap-4 items-start">
+        <div className="grid grid-cols-12 gap-6 items-start">
           {/* Priority */}
           <div className="col-span-1">
             <span className={`inline-block px-2 py-1 rounded text-xs font-black ${priorityConfig.color}`}>
@@ -434,12 +486,22 @@ function InsightRow({ insight, isExpanded, onToggle }: {
           </div>
 
           {/* Insight Statement */}
-          <div className="col-span-5">
+          <div className="col-span-4">
             {insight.title && (
               <div className="text-sm font-black text-brand-black mb-1">{insight.title}</div>
             )}
             <div className="text-sm text-brand-text-secondary font-medium line-clamp-2">
               {insight.statement}
+            </div>
+          </div>
+
+          {/* Research Source */}
+          <div className="col-span-2">
+            <div className="inline-flex items-center gap-1.5 px-2 py-1 bg-blue-50 border border-blue-200 rounded text-xs font-bold text-blue-700">
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              {RESEARCH_TYPE_LABELS[insight.research_type]}
             </div>
           </div>
 
@@ -451,7 +513,7 @@ function InsightRow({ insight, isExpanded, onToggle }: {
           </div>
 
           {/* Growth Pillar */}
-          <div className="col-span-2">
+          <div className="col-span-1">
             <div className="text-sm text-brand-black font-bold uppercase">
               {insight.growth_pillar || '—'}
             </div>
@@ -471,6 +533,80 @@ function InsightRow({ insight, isExpanded, onToggle }: {
             </div>
             <svg
               className={`w-4 h-4 text-brand-text-tertiary transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </div>
+        </div>
+      </button>
+
+      {/* Mobile Card Layout */}
+      <button
+        onClick={onToggle}
+        className="lg:hidden w-full px-5 py-5 text-left"
+      >
+        <div className="space-y-4">
+          {/* Top Row - Priority and Source */}
+          <div className="flex items-center justify-between gap-3">
+            <span className={`inline-block px-2.5 py-1.5 rounded-lg text-xs font-black ${priorityConfig.color}`}>
+              {priorityConfig.label}
+            </span>
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-blue-50 border border-blue-200 rounded-lg text-xs font-bold text-blue-700">
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              <span className="hidden sm:inline">{RESEARCH_TYPE_LABELS[insight.research_type]}</span>
+              <span className="sm:hidden">{RESEARCH_TYPE_LABELS[insight.research_type].split(' ')[0]}</span>
+            </div>
+          </div>
+
+          {/* Insight Statement */}
+          <div>
+            {insight.title && (
+              <div className="text-base font-black text-brand-black mb-2 leading-snug">{insight.title}</div>
+            )}
+            <div className="text-sm text-brand-text-secondary font-medium line-clamp-3 leading-relaxed">
+              {insight.statement}
+            </div>
+          </div>
+
+          {/* Meta Information Grid */}
+          <div className="grid grid-cols-2 gap-4 pt-3 border-t border-gray-100">
+            <div>
+              <div className="text-xs font-black text-brand-text-tertiary uppercase mb-1.5">Segment</div>
+              <div className="text-sm text-brand-black font-bold">
+                {insight.customer_segment || '—'}
+              </div>
+            </div>
+            <div>
+              <div className="text-xs font-black text-brand-text-tertiary uppercase mb-1.5">Pillar</div>
+              <div className="text-sm text-brand-black font-bold uppercase">
+                {insight.growth_pillar || '—'}
+              </div>
+            </div>
+          </div>
+
+          {/* Bottom Row - Confidence, Status, Expand Icon */}
+          <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+            <div className="flex items-center gap-4">
+              <div>
+                <div className="text-xs font-black text-brand-text-tertiary uppercase mb-1">Confidence</div>
+                <div className={`text-sm font-black ${confidenceConfig.color}`}>
+                  {confidenceConfig.label}
+                </div>
+              </div>
+              <div>
+                <div className="text-xs font-black text-brand-text-tertiary uppercase mb-1">Status</div>
+                <div className={`text-sm font-black ${statusConfig.color}`}>
+                  {statusConfig.label}
+                </div>
+              </div>
+            </div>
+            <svg
+              className={`w-5 h-5 text-brand-text-tertiary transition-transform ${isExpanded ? 'rotate-180' : ''}`}
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"

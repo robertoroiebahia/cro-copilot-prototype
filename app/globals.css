@@ -33,37 +33,69 @@
 }
 
 @layer components {
-  /* Brand Button - Primary */
+  /* ============================================================
+     BUTTON SYSTEM - Standardized CTAs
+     Primary: Black background + white text
+     Secondary: Transparent background + black stroke + black text
+     ============================================================ */
+
+  /* Primary CTA - Black background, white text */
   .btn-primary {
-    @apply px-5 py-2.5 text-sm font-black rounded transition-all duration-200;
+    @apply px-6 py-3 text-sm font-black rounded-lg transition-all duration-200;
     background-color: #0E0E0E; /* brand-black */
     color: #FFFFFF; /* white */
   }
   .btn-primary:hover {
-    background-color: #F5C542; /* brand-gold */
-    color: #0E0E0E; /* brand-black */
+    background-color: #2A2A2A; /* slightly lighter black */
+    transform: translateY(-1px);
+  }
+  .btn-primary:active {
+    transform: translateY(0);
   }
 
-  /* Brand Button - Secondary */
+  /* Secondary CTA - Transparent background, black stroke, black text */
   .btn-secondary {
-    @apply px-5 py-2.5 bg-transparent text-sm font-bold rounded transition-all duration-200;
+    @apply px-6 py-3 bg-transparent text-sm font-bold rounded-lg transition-all duration-200;
     color: #0E0E0E; /* brand-black */
     border: 2px solid #0E0E0E; /* brand-black */
   }
   .btn-secondary:hover {
-    background-color: #F5C542; /* brand-gold */
-    border-color: #F5C542; /* brand-gold */
-    color: #0E0E0E; /* brand-black */
+    background-color: #0E0E0E; /* brand-black */
+    color: #FFFFFF; /* white */
+  }
+  .btn-secondary:active {
+    transform: translateY(0);
   }
 
-  /* Brand Button - Ghost */
-  .btn-ghost {
-    @apply px-4 py-2 bg-transparent text-sm font-bold rounded transition-all duration-200;
-    color: #525252; /* brand-text-secondary */
+  /* Small variants for compact spaces */
+  .btn-primary-sm {
+    @apply px-4 py-2 text-xs font-black rounded-lg transition-all duration-200;
+    background-color: #0E0E0E;
+    color: #FFFFFF;
   }
-  .btn-ghost:hover {
-    color: #0E0E0E; /* brand-black */
-    background-color: #F5F5F5; /* brand-gray-light */
+  .btn-primary-sm:hover {
+    background-color: #2A2A2A;
+  }
+
+  .btn-secondary-sm {
+    @apply px-4 py-2 bg-transparent text-xs font-bold rounded-lg transition-all duration-200;
+    color: #0E0E0E;
+    border: 2px solid #0E0E0E;
+  }
+  .btn-secondary-sm:hover {
+    background-color: #0E0E0E;
+    color: #FFFFFF;
+  }
+
+  /* Disabled state */
+  .btn-primary:disabled,
+  .btn-secondary:disabled {
+    @apply opacity-40 cursor-not-allowed;
+  }
+  .btn-primary:disabled:hover,
+  .btn-secondary:disabled:hover {
+    transform: none;
+    background-color: inherit;
   }
 
   /* Brand Card */

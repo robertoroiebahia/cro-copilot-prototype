@@ -23,16 +23,40 @@ export async function GET(request: Request) {
       }
 
       if (data.session) {
-        // Successfully authenticated, redirect to next page
+        // Check if user needs onboarding
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('onboarding_completed_at')
+          .eq('id', data.session.user.id)
+          .single();
+
+        // Check if user has workspaces
+        const { data: workspaces } = await supabase
+          .from('workspaces')
+          .select('id')
+          .eq('user_id', data.session.user.id)
+          .eq('is_active', true);
+
+        // Redirect to onboarding if:
+        // 1. User hasn't completed onboarding AND
+        // 2. User has no workspaces AND
+        // 3. They're not already going to onboarding
+        const needsOnboarding = !profile?.onboarding_completed_at &&
+                               (!workspaces || workspaces.length === 0) &&
+                               next !== '/onboarding';
+
+        const redirectPath = needsOnboarding ? '/onboarding' : next;
+
+        // Successfully authenticated, redirect to appropriate page
         const forwardedHost = request.headers.get('x-forwarded-host');
         const isLocalEnv = process.env.NODE_ENV === 'development';
 
         if (isLocalEnv) {
-          return NextResponse.redirect(`http://localhost:3000${next}`);
+          return NextResponse.redirect(`http://localhost:3000${redirectPath}`);
         } else if (forwardedHost) {
-          return NextResponse.redirect(`https://${forwardedHost}${next}`);
+          return NextResponse.redirect(`https://${forwardedHost}${redirectPath}`);
         } else {
-          return NextResponse.redirect(new URL(next, request.url));
+          return NextResponse.redirect(new URL(redirectPath, request.url));
         }
       }
     }

@@ -44,9 +44,9 @@ function SignupContent() {
         return;
       }
 
-      // If session exists, user is logged in
+      // If session exists, new user is logged in - redirect to onboarding
       if (data.session) {
-        router.push(next);
+        router.push('/onboarding');
         router.refresh();
       }
     } catch (err) {

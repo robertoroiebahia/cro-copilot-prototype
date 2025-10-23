@@ -27,7 +27,8 @@ export async function middleware(request: NextRequest) {
       '/themes',
       '/queue',
       '/settings',
-      '/analyses'
+      '/analyses',
+      '/onboarding'
     ];
     const isProtectedRoute = protectedRoutes.some(route =>
       request.nextUrl.pathname.startsWith(route)

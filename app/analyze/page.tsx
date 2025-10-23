@@ -7,6 +7,7 @@ import { createClient } from '@/utils/supabase/client';
 import { AIChat } from '@/components/AIChat';
 import { useWorkspace } from '@/components/WorkspaceContext';
 import WorkspaceGuard from '@/components/WorkspaceGuard';
+import FirstAnalysisGuide from '@/components/FirstAnalysisGuide';
 
 type AnalysisStage =
   | 'idle'
@@ -744,6 +745,7 @@ function PageAnalysisContent() {
 export default function PageAnalysisPage() {
   return (
     <WorkspaceGuard>
+      <FirstAnalysisGuide />
       <PageAnalysisContent />
     </WorkspaceGuard>
   );

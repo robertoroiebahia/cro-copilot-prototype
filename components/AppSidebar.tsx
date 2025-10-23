@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState, useRef, useEffect } from 'react';
 import { useAuth } from '@/lib/auth/AuthProvider';
+import { useSubscription } from '@/lib/billing/useSubscription';
 import WorkspaceSelector from './WorkspaceSelector';
 import { useWorkspace } from './WorkspaceContext';
 
@@ -16,6 +17,7 @@ export default function AppSidebar({ isCollapsed, onToggle }: SidebarProps) {
   const pathname = usePathname();
   const { user, signOut } = useAuth();
   const { selectedWorkspaceId } = useWorkspace();
+  const { isPro, loading } = useSubscription();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -239,9 +241,19 @@ export default function AppSidebar({ isCollapsed, onToggle }: SidebarProps) {
           disabled={!selectedWorkspaceId}
         />
 
+        {/* Divider */}
+        {!isCollapsed && <div className="h-px bg-gray-200 my-2" />}
+
+        {/* Settings Section */}
+        {!isCollapsed && (
+          <div className="px-2 py-1 text-xs font-bold text-gray-400 uppercase tracking-wider">
+            Settings
+          </div>
+        )}
+
         <NavItem
-          href="/settings"
-          label="Settings"
+          href="/settings/billing"
+          label="Billing"
           icon={<SettingsIcon />}
           isActive={isActive('/settings')}
           isCollapsed={isCollapsed}
@@ -256,15 +268,31 @@ export default function AppSidebar({ isCollapsed, onToggle }: SidebarProps) {
             className="w-full flex items-center gap-2 px-2 py-2 rounded-lg hover:bg-gray-100 transition-all"
             title={isCollapsed ? user?.email || 'Account' : undefined}
           >
-            <div className="w-8 h-8 bg-brand-gold rounded-lg flex items-center justify-center flex-shrink-0">
-              <span className="text-sm font-bold text-brand-black">
-                {user?.email?.charAt(0).toUpperCase() || 'U'}
-              </span>
+            <div className="relative flex-shrink-0">
+              <div className="w-8 h-8 bg-brand-gold rounded-lg flex items-center justify-center">
+                <span className="text-sm font-bold text-brand-black">
+                  {user?.email?.charAt(0).toUpperCase() || 'U'}
+                </span>
+              </div>
+              {!loading && isPro && (
+                <div className="absolute -top-1 -right-1 w-4 h-4 bg-brand-gold rounded-full flex items-center justify-center border-2 border-white shadow-sm">
+                  <svg className="w-2.5 h-2.5 text-black" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                  </svg>
+                </div>
+              )}
             </div>
             {!isCollapsed && (
               <>
                 <div className="flex-1 text-left overflow-hidden">
-                  <div className="text-sm font-bold text-brand-black truncate">{user?.email || 'User'}</div>
+                  <div className="flex items-center gap-1.5">
+                    <div className="text-sm font-bold text-brand-black truncate">{user?.email || 'User'}</div>
+                    {!loading && isPro && (
+                      <span className="px-1.5 py-0.5 bg-gradient-to-r from-brand-gold to-yellow-400 text-black border border-brand-gold text-[10px] font-black rounded uppercase tracking-wide flex-shrink-0 shadow-sm">
+                        Pro
+                      </span>
+                    )}
+                  </div>
                   <div className="text-xs text-gray-500">Account</div>
                 </div>
                 <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
