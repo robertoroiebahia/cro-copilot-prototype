@@ -126,6 +126,7 @@ export default function AppSidebar({ isCollapsed, onToggle }: SidebarProps) {
           isActive={isActive('/analyze/survey')}
           isCollapsed={isCollapsed}
           disabled={!selectedWorkspaceId}
+          isPro={!isPro}
         />
 
         <NavItem
@@ -135,6 +136,7 @@ export default function AppSidebar({ isCollapsed, onToggle }: SidebarProps) {
           isActive={isActive('/analyze/review-mining')}
           isCollapsed={isCollapsed}
           disabled={!selectedWorkspaceId}
+          isPro={!isPro}
         />
 
         <NavItem
@@ -144,6 +146,7 @@ export default function AppSidebar({ isCollapsed, onToggle }: SidebarProps) {
           isActive={isActive('/analyze/onsite-poll')}
           isCollapsed={isCollapsed}
           disabled={!selectedWorkspaceId}
+          isPro={!isPro}
         />
 
         <NavItem
@@ -154,6 +157,7 @@ export default function AppSidebar({ isCollapsed, onToggle }: SidebarProps) {
           isCollapsed={isCollapsed}
           disabled={!selectedWorkspaceId}
           comingSoon={true}
+          isPro={!isPro}
         />
 
         <NavItem
@@ -164,6 +168,7 @@ export default function AppSidebar({ isCollapsed, onToggle }: SidebarProps) {
           isCollapsed={isCollapsed}
           disabled={!selectedWorkspaceId}
           comingSoon={true}
+          isPro={!isPro}
         />
 
         <NavItem
@@ -353,7 +358,8 @@ function NavItem({
   isActive,
   isCollapsed,
   disabled = false,
-  comingSoon = false
+  comingSoon = false,
+  isPro = false
 }: {
   href: string;
   label: string;
@@ -362,6 +368,7 @@ function NavItem({
   isCollapsed: boolean;
   disabled?: boolean;
   comingSoon?: boolean;
+  isPro?: boolean;
 }) {
   if (disabled) {
     return (
@@ -391,6 +398,11 @@ function NavItem({
         {!isCollapsed && (
           <div className="flex items-center gap-2 flex-1">
             <span className="text-sm truncate text-gray-500">{label}</span>
+            {isPro && (
+              <span className="px-1.5 py-0.5 bg-gradient-to-r from-brand-gold to-yellow-400 text-black border border-brand-gold text-[10px] font-black rounded uppercase tracking-wide flex-shrink-0 shadow-sm opacity-70">
+                Pro
+              </span>
+            )}
             <span className="px-1.5 py-0.5 bg-gray-200 text-gray-600 text-[10px] font-bold rounded uppercase tracking-wide">
               Soon
             </span>
@@ -414,9 +426,16 @@ function NavItem({
         {icon}
       </div>
       {!isCollapsed && (
-        <span className="text-sm truncate">{label}</span>
+        <div className="flex items-center gap-2 flex-1">
+          <span className="text-sm truncate">{label}</span>
+          {isPro && (
+            <span className="px-1.5 py-0.5 bg-gradient-to-r from-brand-gold to-yellow-400 text-black border border-brand-gold text-[10px] font-black rounded uppercase tracking-wide flex-shrink-0 shadow-sm">
+              Pro
+            </span>
+          )}
+        </div>
       )}
-      {isActive && !isCollapsed && (
+      {isActive && !isCollapsed && !isPro && (
         <div className="ml-auto w-1 h-1 bg-brand-gold rounded-full" />
       )}
     </Link>
