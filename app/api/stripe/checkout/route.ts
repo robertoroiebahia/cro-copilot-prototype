@@ -27,13 +27,31 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(new URL('/settings/billing?error=invalid_session', request.url));
     }
 
+    // Type assertions for expanded objects
     const customer = session.customer as Stripe.Customer;
     const subscription = session.subscription as Stripe.Subscription;
     const customerId = customer.id;
     const subscriptionId = subscription.id;
 
+    // Get subscription details using type assertion since expanded objects have these properties
+    const subscriptionData = subscription as unknown as {
+      current_period_start: number;
+      current_period_end: number;
+      trial_end?: number | null;
+      status: string;
+    };
+
+    const currentPeriodStart = subscriptionData.current_period_start;
+    const currentPeriodEnd = subscriptionData.current_period_end;
+    const trialEnd = subscriptionData.trial_end;
+
     // Get the price and product information
     const lineItem = subscription.items.data[0];
+    if (!lineItem) {
+      console.error('No line items in subscription:', subscriptionId);
+      return NextResponse.redirect(new URL('/settings/billing?error=invalid_subscription', request.url));
+    }
+
     const priceId = lineItem.price.id;
     const productId = typeof lineItem.price.product === 'string'
       ? lineItem.price.product
@@ -71,15 +89,15 @@ export async function GET(request: NextRequest) {
         .from('subscriptions')
         .update({
           plan_id: planId,
-          status: subscription.status,
+          status: subscriptionData.status,
           billing_cycle: billingCycle,
           stripe_customer_id: customerId,
           stripe_subscription_id: subscriptionId,
           stripe_price_id: priceId,
-          current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
-          current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
-          trial_ends_at: subscription.trial_end
-            ? new Date(subscription.trial_end * 1000).toISOString()
+          current_period_start: new Date(currentPeriodStart * 1000).toISOString(),
+          current_period_end: new Date(currentPeriodEnd * 1000).toISOString(),
+          trial_ends_at: trialEnd
+            ? new Date(trialEnd * 1000).toISOString()
             : null,
           updated_at: new Date().toISOString(),
         })
@@ -98,15 +116,15 @@ export async function GET(request: NextRequest) {
         .insert({
           user_id: userId,
           plan_id: planId,
-          status: subscription.status,
+          status: subscriptionData.status,
           billing_cycle: billingCycle,
           stripe_customer_id: customerId,
           stripe_subscription_id: subscriptionId,
           stripe_price_id: priceId,
-          current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
-          current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
-          trial_ends_at: subscription.trial_end
-            ? new Date(subscription.trial_end * 1000).toISOString()
+          current_period_start: new Date(currentPeriodStart * 1000).toISOString(),
+          current_period_end: new Date(currentPeriodEnd * 1000).toISOString(),
+          trial_ends_at: trialEnd
+            ? new Date(trialEnd * 1000).toISOString()
             : null,
         });
 

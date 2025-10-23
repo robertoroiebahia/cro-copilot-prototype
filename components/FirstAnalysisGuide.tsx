@@ -104,6 +104,10 @@ export default function FirstAnalysisGuide({ onComplete }: FirstAnalysisGuidePro
 
   const step = ANALYSIS_GUIDE_STEPS[currentStep];
 
+  if (!step) {
+    return null;
+  }
+
   return (
     <>
       {/* Overlay */}

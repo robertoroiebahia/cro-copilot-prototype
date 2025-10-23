@@ -150,19 +150,28 @@ async function handleSubscriptionUpdate(
     billingCycle = plan.stripe_price_id_annual === priceId ? 'annual' : 'monthly';
   }
 
+  // Type assertion for subscription data (webhook subscriptions have these properties)
+  const subscriptionData = subscription as unknown as {
+    id: string;
+    status: string;
+    current_period_start: number;
+    current_period_end: number;
+    canceled_at?: number | null;
+  };
+
   // Update subscription with latest data from Stripe
   const { error: updateError } = await supabase
     .from('subscriptions')
     .update({
       plan_id: planId,
-      status: subscription.status,
+      status: subscriptionData.status,
       billing_cycle: billingCycle,
-      stripe_subscription_id: subscription.id,
+      stripe_subscription_id: subscriptionData.id,
       stripe_price_id: priceId,
-      current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
-      current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
-      cancelled_at: subscription.canceled_at
-        ? new Date(subscription.canceled_at * 1000).toISOString()
+      current_period_start: new Date(subscriptionData.current_period_start * 1000).toISOString(),
+      current_period_end: new Date(subscriptionData.current_period_end * 1000).toISOString(),
+      cancelled_at: subscriptionData.canceled_at
+        ? new Date(subscriptionData.canceled_at * 1000).toISOString()
         : null,
       updated_at: new Date().toISOString(),
     })
@@ -173,7 +182,7 @@ async function handleSubscriptionUpdate(
     return;
   }
 
-  console.log('Subscription updated via webhook for user:', userId, '-> Plan:', planId, 'Status:', subscription.status);
+  console.log('Subscription updated via webhook for user:', userId, '-> Plan:', planId, 'Status:', subscriptionData.status);
 }
 
 async function handleSubscriptionDeleted(

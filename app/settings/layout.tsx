@@ -3,11 +3,12 @@
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useSubscription } from '@/lib/billing/useSubscription';
+import { ReactElement } from 'react';
 
 interface SettingsNavItem {
   href: string;
   label: string;
-  icon: JSX.Element;
+  icon: ReactElement;
   description: string;
 }
 

@@ -76,7 +76,7 @@ export function useSubscription() {
     isEnterprise: isInitialized ? subscription?.plan_id === 'enterprise' : false,
     isFree,
     hasFeature: (featureName: string) => {
-      return isInitialized ? subscription?.features?.[featureName] === true : false;
+      return isInitialized ? subscription?.features?.[featureName as keyof typeof subscription.features] === true : false;
     },
   };
 }

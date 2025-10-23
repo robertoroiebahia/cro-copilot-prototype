@@ -167,7 +167,10 @@ export async function createPortalSession({
     configurationId = configuration.id;
     console.log('Created billing portal configuration:', configurationId);
   } else {
-    configurationId = configurations.data[0].id;
+    configurationId = configurations.data[0]?.id;
+    if (!configurationId) {
+      throw new Error('No billing portal configuration found');
+    }
   }
 
   // Create portal session with configuration
