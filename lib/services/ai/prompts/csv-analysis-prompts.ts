@@ -14,136 +14,312 @@ export interface CSVAnalysisPromptParams {
 export function getCSVAnalysisPrompt(params: CSVAnalysisPromptParams): string {
   const { researchType, dataPreview, totalRows, headers } = params;
 
-  const baseInstructions = `You are a CRO (Conversion Rate Optimization) analyst analyzing customer feedback data.
+  const baseInstructions = `You are a CRO (Conversion Rate Optimization) analyst with expertise in analyzing customer feedback data.
+
+# Your Task
+You've been given a CSV file with customer data. Your job is to:
+1. **Understand the data structure** - Figure out what each column represents
+2. **Identify the content type** - Is this survey data, reviews, poll responses, or something else?
+3. **Extract actionable insights** - Find patterns, pain points, opportunities for conversion optimization
 
 # Data Overview
-- Total responses: ${totalRows}
-- Columns: ${headers.join(', ')}
+- Total rows: ${totalRows}
+- Columns available: ${headers.join(', ')}
 
 # Sample Data (first ${dataPreview.length} entries)
-${dataPreview.slice(0, 20).map((entry, i) => `${i + 1}. ${entry}`).join('\n')}
+${dataPreview.slice(0, 20).map((entry, i) => `Row ${i + 1}: ${entry}`).join('\n')}
 
-${totalRows > 20 ? `\n... and ${totalRows - 20} more responses` : ''}`;
+${totalRows > 20 ? `\n... and ${totalRows - 20} more rows in the full dataset` : ''}
+
+# Important Instructions
+- **Don't assume column names** - A column called "notes" might contain reviews, "text" might contain survey responses
+- **Look at the actual content** - The data itself tells you what type of information this is
+- **Be flexible** - Users don't follow strict naming conventions
+- **Focus on text columns** - ID columns, timestamps, and numeric codes are metadata, not insights`;
 
   switch (researchType) {
     case 'survey_analysis':
       return `${baseInstructions}
 
-# Your Task: Survey Analysis
-Analyze these survey responses to extract actionable insights for conversion optimization.
+# Analysis Context: Survey/Feedback Analysis
+The user indicated this is survey or feedback data. Look for:
+- Open-ended responses (text answers)
+- Customer opinions, thoughts, feelings
+- Pain points and frustrations
+- Suggestions and requests
+- Sentiment and emotional tone
 
-Focus on:
-1. **Common Themes** - What topics appear frequently?
-2. **Pain Points** - What problems or frustrations do customers mention?
-3. **Desires & Expectations** - What do customers want or expect?
-4. **Sentiment Patterns** - Overall tone (positive, negative, neutral) and intensity
-5. **Journey Stage Issues** - Problems at specific stages (awareness, consideration, decision, retention)
-6. **Segment Differences** - Any patterns by customer type, product, or demographic
+**Remember:** Survey data can have ANY column structure. Common variations:
+- "What did you think?", "Feedback", "Comments", "Notes", "Response"
+- May include demographics, timestamps, ratings alongside text
+- May have multiple response columns for different questions
+
+# What to Analyze
+1. **Understand the questions** - If there are question columns, note what was asked
+2. **Read the responses** - What are people actually saying?
+3. **Find patterns** - What themes emerge across responses?
+4. **Identify friction** - What problems do people mention?
+5. **Spot opportunities** - What do customers want that they don't have?
+6. **Measure sentiment** - How do people feel? (positive, negative, frustrated, delighted)
 
 # Output Format
-Return a JSON array of insights with this structure:
+**CRITICAL INSTRUCTIONS - READ CAREFULLY:**
+1. You MUST return a JSON ARRAY with square brackets [ ]
+2. The array MUST contain 10-15 separate insight objects
+3. DO NOT return a single object - return an ARRAY of objects
+4. DO NOT wrap the array in a parent object like {"insights": [...]}
+5. Start your response with [ and end with ]
+
+**EXAMPLE OF CORRECT FORMAT:**
 [
   {
-    "insight_type": "friction_point | expectation_gap | segment_difference | sentiment_pattern | theme",
-    "statement": "Clear observation from the data (no recommendations)",
+    "statement": "First insight about theme A",
     "evidence": {
       "qualitative": {
-        "quotes": ["exact quote 1", "exact quote 2", "exact quote 3"],
-        "theme_frequency": "X% of responses mentioned..."
+        "quotes": ["Quote 1", "Quote 2", "Quote 3"],
+        "pattern": "Pattern description"
       }
     },
-    "customer_segment": "segment if applicable",
-    "journey_stage": "awareness | consideration | decision | retention",
-    "friction_type": "usability | trust | value_perception | process | technical | information",
-    "psychology_principle": "if applicable: social_proof | scarcity | authority | reciprocity | commitment | anchoring",
-    "priority": "critical | high | medium | low",
-    "confidence_level": "high | medium | low",
-    "affected_kpis": ["Conversion Rate", "Cart Abandonment", etc]
+    "growth_pillar": "conversion",
+    "confidence_level": "high",
+    "priority": "high",
+    "customer_segment": "Who said this?",
+    "journey_stage": "consideration",
+    "friction_type": "value_perception",
+    "psychology_principle": "authority",
+    "affected_kpis": ["Conversion Rate", "Cart Abandonment"],
+    "tags": ["#survey", "#customer_voice"]
+
+**IMPORTANT - EXACT VALUES REQUIRED:**
+- growth_pillar: MUST be one of: "conversion", "aov", "frequency", "retention", "acquisition"
+- confidence_level: MUST be one of: "high", "medium", "low"
+- priority: MUST be one of: "critical", "high", "medium", "low"
+- journey_stage: MUST be one of: "awareness", "consideration", "decision", "post_purchase" (or null)
+- friction_type: MUST be one of: "usability", "trust", "value_perception", "information_gap", "cognitive_load" (or null)
+- psychology_principle: MUST be one of: "loss_aversion", "social_proof", "scarcity", "authority", "anchoring" (or null)
+- device_type: MUST be one of: "mobile", "desktop", "tablet", "all" (or null)
+  },
+  {
+    "statement": "Second insight about theme B",
+    "evidence": {
+      "qualitative": {
+        "quotes": ["Different quote 1", "Different quote 2"],
+        "pattern": "Different pattern"
+      }
+    },
+    "growth_pillar": "conversion",
+    "confidence_level": "medium",
+    "priority": "medium",
+    "customer_segment": "Different segment",
+    "journey_stage": "awareness",
+    "friction_type": "trust",
+    "psychology_principle": "social_proof",
+    "affected_kpis": ["Bounce Rate"],
+    "tags": ["#survey", "#trust_signals"]
   }
 ]
 
-Generate 8-15 high-quality insights. Be specific and quote actual customer language.`;
+**REQUIREMENTS:**
+- MUST generate 10-15 DISTINCT insights (minimum 10, target 12-15)
+- Each insight MUST cover a DIFFERENT theme or pattern
+- MUST return a JSON ARRAY starting with [ and ending with ]
+- Quote actual customer language in evidence
+- Make insights specific and actionable
+- DO NOT number the insights, just include them in the array
+- USE ONLY THE EXACT VALUES listed above for growth_pillar, friction_type, psychology_principle, etc.
+- If unsure about friction_type or psychology_principle, set to null rather than inventing new values`;
 
     case 'onsite_poll':
       return `${baseInstructions}
 
-# Your Task: Onsite Poll Analysis
-Analyze these poll responses to understand customer preferences and decision-making factors.
+# Analysis Context: Onsite Poll / Exit Intent / Quick Surveys
+The user indicated this is poll or quick survey data. Look for:
+- Short-form responses (often multiple choice or brief answers)
+- Specific questions asked on-site
+- Customer preferences and choices
+- Reasons for actions/inactions
+- Exit intent reasons
 
-Focus on:
-1. **Response Patterns** - Most common answers and their frequency
-2. **Unexpected Responses** - Surprising or outlier answers
-3. **Decision Factors** - What influences customer choices?
-4. **Barriers** - What prevents customers from taking action?
-5. **Feature Requests** - What do customers want that they don't have?
-6. **Behavioral Signals** - What do responses reveal about intent?
+**Remember:** Poll data structure varies widely:
+- May have "Question" column or questions as column headers
+- Answers might be in "Response", "Choice", "Answer", or custom columns
+- May include page URLs, timestamps, user segments
+- Could be multiple choice OR open-ended mini responses
+
+# What to Analyze
+1. **What questions were asked?** - Understanding context is key
+2. **Response distribution** - What did most people select/say?
+3. **Barrier analysis** - What stops people from converting?
+4. **Preference patterns** - What do customers want/prefer?
+5. **Decision factors** - What influences their choices?
+6. **Unexpected insights** - Surprising or counterintuitive findings
 
 # Output Format
-Return a JSON array of insights with this structure:
+**CRITICAL INSTRUCTIONS - READ CAREFULLY:**
+1. You MUST return a JSON ARRAY with square brackets [ ]
+2. The array MUST contain 8-12 separate insight objects
+3. DO NOT return a single object - return an ARRAY of objects
+4. DO NOT wrap the array in a parent object like {"insights": [...]}
+5. Start your response with [ and end with ]
+
+**EXAMPLE OF CORRECT FORMAT:**
 [
   {
-    "insight_type": "preference_pattern | barrier | feature_gap | behavioral_signal",
-    "statement": "Clear observation from poll data (no recommendations)",
+    "statement": "First poll finding",
     "evidence": {
       "quantitative": {
-        "percentage": "X% responded...",
-        "sample_size": ${totalRows}
+        "percentage": "X% of respondents said...",
+        "count": "Y out of ${totalRows} responses"
       },
       "qualitative": {
-        "quotes": ["exact response 1", "exact response 2"]
+        "quotes": ["Example response 1", "Example response 2"]
       }
     },
-    "customer_segment": "segment if applicable",
-    "journey_stage": "awareness | consideration | decision",
-    "priority": "critical | high | medium | low",
-    "confidence_level": "high | medium | low",
-    "affected_kpis": ["Conversion Rate", "Average Order Value", etc]
+    "growth_pillar": "conversion",
+    "confidence_level": "high",
+    "priority": "high",
+    "customer_segment": "Who this applies to",
+    "journey_stage": "consideration",
+    "friction_type": "value_perception",
+    "psychology_principle": "anchoring",
+    "affected_kpis": ["Conversion Rate"],
+    "tags": ["#poll", "#exit_intent"]
+
+**IMPORTANT - EXACT VALUES REQUIRED:**
+- growth_pillar: MUST be one of: "conversion", "aov", "frequency", "retention", "acquisition"
+- friction_type: MUST be one of: "usability", "trust", "value_perception", "information_gap", "cognitive_load" (or null)
+- psychology_principle: MUST be one of: "loss_aversion", "social_proof", "scarcity", "authority", "anchoring" (or null)
+  },
+  {
+    "statement": "Second poll finding about different topic",
+    "evidence": {
+      "quantitative": {
+        "percentage": "Different percentage",
+        "count": "Different count"
+      },
+      "qualitative": {
+        "quotes": ["Different quote 1", "Different quote 2"]
+      }
+    },
+    "growth_pillar": "acquisition",
+    "confidence_level": "medium",
+    "priority": "high",
+    "customer_segment": "Different segment",
+    "journey_stage": "awareness",
+    "friction_type": "information",
+    "psychology_principle": "clarity",
+    "affected_kpis": ["Bounce Rate"],
+    "tags": ["#poll", "#navigation"]
   }
 ]
 
-Generate 6-12 insights based on poll patterns.`;
+**REQUIREMENTS:**
+- MUST generate 8-12 DISTINCT insights (minimum 8, target 10-12)
+- Each insight MUST cover a DIFFERENT pattern or finding
+- MUST return a JSON ARRAY starting with [ and ending with ]
+- Include both quantitative data and qualitative quotes
+- Make insights actionable for conversion optimization
+- DO NOT number the insights, just include them in the array
+- USE ONLY THE EXACT VALUES listed above for growth_pillar, friction_type, psychology_principle
+- If unsure about a field value, use null instead of inventing new values`;
 
     case 'review_mining':
       return `${baseInstructions}
 
-# Your Task: Review Mining
-Extract conversion optimization insights from customer reviews.
+# Analysis Context: Customer Reviews
+The user indicated this is review data. Look for:
+- Customer opinions about products/services
+- Star ratings or satisfaction scores
+- Detailed experiences (positive and negative)
+- Comparisons to competitors
+- Before/after purchase thoughts
 
-Focus on:
-1. **Product/Service Strengths** - What customers love (use for marketing/social proof)
-2. **Pain Points** - Problems that hurt conversion or cause returns
-3. **Comparison Shopping** - What customers compare you against
-4. **Purchase Motivations** - Why did they choose you?
-5. **Hesitations** - What almost stopped them from buying?
-6. **Post-Purchase Experience** - Satisfaction, regret, delight
-7. **Language & Terminology** - How do customers describe products/benefits?
+**Remember:** Review data comes in many formats:
+- Could be from Google, Trustpilot, Amazon, Yelp, or internal surveys
+- May have "Review", "Comment", "Feedback", "Description", "Body", or custom column names
+- Often includes ratings (1-5 stars, 1-10 scale, thumbs up/down)
+- May have verified purchase status, product names, reviewer names
+
+# What to Analyze
+1. **Product/Service Strengths** - What do customers LOVE? (use for marketing copy & social proof)
+2. **Pain Points & Complaints** - What problems hurt satisfaction or cause returns?
+3. **Purchase Motivations** - WHY did they buy? What convinced them?
+4. **Hesitations & Objections** - What almost stopped them from buying?
+5. **Comparison Shopping** - What alternatives did they consider?
+6. **Post-Purchase Experience** - Satisfaction, regret, delight, buyer's remorse?
+7. **Customer Language** - How do THEY describe the product/benefits? (copy this for marketing)
+8. **Unexpected Use Cases** - Are customers using the product differently than intended?
 
 # Output Format
-Return a JSON array of insights with this structure:
+**CRITICAL INSTRUCTIONS - READ CAREFULLY:**
+1. You MUST return a JSON ARRAY with square brackets [ ]
+2. The array MUST contain 12-20 separate insight objects
+3. DO NOT return a single object - return an ARRAY of objects
+4. DO NOT wrap the array in a parent object like {"insights": [...]}
+5. Start your response with [ and end with ]
+
+**EXAMPLE OF CORRECT FORMAT:**
 [
   {
-    "insight_type": "strength | pain_point | comparison | motivation | hesitation | terminology",
-    "statement": "Clear observation from reviews (no recommendations)",
+    "statement": "First review theme about product strength",
     "evidence": {
       "qualitative": {
-        "quotes": ["exact quote 1", "exact quote 2", "exact quote 3"],
-        "mention_frequency": "mentioned in X reviews"
+        "quotes": ["Exact customer quote 1", "Exact quote 2", "Exact quote 3"],
+        "theme": "Describe the pattern"
       },
       "quantitative": {
-        "percentage": "X% of reviews mentioned..."
+        "frequency": "Mentioned in X reviews",
+        "percentage": "Y% of reviews mentioned this"
       }
     },
-    "customer_segment": "segment if applicable",
-    "journey_stage": "consideration | decision | retention",
-    "friction_type": "if pain point: usability | trust | value_perception | quality",
-    "psychology_principle": "social_proof | authority | scarcity | commitment",
-    "priority": "critical | high | medium | low",
-    "confidence_level": "high | medium | low",
-    "affected_kpis": ["Conversion Rate", "Return Rate", "Customer Lifetime Value", etc],
-    "tags": ["#review", "#customer_voice"]
+    "growth_pillar": "conversion",
+    "confidence_level": "high",
+    "priority": "high",
+    "customer_segment": "Who is saying this?",
+    "journey_stage": "purchase",
+    "friction_type": "value_perception",
+    "psychology_principle": "social_proof",
+    "affected_kpis": ["Conversion Rate", "Review Rating"],
+    "tags": ["#reviews", "#customer_voice"]
+
+**IMPORTANT - EXACT VALUES REQUIRED:**
+- growth_pillar: MUST be one of: "conversion", "aov", "frequency", "retention", "acquisition"
+- friction_type: MUST be one of: "usability", "trust", "value_perception", "information_gap", "cognitive_load" (or null)
+- psychology_principle: MUST be one of: "loss_aversion", "social_proof", "scarcity", "authority", "anchoring" (or null)
+  },
+  {
+    "statement": "Second review theme about different aspect",
+    "evidence": {
+      "qualitative": {
+        "quotes": ["Different quote 1", "Different quote 2"],
+        "theme": "Different theme"
+      },
+      "quantitative": {
+        "frequency": "Different frequency",
+        "percentage": "Different percentage"
+      }
+    },
+    "growth_pillar": "retention",
+    "confidence_level": "medium",
+    "priority": "medium",
+    "customer_segment": "Different segment",
+    "journey_stage": "post_purchase",
+    "friction_type": "usability",
+    "psychology_principle": "reciprocity",
+    "affected_kpis": ["Customer Satisfaction"],
+    "tags": ["#reviews", "#product_quality"]
   }
 ]
 
-Generate 10-20 insights. Include exact customer quotes and prioritize insights that impact conversion.`;
+**REQUIREMENTS:**
+- MUST generate 12-20 DISTINCT insights (minimum 12, target 15-20)
+- Each insight MUST cover a DIFFERENT theme, pattern, or finding
+- MUST return a JSON ARRAY starting with [ and ending with ]
+- Include exact customer quotes (copy their words!)
+- Prioritize insights that impact conversion or can be used in marketing
+- Look for both strengths (for social proof) AND pain points (to fix)
+- DO NOT number the insights, just include them in the array
+- USE ONLY THE EXACT VALUES listed above for growth_pillar, friction_type, psychology_principle
+- If unsure about a field value, use null instead of making up new values`;
   }
 }

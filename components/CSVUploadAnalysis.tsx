@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { createClient } from '@/utils/supabase/client';
 import { useWorkspace } from './WorkspaceContext';
+import { emitProgress } from './GlobalProgressTracker';
 
 type ResearchType = 'survey_analysis' | 'onsite_poll' | 'review_mining';
 
@@ -124,7 +125,26 @@ export function CSVUploadAnalysis({
     setAnalyzing(true);
     setError(null);
 
+    // Generate unique job ID
+    const jobId = `csv-${Date.now()}`;
+
+    // Emit initial progress event
+    emitProgress({
+      id: jobId,
+      type: 'csv_analysis',
+      title: `Analyzing ${file?.name || 'CSV Data'}`,
+      status: 'running',
+      progress: 0,
+    });
+
     try {
+      // Update progress: parsing CSV
+      emitProgress({
+        id: jobId,
+        status: 'running',
+        progress: 20,
+      });
+
       const response = await fetch('/api/analyze-csv', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -136,16 +156,38 @@ export function CSVUploadAnalysis({
         }),
       });
 
+      // Update progress: generating insights
+      emitProgress({
+        id: jobId,
+        status: 'running',
+        progress: 60,
+      });
+
       const data = await response.json();
 
       if (!response.ok) {
         throw new Error(data.error || 'Analysis failed');
       }
 
+      // Update progress: completing
+      emitProgress({
+        id: jobId,
+        status: 'running',
+        progress: 90,
+      });
+
       setResult(data);
 
       // Refresh history
       await fetchHistory();
+
+      // Emit completion event
+      emitProgress({
+        id: jobId,
+        status: 'completed',
+        progress: 100,
+        resultUrl: `/dashboard/results/${data.analysisId}`,
+      });
 
       // Redirect to results page after short delay
       setTimeout(() => {
@@ -153,6 +195,14 @@ export function CSVUploadAnalysis({
       }, 2000);
     } catch (err) {
       console.error('Analysis error:', err);
+
+      // Emit failure event
+      emitProgress({
+        id: jobId,
+        status: 'failed',
+        error: err instanceof Error ? err.message : 'Analysis failed',
+      });
+
       setError(err instanceof Error ? err.message : 'Analysis failed');
       setAnalyzing(false);
     }
@@ -204,7 +254,21 @@ export function CSVUploadAnalysis({
               </div>
 
               <p className="text-sm font-bold text-brand-black mb-2">Choose CSV File</p>
-              <p className="text-xs text-brand-text-tertiary">{description}</p>
+              <p className="text-xs text-brand-text-tertiary mb-3">{description}</p>
+
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-left">
+                <div className="flex items-start gap-2">
+                  <svg className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <div>
+                    <p className="text-xs font-black text-blue-900 mb-1">Any CSV Structure Works!</p>
+                    <p className="text-xs text-blue-800 leading-relaxed">
+                      Don't worry about column names. Our AI will automatically understand your data structure and extract insights from any text columns.
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
           ) : (
             <div className="space-y-4">
@@ -278,8 +342,55 @@ export function CSVUploadAnalysis({
                 </div>
               )}
 
+              {/* Progress Bar - Fun & Engaging */}
+              {analyzing && (
+                <div className="space-y-3">
+                  <div className="bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-lg p-4">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="relative">
+                        <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-blue-500 rounded-full flex items-center justify-center">
+                          <div className="animate-spin rounded-full h-6 w-6 border-2 border-white border-t-transparent"></div>
+                        </div>
+                        <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full animate-pulse"></div>
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-black text-purple-900">AI is analyzing your data...</p>
+                        <p className="text-xs text-purple-700">Reading responses, finding patterns, extracting insights</p>
+                      </div>
+                    </div>
+
+                    {/* Animated Progress Bar */}
+                    <div className="relative h-2 bg-purple-200 rounded-full overflow-hidden">
+                      <div className="absolute inset-0 bg-gradient-to-r from-purple-500 via-blue-500 to-purple-500 animate-[shimmer_2s_ease-in-out_infinite] bg-[length:200%_100%]"></div>
+                    </div>
+
+                    {/* Fun Messages */}
+                    <div className="mt-3 space-y-1">
+                      <div className="flex items-center gap-2 text-xs text-purple-800">
+                        <svg className="w-4 h-4 text-green-500 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                        <span className="font-bold">Analyzing your CSV data</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-xs text-purple-800">
+                        <div className="w-4 h-4 flex items-center justify-center">
+                          <div className="w-2 h-2 bg-blue-500 rounded-full animate-ping"></div>
+                        </div>
+                        <span className="font-bold">Identifying patterns and themes</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-xs text-purple-800">
+                        <div className="w-4 h-4 flex items-center justify-center">
+                          <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></div>
+                        </div>
+                        <span className="font-bold">Generating actionable insights</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Action Buttons */}
-              {!result && (
+              {!result && !analyzing && (
                 <button
                   onClick={handleAnalyze}
                   disabled={analyzing}
@@ -292,19 +403,10 @@ export function CSVUploadAnalysis({
                       : undefined
                   }
                 >
-                  {analyzing ? (
-                    <>
-                      <div className="animate-spin rounded-full h-5 w-5 border-2 border-current border-t-transparent"></div>
-                      Analyzing...
-                    </>
-                  ) : (
-                    <>
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                      </svg>
-                      Analyze & Generate Insights
-                    </>
-                  )}
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                  </svg>
+                  Analyze & Generate Insights
                 </button>
               )}
             </div>

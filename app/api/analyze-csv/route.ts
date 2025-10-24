@@ -166,13 +166,60 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    const rawInsights = aiResponse.data;
+    let rawInsights = aiResponse.data;
+
+    // CRITICAL DEBUG: Log what AI actually returned
+    console.log('=================================');
+    console.log('🔍 AI RESPONSE DEBUG');
+    console.log('=================================');
+    console.log('Type:', typeof rawInsights);
+    console.log('Is Array?:', Array.isArray(rawInsights));
+    console.log('Constructor:', rawInsights?.constructor?.name);
+    console.log('Length (if array):', Array.isArray(rawInsights) ? rawInsights.length : 'N/A');
+    console.log('Keys (if object):', typeof rawInsights === 'object' && rawInsights !== null ? Object.keys(rawInsights).slice(0, 10) : 'N/A');
+    console.log('Full JSON (first 1000 chars):', JSON.stringify(rawInsights, null, 2).substring(0, 1000));
+    console.log('=================================');
+
+    // FIX: Ensure we always have an array
+    // If AI returned a single object instead of an array, wrap it
+    if (!Array.isArray(rawInsights)) {
+      console.log('⚠️  AI returned single object instead of array - wrapping it');
+      rawInsights = [rawInsights];
+    }
+
+    // FIX: If AI nested the array in a "insights" property, extract it
+    if (rawInsights.length === 1 && rawInsights[0].insights && Array.isArray(rawInsights[0].insights)) {
+      console.log('⚠️  AI nested insights in wrapper object - extracting array');
+      rawInsights = rawInsights[0].insights;
+    }
+
+    // FIX: Check for other common wrapper patterns
+    if (rawInsights.length === 1 && typeof rawInsights[0] === 'object') {
+      const firstItem = rawInsights[0];
+      // Check for various wrapper patterns
+      if (firstItem.data && Array.isArray(firstItem.data)) {
+        console.log('⚠️  Found insights in "data" wrapper - extracting');
+        rawInsights = firstItem.data;
+      } else if (firstItem.results && Array.isArray(firstItem.results)) {
+        console.log('⚠️  Found insights in "results" wrapper - extracting');
+        rawInsights = firstItem.results;
+      } else if (firstItem.items && Array.isArray(firstItem.items)) {
+        console.log('⚠️  Found insights in "items" wrapper - extracting');
+        rawInsights = firstItem.items;
+      }
+    }
+
+    console.log(`✅ Final processing count: ${rawInsights.length} insights`);
+    console.log('First insight preview:', rawInsights[0] ? JSON.stringify(rawInsights[0]).substring(0, 200) : 'No insights');
 
     // Step 6: Store insights
     console.log('Storing insights...');
     const storedInsights = [];
 
-    for (const insight of rawInsights) {
+    for (let i = 0; i < rawInsights.length; i++) {
+      const insight = rawInsights[i];
+      console.log(`Processing insight ${i + 1}/${rawInsights.length}...`);
+
       const insightRecord = {
         analysis_id: analysisRecord.id,
         workspace_id: workspaceId,
@@ -182,8 +229,8 @@ export async function POST(request: NextRequest) {
         source_url: fileName || 'CSV Upload',
 
         // Core fields
-        title: insight.statement.substring(0, 100),
-        statement: insight.statement,
+        title: insight.statement?.substring(0, 100) || 'Untitled Insight',
+        statement: insight.statement || '',
         growth_pillar: insight.growth_pillar || 'conversion',
         confidence_level: insight.confidence_level || 'medium',
         priority: insight.priority || 'medium',
@@ -215,11 +262,16 @@ export async function POST(request: NextRequest) {
         status: 'draft' as const,
       };
 
-      const { error: insightError } = await supabase
+      const { data, error: insightError } = await supabase
         .from('insights')
-        .insert(insightRecord);
+        .insert(insightRecord)
+        .select();
 
-      if (!insightError) {
+      if (insightError) {
+        console.error(`❌ Failed to insert insight ${i + 1}:`, insightError);
+        console.error('Insight data:', JSON.stringify(insight).substring(0, 300));
+      } else {
+        console.log(`✅ Successfully inserted insight ${i + 1}`);
         storedInsights.push(insight);
       }
     }

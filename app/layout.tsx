@@ -4,6 +4,7 @@ import type { Metadata } from 'next'
 import AppSidebar from '@/components/AppSidebar'
 import MobileHeader from '@/components/MobileHeader'
 import MobileSubNav from '@/components/MobileSubNav'
+import GlobalProgressTracker from '@/components/GlobalProgressTracker'
 import { AuthProvider } from '@/lib/auth/AuthProvider'
 import { WorkspaceProvider } from '@/components/WorkspaceContext'
 import './globals.css'
@@ -77,6 +78,9 @@ export default function RootLayout({
           >
             {children}
           </main>
+
+          {/* Global Progress Tracker - Fixed position, visible across all pages */}
+          <GlobalProgressTracker />
           </WorkspaceProvider>
         </AuthProvider>
       </body>
