@@ -69,32 +69,38 @@ export async function GET(request: NextRequest) {
     const userId = oauthState.user_id;
     const workspaceId = oauthState.workspace_id;
 
-    // Exchange code for access token
+    // Exchange code for access token manually
     console.log(`Exchanging OAuth code for access token: ${shop}`);
     const shopify = getShopifyApi();
 
-    let session;
+    let accessToken;
     try {
-      const authCallback = await shopify.auth.callback({
-        rawRequest: {
-          url: request.url,
-          method: 'GET',
-          headers: Object.fromEntries(request.headers),
+      const tokenResponse = await fetch(`https://${shop}/admin/oauth/access_token`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
         },
+        body: JSON.stringify({
+          client_id: shopify.config.apiKey,
+          client_secret: shopify.config.apiSecretKey,
+          code,
+        }),
       });
 
-      session = authCallback.session;
+      if (!tokenResponse.ok) {
+        throw new Error(`Token exchange failed: ${tokenResponse.statusText}`);
+      }
+
+      const tokenData = await tokenResponse.json();
+      accessToken = tokenData.access_token;
+
+      if (!accessToken) {
+        throw new Error('No access token in response');
+      }
     } catch (error) {
       console.error('Failed to exchange OAuth code:', error);
       return NextResponse.redirect(
         new URL('/analyze?error=oauth_token_exchange_failed', request.url)
-      );
-    }
-
-    if (!session?.accessToken) {
-      console.error('No access token in session');
-      return NextResponse.redirect(
-        new URL('/analyze?error=oauth_no_access_token', request.url)
       );
     }
 
@@ -104,7 +110,7 @@ export async function GET(request: NextRequest) {
     try {
       const mcpClient = await createShopifyMCPClient({
         shopDomain: shop,
-        accessToken: session.accessToken,
+        accessToken: accessToken,
       });
 
       try {

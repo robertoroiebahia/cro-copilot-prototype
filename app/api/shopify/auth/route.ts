@@ -77,23 +77,21 @@ export async function GET(request: NextRequest) {
       expires_at: expiresAt.toISOString(),
     });
 
-    // Get Shopify API client
+    // Build Shopify OAuth URL manually
     const shopify = getShopifyApi();
+    const scopes = 'read_orders,read_products,read_customers,read_analytics';
+    const redirectUri = `${process.env.NEXT_PUBLIC_APP_URL}/api/shopify/callback`;
 
-    // Generate authorization URL
-    const authUrl = await shopify.auth.begin({
-      shop,
-      callbackPath: '/api/shopify/callback',
-      isOnline: false, // Offline token for server-to-server
-    });
-
-    // Append state to auth URL
-    const fullAuthUrl = `${authUrl}&state=${state}`;
+    const authUrl = `https://${shop}/admin/oauth/authorize?` +
+      `client_id=${shopify.config.apiKey}&` +
+      `scope=${scopes}&` +
+      `redirect_uri=${encodeURIComponent(redirectUri)}&` +
+      `state=${state}`;
 
     console.log(`Redirecting to Shopify OAuth for shop: ${shop}`);
 
     // Redirect to Shopify
-    return NextResponse.redirect(fullAuthUrl);
+    return NextResponse.redirect(authUrl);
   } catch (error) {
     console.error('Shopify auth initiation error:', error);
     return NextResponse.redirect(
