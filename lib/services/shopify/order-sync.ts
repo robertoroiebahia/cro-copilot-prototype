@@ -1,11 +1,40 @@
 /**
  * Shopify Order Sync Service
  *
- * Fetches orders from Shopify via MCP and stores them in database
+ * Fetches orders from Shopify REST API and stores them in database
  */
 
 import { createClient } from '@/utils/supabase/server';
-import { ShopifyMCPClient, ShopifyOrder, createShopifyMCPClient } from './mcp-client';
+
+export interface ShopifyOrder {
+  id: string;
+  order_number: number;
+  email: string;
+  created_at: string;
+  updated_at: string;
+  total_price: string;
+  subtotal_price: string;
+  total_tax: string;
+  currency: string;
+  financial_status: string;
+  fulfillment_status: string | null;
+  customer: {
+    id: string;
+    email: string;
+    first_name: string;
+    last_name: string;
+  } | null;
+  line_items: Array<{
+    id: string;
+    product_id: string;
+    variant_id: string;
+    title: string;
+    quantity: number;
+    price: string;
+  }>;
+  shipping_address: any;
+  billing_address: any;
+}
 
 export interface OrderSyncOptions {
   workspaceId: string;
@@ -46,24 +75,41 @@ export async function syncShopifyOrders(
   let ordersFetched = 0;
 
   try {
-    // Create MCP client
-    const mcpClient = await createShopifyMCPClient({
-      shopDomain: options.shopDomain,
-      accessToken: options.accessToken,
+    // Fetch orders from Shopify REST API
+    console.log('Fetching orders from Shopify...');
+
+    const limit = options.limit || 250;
+    const queryParams = new URLSearchParams({
+      limit: String(limit),
+      status: 'any',
     });
 
-    try {
-      // Fetch orders from Shopify
-      console.log('Fetching orders from Shopify...');
-      const orders = await mcpClient.getOrders({
-        limit: options.limit || 250,
-        created_at_min: options.dateRange?.startDate,
-        created_at_max: options.dateRange?.endDate,
-        status: 'any',
-      });
+    if (options.dateRange?.startDate) {
+      queryParams.append('created_at_min', options.dateRange.startDate);
+    }
+    if (options.dateRange?.endDate) {
+      queryParams.append('created_at_max', options.dateRange.endDate);
+    }
 
-      ordersFetched = orders.length;
-      console.log(`Fetched ${ordersFetched} orders from Shopify`);
+    const ordersResponse = await fetch(
+      `https://${options.shopDomain}/admin/api/2024-10/orders.json?${queryParams.toString()}`,
+      {
+        headers: {
+          'X-Shopify-Access-Token': options.accessToken,
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+
+    if (!ordersResponse.ok) {
+      throw new Error(`Shopify API error: ${ordersResponse.statusText}`);
+    }
+
+    const ordersData = await ordersResponse.json();
+    const orders: ShopifyOrder[] = ordersData.orders || [];
+
+    ordersFetched = orders.length;
+    console.log(`Fetched ${ordersFetched} orders from Shopify`);
 
       // Process and store each order
       for (const order of orders) {
@@ -89,26 +135,22 @@ export async function syncShopifyOrders(
         }
       }
 
-      // Calculate summary statistics
-      const summary = calculateSummary(orders);
+    // Calculate summary statistics
+    const summary = calculateSummary(orders);
 
-      // Update last sync timestamp
-      await supabase
-        .from('shopify_connections')
-        .update({ last_sync_at: new Date().toISOString() })
-        .eq('id', options.connectionId);
+    // Update last sync timestamp
+    await supabase
+      .from('shopify_connections')
+      .update({ last_sync_at: new Date().toISOString() })
+      .eq('id', options.connectionId);
 
-      return {
-        success: errors.length === 0,
-        ordersSynced,
-        ordersFetched,
-        errors,
-        summary,
-      };
-    } finally {
-      // Always disconnect MCP client
-      await mcpClient.disconnect();
-    }
+    return {
+      success: errors.length === 0,
+      ordersSynced,
+      ordersFetched,
+      errors,
+      summary,
+    };
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : 'Unknown error';
     return {
