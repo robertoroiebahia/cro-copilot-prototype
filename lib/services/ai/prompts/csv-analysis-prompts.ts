@@ -73,61 +73,73 @@ The user indicated this is survey or feedback data. Look for:
 **EXAMPLE OF CORRECT FORMAT:**
 [
   {
-    "statement": "First insight about theme A",
-    "evidence": {
-      "qualitative": {
-        "quotes": ["Quote 1", "Quote 2", "Quote 3"],
-        "pattern": "Pattern description"
-      }
-    },
+    "title": "Checkout feels unsafe",
+    "statement": "Multiple customers said they didn't complete their purchase because they couldn't find security badges or trust signals during checkout. This uncertainty about payment safety is causing cart abandonment.",
+    "evidence": "15 out of 47 survey responses mentioned security concerns. People said things like 'I wanted to see security badges' and 'No SSL seal made me nervous' and 'Wasn't sure if my card info was safe.'",
     "growth_pillar": "conversion",
     "confidence_level": "high",
-    "priority": "high",
-    "customer_segment": "Who said this?",
-    "journey_stage": "consideration",
-    "friction_type": "value_perception",
-    "psychology_principle": "authority",
-    "affected_kpis": ["Conversion Rate", "Cart Abandonment"],
-    "tags": ["#survey", "#customer_voice"]
-
-**IMPORTANT - EXACT VALUES REQUIRED:**
-- growth_pillar: MUST be one of: "conversion", "aov", "frequency", "retention", "acquisition"
-- confidence_level: MUST be one of: "high", "medium", "low"
-- priority: MUST be one of: "critical", "high", "medium", "low"
-- journey_stage: MUST be one of: "awareness", "consideration", "decision", "post_purchase" (or null)
-- friction_type: MUST be one of: "usability", "trust", "value_perception", "information_gap", "cognitive_load" (or null)
-- psychology_principle: MUST be one of: "loss_aversion", "social_proof", "scarcity", "authority", "anchoring" (or null)
-- device_type: MUST be one of: "mobile", "desktop", "tablet", "all" (or null)
+    "priority": "critical",
+    "customer_segment": "First-time buyers",
+    "journey_stage": "decision",
+    "friction_type": "trust",
+    "psychology_principle": "N/A",
+    "affected_kpis": ["Cart abandonment rate"],
+    "tags": ["#trust", "#checkout"],
+    "suggested_actions": "Add visible security badges (Norton, McAfee, SSL) and trust seals near the payment form and checkout button.",
+    "device_type": "N/A"
   },
   {
-    "statement": "Second insight about theme B",
-    "evidence": {
-      "qualitative": {
-        "quotes": ["Different quote 1", "Different quote 2"],
-        "pattern": "Different pattern"
-      }
-    },
-    "growth_pillar": "conversion",
-    "confidence_level": "medium",
-    "priority": "medium",
-    "customer_segment": "Different segment",
-    "journey_stage": "awareness",
-    "friction_type": "trust",
-    "psychology_principle": "social_proof",
-    "affected_kpis": ["Bounce Rate"],
-    "tags": ["#survey", "#trust_signals"]
+    "title": "Fast survey completion",
+    "statement": "Customers are completing the survey in 30-60 seconds, which shows the questions are clear and people are engaged enough to provide feedback quickly.",
+    "evidence": "All 20 survey responses were completed in under 2 minutes, with most taking between 30-60 seconds. This suggests well-designed questions and motivated customers.",
+    "growth_pillar": "retention",
+    "confidence_level": "high",
+    "priority": "low",
+    "customer_segment": "N/A",
+    "journey_stage": "N/A",
+    "friction_type": "N/A",
+    "psychology_principle": "N/A",
+    "affected_kpis": [],
+    "tags": ["#survey_quality"],
+    "suggested_actions": "N/A",
+    "device_type": "N/A"
   }
 ]
 
+**CRITICAL - WRITE LIKE A HUMAN, NOT A ROBOT:**
+- **title**: Short, plain English (3-7 words). Focus on the problem or finding, not jargon.
+- **statement**: Explain what you found in 1-2 sentences like you're talking to a business owner. What did customers say? Why does it matter?
+- **evidence**: Write naturally! "15 customers mentioned X. They said things like..." NOT JSON dumps or timestamps.
+- **suggested_actions**: Plain English recommendation. Can be null if this is just an observation with no action needed.
+
+**CRITICAL - DO NOT HALLUCINATE METADATA:**
+- growth_pillar: MUST be one of: "conversion", "aov", "frequency", "retention", "acquisition"
+- confidence_level: MUST be one of: "high", "medium", "low"
+- priority: MUST be one of: "critical", "high", "medium", "low"
+- journey_stage: MUST be one of: "awareness", "consideration", "decision", "post_purchase" **OR "N/A" if not certain**
+- friction_type: MUST be one of: "usability", "trust", "value_perception", "information_gap", "cognitive_load" **OR "N/A" if NO friction exists**
+- psychology_principle: MUST be one of: "loss_aversion", "social_proof", "scarcity", "authority", "anchoring" **OR "N/A" (most insights don't have one - DO NOT GUESS)**
+- device_type: MUST be one of: "mobile", "desktop", "tablet", "all" **OR "N/A" if not mentioned in data**
+- affected_kpis: Array of SPECIFIC KPIs directly impacted **OR empty array [] if none clearly apply**
+- suggested_actions: Plain English recommendation **OR "N/A" if no action needed**
+
+**IF YOU'RE NOT 100% CERTAIN, USE "N/A" OR EMPTY ARRAY []. DO NOT GUESS.**
+
 **REQUIREMENTS:**
-- MUST generate 10-15 DISTINCT insights (minimum 10, target 12-15)
+- MUST generate 0-5 DISTINCT insights ONLY - Focus on STATISTICALLY SIGNIFICANT patterns
+- Quality over quantity - only include insights that are:
+  * Backed by strong evidence (multiple data points, clear patterns)
+  * Statistically meaningful (not isolated incidents)
+  * Actionable and testable
+  * High business impact potential
+- If there are NO statistically significant patterns, return an empty array []
 - Each insight MUST cover a DIFFERENT theme or pattern
 - MUST return a JSON ARRAY starting with [ and ending with ]
 - Quote actual customer language in evidence
 - Make insights specific and actionable
 - DO NOT number the insights, just include them in the array
 - USE ONLY THE EXACT VALUES listed above for growth_pillar, friction_type, psychology_principle, etc.
-- If unsure about friction_type or psychology_principle, set to null rather than inventing new values`;
+- If unsure about friction_type or psychology_principle, set to "N/A" rather than inventing new values
 
     case 'onsite_poll':
       return `${baseInstructions}
@@ -214,14 +226,20 @@ The user indicated this is poll or quick survey data. Look for:
 ]
 
 **REQUIREMENTS:**
-- MUST generate 8-12 DISTINCT insights (minimum 8, target 10-12)
+- MUST generate 0-5 DISTINCT insights ONLY - Focus on STATISTICALLY SIGNIFICANT patterns
+- Quality over quantity - only include insights that are:
+  * Backed by strong evidence (multiple data points, clear patterns)
+  * Statistically meaningful (not isolated incidents)
+  * Actionable and testable
+  * High business impact potential
+- If there are NO statistically significant patterns, return an empty array []
 - Each insight MUST cover a DIFFERENT pattern or finding
 - MUST return a JSON ARRAY starting with [ and ending with ]
 - Include both quantitative data and qualitative quotes
 - Make insights actionable for conversion optimization
 - DO NOT number the insights, just include them in the array
 - USE ONLY THE EXACT VALUES listed above for growth_pillar, friction_type, psychology_principle
-- If unsure about a field value, use null instead of inventing new values`;
+- If unsure about a field value, use "N/A" instead of inventing new values
 
     case 'review_mining':
       return `${baseInstructions}
@@ -312,7 +330,13 @@ The user indicated this is review data. Look for:
 ]
 
 **REQUIREMENTS:**
-- MUST generate 12-20 DISTINCT insights (minimum 12, target 15-20)
+- MUST generate 0-5 DISTINCT insights ONLY - Focus on STATISTICALLY SIGNIFICANT patterns
+- Quality over quantity - only include insights that are:
+  * Backed by strong evidence (multiple data points, clear patterns)
+  * Statistically meaningful (not isolated incidents)
+  * Actionable and testable
+  * High business impact potential
+- If there are NO statistically significant patterns, return an empty array []
 - Each insight MUST cover a DIFFERENT theme, pattern, or finding
 - MUST return a JSON ARRAY starting with [ and ending with ]
 - Include exact customer quotes (copy their words!)
@@ -320,6 +344,6 @@ The user indicated this is review data. Look for:
 - Look for both strengths (for social proof) AND pain points (to fix)
 - DO NOT number the insights, just include them in the array
 - USE ONLY THE EXACT VALUES listed above for growth_pillar, friction_type, psychology_principle
-- If unsure about a field value, use null instead of making up new values`;
+- If unsure about a field value, use "N/A" instead of making up new values
   }
 }

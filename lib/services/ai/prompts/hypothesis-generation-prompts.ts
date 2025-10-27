@@ -44,9 +44,18 @@ export function getHypothesisGenerationPrompt(params: HypothesisGenerationPrompt
   return `You are an expert CRO (Conversion Rate Optimization) strategist and experimentation designer.
 
 # Your Task
-Generate EXACTLY 3 testable hypotheses based on the data provided below. Each hypothesis should follow the PXL (Potential × Importance × Ease) prioritization framework.
+Generate 0-3 testable hypotheses based on the data provided below. Each hypothesis should follow the PXL (Potential × Importance × Ease) prioritization framework.
 
-**CRITICAL**: You MUST generate EXACTLY 3 hypotheses - no more, no less.
+**CRITICAL QUALITY STANDARDS:**
+- ONLY generate hypotheses that are backed by STATISTICALLY SIGNIFICANT insights
+- Quality over quantity - only include hypotheses that have:
+  * Strong research backing (multiple insights, clear patterns, quantitative evidence)
+  * High confidence level (7+ out of 10)
+  * Clear business impact potential
+  * Realistic testability
+- If there are NOT ENOUGH statistically significant insights, generate fewer hypotheses (0-2)
+- NEVER generate hypotheses based on weak evidence or single data points
+- Each hypothesis MUST reference specific insight IDs with strong evidence
 
 # Input Data
 
@@ -137,10 +146,11 @@ For each hypothesis, evaluate:
 
 **CRITICAL INSTRUCTIONS - READ CAREFULLY:**
 1. You MUST return a JSON ARRAY with square brackets [ ]
-2. The array MUST contain EXACTLY 3 hypothesis objects (no more, no less)
+2. The array MUST contain 0-3 hypothesis objects based on evidence strength
 3. DO NOT return a single object - return an ARRAY of objects
 4. DO NOT wrap the array in a parent object like {"hypotheses": [...]}
 5. Start your response with [ and end with ]
+6. If there is NOT ENOUGH statistically significant evidence, return fewer hypotheses or empty array []
 
 **EXAMPLE OF CORRECT FORMAT:**
 [
@@ -241,7 +251,13 @@ For each hypothesis, evaluate:
 ]
 
 **REQUIREMENTS:**
-- MUST generate EXACTLY 3 DISTINCT hypotheses (no more, no less)
+- Generate 0-3 hypotheses based on STATISTICAL SIGNIFICANCE of insights
+- Quality over quantity - ONLY generate hypotheses with:
+  * Strong research backing (multiple insights with quantitative evidence)
+  * Confidence score 7+ out of 10
+  * Clear, measurable business impact
+  * Referenced insight IDs must have strong evidence
+- If insights are weak or isolated, generate fewer hypotheses (0-2) or empty array []
 - Each hypothesis MUST be based on different themes, insights, or experiment learnings
 - MUST return a JSON ARRAY starting with [ and ending with ]
 - Statement MUST follow "If [change], then [outcome] because [reasoning]" format

@@ -76,9 +76,12 @@ Extract individual, actionable CRO insights. Each insight must be:
 For each insight, provide ALL of these fields:
 
 REQUIRED FIELDS:
-- title: Short descriptive title (max 100 chars) - e.g., "Weak primary CTA contrast"
-- statement: Full insight statement following format: "[Customer Segment] [Observation] [Visual Evidence]"
-  Example: "Mobile visitors encounter a low-contrast CTA button that blends with the background, reducing visual prominence and click likelihood"
+- title: Short, actionable title (3-7 words max) - Focus on the PROBLEM or OPPORTUNITY, not technical jargon
+  GOOD: "CTA button lacks contrast", "No trust signals above fold", "Confusing checkout flow"
+  BAD: "Visual hierarchy optimization needed", "Trust signal implementation", "UX friction detected"
+- statement: Full insight in plain English (1-2 sentences). Explain what you see, why it matters, and the likely impact.
+  Write like you're talking to a business owner, not a developer.
+  Example: "The primary CTA button uses a light gray color that blends into the background, making it hard for visitors to find where to click. This likely causes people to leave without taking action."
 - growth_pillar: Which growth area this impacts
   Options: "conversion", "aov", "frequency", "retention", "acquisition"
 - confidence_level: Your confidence in this insight
@@ -87,26 +90,41 @@ REQUIRED FIELDS:
   Options: "critical", "high", "medium", "low"
 
 EVIDENCE & CONTEXT:
-- evidence: {
-    quantitative?: { metric: string, value: string, sample_size?: number, comparison?: string },
-    qualitative?: { quotes: string[], sources: string[] }
-  }
-  For visual analysis, use qualitative evidence with observations
+- evidence: Use NATURAL LANGUAGE for evidence, not robotic JSON. Write like a human analyst explaining what you found.
+  GOOD: "Looking at the survey responses, 15 out of 20 customers mentioned they weren't sure if the site was secure. Several said things like 'I wanted to see security badges' and 'No SSL seal made me nervous.'"
+  BAD: Raw timestamps, technical data dumps, or JSON structures
+
+  For visual analysis, describe what you observe:
+  GOOD: "The CTA button appears in light gray (#E8E8E8) against a white background, creating minimal contrast. It's positioned below the fold on mobile devices."
+  BAD: { "qualitative": { "quotes": ["button color: #E8E8E8"], "sources": ["CTA section"] } }
 - page_location: Array of page sections where observed
   Examples: ["hero"], ["navigation", "header"], ["product_details"], ["cart"], ["checkout"], ["footer"]
 - device_type: Which device context this applies to
   Options: "mobile", "desktop", "tablet", "all"
 
-CATEGORIZATION (Optional but recommended):
+CATEGORIZATION - **ONLY FILL IF YOU ARE 100% CERTAIN**:
 - customer_segment: Who this affects - e.g., "First-time visitors", "Mobile users", "High-intent shoppers"
+  **Set to "N/A" if not explicitly clear from the data**
 - journey_stage: Where in customer journey
   Options: "awareness", "consideration", "decision", "post_purchase"
-- friction_type: Type of UX friction observed
+  **Set to "N/A" if you're not certain which stage this applies to**
+- friction_type: Type of UX friction observed - **ONLY if there IS friction**
   Options: "usability", "trust", "value_perception", "information_gap", "cognitive_load"
-- psychology_principle: Psychological principle involved
+  **Set to "N/A" if this insight is NOT about friction/problems**
+- psychology_principle: Psychological principle involved - **ONLY if clearly applicable**
   Options: "loss_aversion", "social_proof", "scarcity", "authority", "anchoring"
+  **Set to "N/A" if no clear psychological principle applies. DO NOT guess.**
 - tags: Array of tags for categorization - e.g., ["#mobile", "#trust", "#cta", "#friction"]
+  **Only include tags that are directly relevant to what you observed**
 - affected_kpis: Which KPIs this likely impacts - e.g., ["Click-through rate", "Add-to-cart rate", "Form completion"]
+  **Only include KPIs that would DIRECTLY be impacted by this specific insight. Leave empty array [] if none clearly apply.**
+
+**CRITICAL - DO NOT HALLUCINATE:**
+- If you're not 100% certain about a field, set it to "N/A"
+- DO NOT guess psychology principles - most insights don't have one
+- DO NOT make up KPIs that wouldn't be directly affected
+- DO NOT invent customer segments that aren't obvious from the data
+- When in doubt, use "N/A"
 
 ACTIONS & METADATA:
 - suggested_actions: Initial recommendations (1-2 sentences)
@@ -119,33 +137,34 @@ Return a JSON object with this exact structure:
 {
   "insights": [
     {
-      "title": "Weak above-the-fold value proposition",
-      "statement": "First-time visitors landing on the homepage see a generic hero headline that doesn't clearly communicate the unique value proposition, creating uncertainty about what makes this product different from competitors",
+      "title": "Generic hero headline",
+      "statement": "The homepage hero says 'Welcome to Our Store' which doesn't tell visitors what makes you different or why they should buy from you instead of competitors. This creates confusion and likely causes people to leave without exploring further.",
       "growth_pillar": "conversion",
       "confidence_level": "high",
       "priority": "high",
-      "evidence": {
-        "qualitative": {
-          "quotes": ["Hero headline reads 'Welcome to Our Store'", "No clear differentiation visible in fold"],
-          "sources": ["Hero section", "Above-fold content"]
-        }
-      },
+      "evidence": "The hero headline is generic and doesn't communicate any unique value. Visitors landing on the page see no clear differentiation from competitors in the above-the-fold area.",
       "page_location": ["hero", "homepage"],
       "device_type": "all",
       "customer_segment": "First-time visitors",
       "journey_stage": "awareness",
       "friction_type": "value_perception",
-      "psychology_principle": "anchoring",
-      "tags": ["#value_prop", "#messaging", "#hero"],
-      "affected_kpis": ["Bounce rate", "Time on page", "Scroll depth"],
-      "suggested_actions": "Test a benefit-driven headline that clearly states the unique value proposition. Consider A/B testing specific value claims.",
+      "psychology_principle": "N/A",
+      "tags": ["#value_prop", "#messaging"],
+      "affected_kpis": ["Bounce rate"],
+      "suggested_actions": "Replace with a benefit-focused headline that clearly states what you do and why it matters. Test variations that lead with the main customer benefit.",
       "validation_status": "untested"
     }
   ]
 }
 
 IMPORTANT:
-- Generate 8-15 high-quality insights per page
+- Generate 0-5 high-quality insights per page ONLY - Focus on STATISTICALLY SIGNIFICANT observations
+- Quality over quantity - only include insights that are:
+  * Backed by clear visual evidence
+  * High business impact potential
+  * Actionable and testable
+  * Not subjective opinions
+- If there are NO significant issues or opportunities, return fewer insights or empty array
 - Focus on VISUAL observations only
 - Do NOT fabricate metrics or data
 - Prioritize insights by potential impact
