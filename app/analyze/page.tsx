@@ -500,107 +500,132 @@ function PageAnalysisContent() {
             )}
 
             {loading && (
-              <div className="bg-white rounded-lg border border-gray-200 p-8"
+              <div className="bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-lg p-8"
                 style={{
                   boxShadow: '0 4px 16px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04)'
                 }}
               >
-                {/* Header */}
-                <div className="text-center mb-8">
-                  <div className="w-16 h-16 mx-auto mb-4 relative">
-                    <div className="absolute inset-0 rounded-full bg-brand-gold/20 animate-ping" />
-                    <div className="relative w-16 h-16 bg-brand-gold rounded-full flex items-center justify-center">
-                      <svg className="w-8 h-8 text-black animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                      </svg>
+                {/* Header with animated spinner */}
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="relative">
+                    <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-blue-500 rounded-full flex items-center justify-center">
+                      <div className="animate-spin rounded-full h-8 w-8 border-2 border-white border-t-transparent"></div>
                     </div>
+                    <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full animate-pulse"></div>
                   </div>
-                  <h3 className="text-xl font-black text-brand-black mb-2">
-                    Analyzing Your Page
-                  </h3>
-                  <p className="text-sm text-brand-text-secondary font-medium">
-                    {analysisProgress.message || 'Starting analysis...'}
-                  </p>
+                  <div className="flex-1">
+                    <h3 className="text-lg font-black text-purple-900 mb-1">
+                      AI is analyzing your page...
+                    </h3>
+                    <p className="text-sm text-purple-700 font-medium">
+                      {analysisProgress.message || 'Fetching page content, running AI analysis, extracting insights'}
+                    </p>
+                  </div>
                 </div>
 
-                {/* Progress Bar */}
-                <div className="mb-8">
-                  <div className="flex justify-between items-center mb-3">
-                    <span className="text-xs font-bold text-brand-text-secondary">Progress</span>
-                    <span className="text-xs font-black text-brand-gold">
+                {/* Animated Progress Bar */}
+                <div className="mb-6">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-xs font-bold text-purple-800">Progress</span>
+                    <span className="text-xs font-black text-purple-900">
                       {analysisProgress.progress}%
                     </span>
                   </div>
-                  <div className="w-full bg-gray-100 rounded-full h-3 overflow-hidden">
+                  <div className="relative h-2 bg-purple-200 rounded-full overflow-hidden">
                     <div
-                      className="bg-gradient-to-r from-brand-gold to-yellow-400 h-3 rounded-full transition-all duration-500 ease-out relative"
+                      className="absolute inset-y-0 left-0 bg-gradient-to-r from-purple-500 via-blue-500 to-purple-500 transition-all duration-500 ease-out"
                       style={{ width: `${analysisProgress.progress}%` }}
                     >
-                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent animate-shimmer" />
+                      <div className="absolute inset-0 bg-gradient-to-r from-purple-500 via-blue-500 to-purple-500 animate-[shimmer_2s_ease-in-out_infinite] bg-[length:200%_100%]"></div>
                     </div>
                   </div>
                 </div>
 
-                {/* Stage List */}
-                <div className="space-y-4 mb-8">
+                {/* Dynamic Status Messages */}
+                <div className="space-y-3 mb-6">
                   {/* Scraping Stage */}
-                  <div className="flex items-center gap-3">
-                    {analysisProgress.stage === 'scraping' ? (
-                      <div className="animate-spin rounded-full h-6 w-6 border-2 border-gray-200 border-t-brand-gold flex-shrink-0" />
+                  <div className={`flex items-center gap-2 text-xs transition-all duration-300 ${
+                    analysisProgress.stage === 'scraping' || analysisProgress.stage === 'screenshots'
+                      ? 'text-purple-900 font-black'
+                      : analysisProgress.progress > 35
+                        ? 'text-green-700'
+                        : 'text-purple-700'
+                  }`}>
+                    {analysisProgress.progress > 35 ? (
+                      <svg className="w-4 h-4 text-green-500 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                    ) : analysisProgress.stage === 'scraping' || analysisProgress.stage === 'screenshots' ? (
+                      <div className="w-4 h-4 flex items-center justify-center">
+                        <div className="w-2 h-2 bg-blue-500 rounded-full animate-ping"></div>
+                      </div>
+                    ) : (
+                      <div className="w-4 h-4 flex items-center justify-center">
+                        <div className="w-2 h-2 bg-gray-300 rounded-full"></div>
+                      </div>
+                    )}
+                    <span className="font-bold">Fetching page content with Firecrawl</span>
+                  </div>
+
+                  {/* AI Analysis Stage */}
+                  <div className={`flex items-center gap-2 text-xs transition-all duration-300 ${
+                    analysisProgress.stage === 'generating-recommendations' ||
+                    analysisProgress.stage === 'hero-analysis' ||
+                    analysisProgress.stage === 'social-proof-analysis' ||
+                    analysisProgress.stage === 'cta-analysis'
+                      ? 'text-purple-900 font-black'
+                      : analysisProgress.progress > 85
+                        ? 'text-green-700'
+                        : analysisProgress.progress > 35
+                          ? 'text-purple-700'
+                          : 'text-gray-500'
+                  }`}>
+                    {analysisProgress.progress > 85 ? (
+                      <svg className="w-4 h-4 text-green-500 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
                     ) : analysisProgress.progress > 35 ? (
-                      <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
-                        <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
+                      <div className="w-4 h-4 flex items-center justify-center">
+                        <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></div>
                       </div>
                     ) : (
-                      <div className="w-6 h-6 rounded-full border-2 border-gray-200 flex-shrink-0" />
-                    )}
-                    <span className={`text-sm ${analysisProgress.progress > 35 ? 'text-brand-black font-bold' : 'text-brand-text-tertiary font-medium'}`}>
-                      Fetching page content with Firecrawl
-                    </span>
-                  </div>
-
-                  {/* Generating Recommendations Stage */}
-                  <div className="flex items-center gap-3">
-                    {analysisProgress.stage === 'generating-recommendations' ? (
-                      <div className="animate-spin rounded-full h-6 w-6 border-2 border-gray-200 border-t-brand-gold flex-shrink-0" />
-                    ) : analysisProgress.progress > 85 ? (
-                      <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
-                        <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
+                      <div className="w-4 h-4 flex items-center justify-center">
+                        <div className="w-2 h-2 bg-gray-300 rounded-full"></div>
                       </div>
-                    ) : (
-                      <div className="w-6 h-6 rounded-full border-2 border-gray-200 flex-shrink-0" />
                     )}
-                    <span className={`text-sm ${analysisProgress.progress > 85 ? 'text-brand-black font-bold' : 'text-brand-text-tertiary font-medium'}`}>
-                      Running AI analysis (30-60 seconds)
-                    </span>
+                    <span className="font-bold">Running AI analysis (30-60 seconds)</span>
                   </div>
 
-                  {/* Completion Indicator */}
-                  <div className="flex items-center gap-3">
+                  {/* Saving Stage */}
+                  <div className={`flex items-center gap-2 text-xs transition-all duration-300 ${
+                    analysisProgress.stage === 'complete'
+                      ? 'text-green-700 font-black'
+                      : analysisProgress.progress > 85
+                        ? 'text-purple-900 font-black'
+                        : 'text-gray-500'
+                  }`}>
                     {analysisProgress.progress === 100 ? (
-                      <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0">
-                        <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </svg>
+                      <svg className="w-4 h-4 text-green-500 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                    ) : analysisProgress.progress > 85 ? (
+                      <div className="w-4 h-4 flex items-center justify-center">
+                        <div className="w-2 h-2 bg-blue-500 rounded-full animate-ping"></div>
                       </div>
                     ) : (
-                      <div className="w-6 h-6 rounded-full border-2 border-gray-200 flex-shrink-0" />
+                      <div className="w-4 h-4 flex items-center justify-center">
+                        <div className="w-2 h-2 bg-gray-300 rounded-full"></div>
+                      </div>
                     )}
-                    <span className={`text-sm ${analysisProgress.progress === 100 ? 'text-brand-black font-bold' : 'text-brand-text-tertiary font-medium'}`}>
-                      Saving results
-                    </span>
+                    <span className="font-bold">Extracting insights and saving results</span>
                   </div>
                 </div>
 
                 {/* Cancel Button */}
-                <div className="flex justify-center">
+                <div className="flex justify-center pt-2">
                   <button
                     onClick={cancelAnalysis}
-                    className="inline-flex items-center gap-2 px-6 py-3 bg-white hover:bg-red-50 text-red-600 text-sm font-black rounded-lg border border-red-200 hover:border-red-400 transition-all duration-300"
+                    className="inline-flex items-center gap-2 px-6 py-3 bg-white hover:bg-red-50 text-red-600 text-sm font-black rounded-lg border-2 border-red-200 hover:border-red-400 transition-all duration-300 shadow-sm hover:shadow"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />

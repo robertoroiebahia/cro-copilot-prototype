@@ -175,7 +175,7 @@ export async function POST(request: NextRequest) {
     if (dbAnalysisId && insights.length > 0) {
       // Helper function to validate enum values
       const validateEnum = (value: any, allowedValues: string[]): string | undefined => {
-        if (!value) return undefined;
+        if (!value || value === 'N/A' || value === 'null' || value === '') return undefined;
         const normalized = String(value).toLowerCase().trim();
         return allowedValues.includes(normalized) ? normalized : undefined;
       };

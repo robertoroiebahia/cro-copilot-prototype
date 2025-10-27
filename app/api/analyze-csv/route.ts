@@ -220,6 +220,14 @@ export async function POST(request: NextRequest) {
       const insight = rawInsights[i];
       console.log(`Processing insight ${i + 1}/${rawInsights.length}...`);
 
+      // Helper function to sanitize AI responses - convert "N/A" to null
+      const sanitizeValue = (value: any) => {
+        if (value === 'N/A' || value === 'null' || value === '' || value === undefined) {
+          return null;
+        }
+        return value;
+      };
+
       const insightRecord = {
         analysis_id: analysisRecord.id,
         workspace_id: workspaceId,
@@ -229,7 +237,7 @@ export async function POST(request: NextRequest) {
         source_url: fileName || 'CSV Upload',
 
         // Core fields
-        title: insight.statement?.substring(0, 100) || 'Untitled Insight',
+        title: insight.title || insight.statement?.substring(0, 100) || 'Untitled Insight',
         statement: insight.statement || '',
         growth_pillar: insight.growth_pillar || 'conversion',
         confidence_level: insight.confidence_level || 'medium',
@@ -245,19 +253,20 @@ export async function POST(request: NextRequest) {
           },
         },
 
-        // Context
-        customer_segment: insight.customer_segment || null,
-        journey_stage: insight.journey_stage || null,
+        // Context - sanitize "N/A" to null
+        customer_segment: sanitizeValue(insight.customer_segment),
+        journey_stage: sanitizeValue(insight.journey_stage),
         page_location: [],
-        device_type: insight.device_type || null,
+        device_type: sanitizeValue(insight.device_type),
 
-        // Categorization
-        friction_type: insight.friction_type || null,
-        psychology_principle: insight.psychology_principle || null,
+        // Categorization - sanitize "N/A" to null
+        friction_type: sanitizeValue(insight.friction_type),
+        psychology_principle: sanitizeValue(insight.psychology_principle),
         tags: insight.tags || [`#${researchType}`, '#csv_upload'],
         affected_kpis: insight.affected_kpis || [],
 
         // Actions
+        suggested_actions: sanitizeValue(insight.suggested_actions),
         validation_status: 'untested' as const,
         status: 'draft' as const,
       };
