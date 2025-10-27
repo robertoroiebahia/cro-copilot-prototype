@@ -16,7 +16,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
 import { getShopifyApi, normalizeShopDomain } from '@/lib/services/shopify/oauth';
 import { encrypt } from '@/lib/utils/encryption';
-import { createShopifyMCPClient } from '@/lib/services/shopify/mcp-client';
 
 export async function GET(request: NextRequest) {
   try {
@@ -104,19 +103,22 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Fetch shop information using the new access token
+    // Fetch shop information using Shopify REST API
     console.log('Fetching shop information...');
     let shopInfo;
     try {
-      const mcpClient = await createShopifyMCPClient({
-        shopDomain: shop,
-        accessToken: accessToken,
+      const shopInfoResponse = await fetch(`https://${shop}/admin/api/2024-10/shop.json`, {
+        headers: {
+          'X-Shopify-Access-Token': accessToken,
+          'Content-Type': 'application/json',
+        },
       });
 
-      try {
-        shopInfo = await mcpClient.getShopInfo();
-      } finally {
-        await mcpClient.disconnect();
+      if (shopInfoResponse.ok) {
+        const data = await shopInfoResponse.json();
+        shopInfo = data.shop;
+      } else {
+        throw new Error('Failed to fetch shop info');
       }
     } catch (error) {
       console.error('Failed to fetch shop info:', error);
@@ -128,7 +130,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Encrypt access token
-    const encryptedToken = encrypt(session.accessToken);
+    const encryptedToken = encrypt(accessToken);
 
     // Check if connection already exists
     const { data: existingConnection } = await supabase
