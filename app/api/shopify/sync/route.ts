@@ -8,6 +8,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
 import { syncShopifyOrders } from '@/lib/services/shopify/order-sync';
+import { decrypt } from '@/lib/utils/encryption';
 
 export async function POST(request: NextRequest) {
   try {
@@ -35,14 +36,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify user has access to workspace
-    const { data: membership, error: membershipError } = await supabase
-      .from('workspace_members')
-      .select('role')
-      .eq('workspace_id', workspaceId)
-      .eq('user_id', user.id)
+    const { data: workspace, error: workspaceError } = await supabase
+      .from('workspaces')
+      .select('user_id')
+      .eq('id', workspaceId)
       .single();
 
-    if (membershipError || !membership) {
+    if (workspaceError || !workspace || workspace.user_id !== user.id) {
       return NextResponse.json(
         { error: 'Access denied to workspace' },
         { status: 403 }
@@ -71,9 +71,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // TODO: Decrypt access token (for now, assuming it's stored encrypted)
-    // In production, you'd decrypt this using a secure encryption library
-    const accessToken = connection.access_token_encrypted;
+    // Decrypt access token
+    const accessToken = decrypt(connection.access_token_encrypted);
 
     // Sync orders
     console.log(`Starting Shopify order sync for workspace ${workspaceId}...`);
@@ -151,14 +150,13 @@ export async function GET(request: NextRequest) {
     }
 
     // Verify user has access to workspace
-    const { data: membership, error: membershipError } = await supabase
-      .from('workspace_members')
-      .select('role')
-      .eq('workspace_id', workspaceId)
-      .eq('user_id', user.id)
+    const { data: workspace, error: workspaceError } = await supabase
+      .from('workspaces')
+      .select('user_id')
+      .eq('id', workspaceId)
       .single();
 
-    if (membershipError || !membership) {
+    if (workspaceError || !workspace || workspace.user_id !== user.id) {
       return NextResponse.json(
         { error: 'Access denied to workspace' },
         { status: 403 }

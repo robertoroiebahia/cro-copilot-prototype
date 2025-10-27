@@ -31,13 +31,13 @@ ALTER TABLE public.shopify_connections ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users can view shopify_connections in their workspace"
   ON public.shopify_connections FOR SELECT
   USING (workspace_id IN (
-    SELECT workspace_id FROM public.workspace_members WHERE user_id = auth.uid()
+    SELECT id FROM public.workspaces WHERE user_id = auth.uid()
   ));
 
 CREATE POLICY "Users can manage shopify_connections in their workspace"
   ON public.shopify_connections FOR ALL
   USING (workspace_id IN (
-    SELECT workspace_id FROM public.workspace_members WHERE user_id = auth.uid() AND role IN ('owner', 'admin')
+    SELECT id FROM public.workspaces WHERE user_id = auth.uid()
   ));
 
 -- ============================================================================
@@ -103,13 +103,13 @@ ALTER TABLE public.shopify_orders ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users can view orders in their workspace"
   ON public.shopify_orders FOR SELECT
   USING (workspace_id IN (
-    SELECT workspace_id FROM public.workspace_members WHERE user_id = auth.uid()
+    SELECT id FROM public.workspaces WHERE user_id = auth.uid()
   ));
 
 CREATE POLICY "Users can manage orders in their workspace"
   ON public.shopify_orders FOR ALL
   USING (workspace_id IN (
-    SELECT workspace_id FROM public.workspace_members WHERE user_id = auth.uid() AND role IN ('owner', 'admin')
+    SELECT id FROM public.workspaces WHERE user_id = auth.uid()
   ));
 
 -- ============================================================================
@@ -149,7 +149,7 @@ ALTER TABLE public.order_clusters ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users can view clusters in their workspace"
   ON public.order_clusters FOR SELECT
   USING (workspace_id IN (
-    SELECT workspace_id FROM public.workspace_members WHERE user_id = auth.uid()
+    SELECT id FROM public.workspaces WHERE user_id = auth.uid()
   ));
 
 -- ============================================================================
@@ -195,7 +195,7 @@ ALTER TABLE public.product_affinity ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users can view affinity in their workspace"
   ON public.product_affinity FOR SELECT
   USING (workspace_id IN (
-    SELECT workspace_id FROM public.workspace_members WHERE user_id = auth.uid()
+    SELECT id FROM public.workspaces WHERE user_id = auth.uid()
   ));
 
 -- ============================================================================
@@ -248,13 +248,13 @@ ALTER TABLE public.aov_opportunities ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users can view opportunities in their workspace"
   ON public.aov_opportunities FOR SELECT
   USING (workspace_id IN (
-    SELECT workspace_id FROM public.workspace_members WHERE user_id = auth.uid()
+    SELECT id FROM public.workspaces WHERE user_id = auth.uid()
   ));
 
 CREATE POLICY "Users can manage opportunities in their workspace"
   ON public.aov_opportunities FOR ALL
   USING (workspace_id IN (
-    SELECT workspace_id FROM public.workspace_members WHERE user_id = auth.uid() AND role IN ('owner', 'admin')
+    SELECT id FROM public.workspaces WHERE user_id = auth.uid()
   ));
 
 -- ============================================================================
