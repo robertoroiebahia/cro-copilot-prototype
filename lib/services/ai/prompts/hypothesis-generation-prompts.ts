@@ -8,8 +8,10 @@
 export interface HypothesisGenerationPromptParams {
   themes?: Array<{
     theme_id: string;
-    name: string;
-    statement: string;
+    name?: string;
+    title?: string;
+    statement?: string;
+    theme_statement?: string;
     business_impact: any;
     connected_insights: any[];
   }>;
