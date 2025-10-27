@@ -17,7 +17,7 @@ interface ResearchMethodology {
   id: ResearchType;
   name: string;
   description: string;
-  icon: string;
+  icon: React.ReactNode;
   path: string;
   count: number;
   isPro?: boolean;
@@ -51,7 +51,11 @@ function DashboardContent() {
       id: 'page_analysis',
       name: 'Page Analysis',
       description: 'AI-powered analysis of landing pages, product pages, and checkout flows',
-      icon: '🎨',
+      icon: (
+        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+        </svg>
+      ),
       path: '/analyze',
       count: analysisStats['page_analysis'] || 0,
       isPro: false,
@@ -60,7 +64,11 @@ function DashboardContent() {
       id: 'ga_analysis',
       name: 'Google Analytics',
       description: 'Funnel analysis, segment comparison, and behavioral insights from GA4',
-      icon: '📊',
+      icon: (
+        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+        </svg>
+      ),
       path: '/analyze/ga',
       count: analysisStats['ga_analysis'] || 0,
       isPro: false,
@@ -69,7 +77,12 @@ function DashboardContent() {
       id: 'heatmap_analysis',
       name: 'Heatmap Analysis',
       description: 'Click maps, scroll maps, and attention analysis from Hotjar/Clarity',
-      icon: '🔥',
+      icon: (
+        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.879 16.121A3 3 0 1012.015 11L11 14H9c0 .768.293 1.536.879 2.121z" />
+        </svg>
+      ),
       path: '/analyze/heatmap',
       count: analysisStats['heatmap_analysis'] || 0,
       isPro: true,
@@ -78,7 +91,11 @@ function DashboardContent() {
       id: 'user_testing',
       name: 'User Testing',
       description: 'Session recordings, user interviews, and usability test insights',
-      icon: '👥',
+      icon: (
+        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+        </svg>
+      ),
       path: '/analyze/user-testing',
       count: analysisStats['user_testing'] || 0,
       isPro: true,
@@ -87,7 +104,11 @@ function DashboardContent() {
       id: 'survey_analysis',
       name: 'Survey Analysis',
       description: 'Customer feedback, NPS, exit surveys, and qualitative research',
-      icon: '📋',
+      icon: (
+        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+        </svg>
+      ),
       path: '/analyze/survey',
       count: analysisStats['survey_analysis'] || 0,
       isPro: true,
@@ -96,7 +117,11 @@ function DashboardContent() {
       id: 'review_mining',
       name: 'Review Mining',
       description: 'Extract insights from customer reviews and ratings',
-      icon: '⭐',
+      icon: (
+        <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+        </svg>
+      ),
       path: '/analyze/review-mining',
       count: analysisStats['review_mining'] || 0,
       isPro: true,
@@ -270,14 +295,14 @@ function DashboardContent() {
         )}
 
         {/* Research Methodologies */}
-        <div className="mb-8">
-          <h2 className="text-xl sm:text-2xl font-black text-brand-black mb-2">Research Methods</h2>
+        <div className="mb-6">
+          <h2 className="text-2xl sm:text-3xl font-black text-brand-black mb-2">Research Methods</h2>
           <p className="text-brand-text-secondary text-sm sm:text-base">
-            Select a methodology to start analyzing
+            Choose a research methodology to uncover conversion insights
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-8 sm:mb-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
           {researchMethodologies.map((method) => {
             const isLocked = method.isPro && isFree;
 
@@ -295,9 +320,9 @@ function DashboardContent() {
                 `}
               >
                 {isLocked && (
-                  <div className="absolute inset-0 bg-black/5 backdrop-blur-[2px] z-10 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                    <div className="bg-white rounded-full p-3 shadow-lg">
-                      <svg className="w-6 h-6 text-brand-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="absolute top-2 right-2 z-10">
+                    <div className="bg-brand-gold/90 backdrop-blur-sm rounded-full p-2 shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                      <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                       </svg>
                     </div>
@@ -305,36 +330,49 @@ function DashboardContent() {
                 )}
 
                 <div className="relative p-6">
+                  {/* Header with icon and badges */}
                   <div className="flex items-start justify-between mb-4">
-                    <div className={`text-4xl transform transition-transform duration-200 ${isLocked ? 'opacity-60' : 'group-hover:scale-110'}`}>
-                      {method.icon}
+                    <div className={`p-3 rounded-xl bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 transition-all duration-200 ${
+                      isLocked ? '' : 'group-hover:border-brand-gold group-hover:shadow-md'
+                    }`}>
+                      <div className="text-brand-gold transition-colors">
+                        {method.icon}
+                      </div>
                     </div>
                     <div className="flex flex-col items-end gap-2">
                       {method.isPro && <ProBadge size="sm" tooltip />}
+                    </div>
+                  </div>
+
+                  {/* Title and count */}
+                  <div className="mb-3">
+                    <div className="flex items-center justify-between gap-2 mb-1">
+                      <h3 className="text-lg font-black text-brand-black group-hover:text-brand-gold transition-colors">
+                        {method.name}
+                      </h3>
                       {method.count > 0 && (
-                        <div className="px-2 py-1 bg-brand-gold/10 border border-brand-gold/20 rounded-full">
+                        <div className="flex items-center gap-1.5 px-2.5 py-1 bg-brand-gold/10 border border-brand-gold/30 rounded-lg">
+                          <svg className="w-3.5 h-3.5 text-brand-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                          </svg>
                           <span className="text-xs font-black text-brand-gold">{method.count}</span>
                         </div>
                       )}
                     </div>
                   </div>
 
-                  <h3 className={`text-lg font-black mb-2 transition-colors ${
-                    isLocked
-                      ? 'text-gray-700 group-hover:text-brand-gold'
-                      : 'text-brand-black group-hover:text-brand-gold'
-                  }`}>
-                    {method.name}
-                  </h3>
-
-                  <p className="text-sm text-brand-text-secondary leading-relaxed mb-4">
+                  {/* Description */}
+                  <p className="text-sm text-brand-text-secondary leading-relaxed mb-6">
                     {method.description}
                   </p>
 
-                  <div className="flex items-center gap-2 text-brand-gold font-bold text-sm">
-                    <span>{isLocked ? 'Unlock with Pro' : 'Start Analysis'}</span>
-                    <svg className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  {/* CTA */}
+                  <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+                    <span className="font-bold text-sm text-brand-gold">
+                      {isLocked ? 'Upgrade to Pro' : 'Start Analysis'}
+                    </span>
+                    <svg className="w-5 h-5 text-brand-gold transform group-hover:translate-x-1 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                     </svg>
                   </div>
                 </div>
