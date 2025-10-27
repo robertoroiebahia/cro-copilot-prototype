@@ -80,7 +80,11 @@ export async function GET(request: NextRequest) {
     // Build Shopify OAuth URL manually
     const shopify = getShopifyApi();
     const scopes = 'read_orders,read_products,read_customers,read_analytics';
-    const redirectUri = `${process.env.NEXT_PUBLIC_APP_URL}/api/shopify/callback`;
+
+    // Get base URL from request or env
+    const url = new URL(request.url);
+    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || `${url.protocol}//${url.host}`;
+    const redirectUri = `${baseUrl}/api/shopify/callback`;
 
     const authUrl = `https://${shop}/admin/oauth/authorize?` +
       `client_id=${shopify.config.apiKey}&` +
@@ -89,6 +93,7 @@ export async function GET(request: NextRequest) {
       `state=${state}`;
 
     console.log(`Redirecting to Shopify OAuth for shop: ${shop}`);
+    console.log(`Redirect URI: ${redirectUri}`);
 
     // Redirect to Shopify
     return NextResponse.redirect(authUrl);
