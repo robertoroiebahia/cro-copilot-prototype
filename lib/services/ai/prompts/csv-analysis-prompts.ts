@@ -139,7 +139,7 @@ The user indicated this is survey or feedback data. Look for:
 - Make insights specific and actionable
 - DO NOT number the insights, just include them in the array
 - USE ONLY THE EXACT VALUES listed above for growth_pillar, friction_type, psychology_principle, etc.
-- If unsure about friction_type or psychology_principle, set to "N/A" rather than inventing new values
+- If unsure about friction_type or psychology_principle, set to "N/A" rather than inventing new values`;
 
     case 'onsite_poll':
       return `${baseInstructions}
@@ -239,7 +239,7 @@ The user indicated this is poll or quick survey data. Look for:
 - Make insights actionable for conversion optimization
 - DO NOT number the insights, just include them in the array
 - USE ONLY THE EXACT VALUES listed above for growth_pillar, friction_type, psychology_principle
-- If unsure about a field value, use "N/A" instead of inventing new values
+- If unsure about a field value, use "N/A" instead of inventing new values`;
 
     case 'review_mining':
       return `${baseInstructions}
@@ -344,6 +344,6 @@ The user indicated this is review data. Look for:
 - Look for both strengths (for social proof) AND pain points (to fix)
 - DO NOT number the insights, just include them in the array
 - USE ONLY THE EXACT VALUES listed above for growth_pillar, friction_type, psychology_principle
-- If unsure about a field value, use "N/A" instead of making up new values
+- If unsure about a field value, use "N/A" instead of making up new values`;
   }
 }
