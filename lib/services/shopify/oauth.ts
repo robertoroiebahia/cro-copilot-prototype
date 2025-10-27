@@ -4,7 +4,7 @@
  * Handles OAuth flow for Shopify app installation
  */
 
-import { shopifyApi, LATEST_API_VERSION, Session } from '@shopify/shopify-api';
+import { shopifyApi, ApiVersion, Session } from '@shopify/shopify-api';
 import '@shopify/shopify-api/adapters/node';
 
 /**
@@ -29,7 +29,7 @@ export function getShopifyApi() {
       'read_analytics',
     ],
     hostName: hostName.replace('https://', '').replace('http://', ''),
-    apiVersion: LATEST_API_VERSION,
+    apiVersion: ApiVersion.October24, // Use explicit API version
     isEmbeddedApp: false,
   });
 }
