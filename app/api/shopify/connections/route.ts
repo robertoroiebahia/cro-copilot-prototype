@@ -12,7 +12,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
 import { encrypt, decrypt } from '@/lib/utils/encryption';
-import { createShopifyMCPClient } from '@/lib/services/shopify/mcp-client';
 
 /**
  * GET - List Shopify connections for a workspace
@@ -128,20 +127,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate Shopify credentials by fetching shop info
+    // Validate Shopify credentials by fetching shop info via REST API
     console.log('Validating Shopify credentials...');
     let shopInfo;
     try {
-      const mcpClient = await createShopifyMCPClient({
-        shopDomain,
-        accessToken,
+      const shopInfoResponse = await fetch(`https://${shopDomain}/admin/api/2024-10/shop.json`, {
+        headers: {
+          'X-Shopify-Access-Token': accessToken,
+          'Content-Type': 'application/json',
+        },
       });
 
-      try {
-        shopInfo = await mcpClient.getShopInfo();
-      } finally {
-        await mcpClient.disconnect();
+      if (!shopInfoResponse.ok) {
+        throw new Error(`Shopify API error: ${shopInfoResponse.statusText}`);
       }
+
+      const data = await shopInfoResponse.json();
+      shopInfo = data.shop;
     } catch (error) {
       console.error('Shopify validation error:', error);
       return NextResponse.json(
@@ -268,17 +270,20 @@ export async function PUT(request: NextRequest) {
         );
       }
 
-      // Validate credentials
+      // Validate credentials with REST API
       try {
-        const mcpClient = await createShopifyMCPClient({
-          shopDomain: connection.shop_domain,
-          accessToken,
-        });
+        const shopInfoResponse = await fetch(
+          `https://${connection.shop_domain}/admin/api/2024-10/shop.json`,
+          {
+            headers: {
+              'X-Shopify-Access-Token': accessToken,
+              'Content-Type': 'application/json',
+            },
+          }
+        );
 
-        try {
-          await mcpClient.getShopInfo();
-        } finally {
-          await mcpClient.disconnect();
+        if (!shopInfoResponse.ok) {
+          throw new Error(`Shopify API error: ${shopInfoResponse.statusText}`);
         }
       } catch (error) {
         return NextResponse.json(
