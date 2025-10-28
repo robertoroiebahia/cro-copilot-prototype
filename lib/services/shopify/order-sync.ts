@@ -50,7 +50,7 @@ export interface OrderSyncOptions {
 
 export interface OrderSyncResult {
   success: boolean;
-  orderssynced: number;
+  ordersSynced: number;
   ordersFetched: number;
   errors: string[];
   summary: {
