@@ -29,6 +29,7 @@ const RESEARCH_TYPE_COLORS: Record<ResearchType, { bg: string; text: string }> =
   competitor_analysis: { bg: 'bg-teal-100', text: 'text-teal-700' },
   review_mining: { bg: 'bg-indigo-100', text: 'text-indigo-700' },
   onsite_poll: { bg: 'bg-cyan-100', text: 'text-cyan-700' },
+  shopify_order_analysis: { bg: 'bg-yellow-100', text: 'text-yellow-700' },
   other: { bg: 'bg-gray-100', text: 'text-gray-700' },
 };
 

@@ -72,7 +72,19 @@ export async function POST(request: NextRequest) {
     }
 
     // Decrypt access token
-    const accessToken = decrypt(connection.access_token_encrypted);
+    let accessToken: string;
+    try {
+      accessToken = decrypt(connection.access_token_encrypted);
+    } catch (decryptError) {
+      console.error('Failed to decrypt access token:', decryptError);
+      return NextResponse.json(
+        {
+          error: 'Failed to decrypt access token. Please reconnect your Shopify store.',
+          details: decryptError instanceof Error ? decryptError.message : 'Decryption failed'
+        },
+        { status: 500 }
+      );
+    }
 
     // Sync orders
     console.log(`Starting Shopify order sync for workspace ${workspaceId}...`);
@@ -110,10 +122,17 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error('Shopify sync error:', error);
+
+    // Log stack trace for debugging
+    if (error instanceof Error && error.stack) {
+      console.error('Stack trace:', error.stack);
+    }
+
     return NextResponse.json(
       {
         error: 'Internal server error',
         details: error instanceof Error ? error.message : 'Unknown error',
+        type: error instanceof Error ? error.constructor.name : typeof error,
       },
       { status: 500 }
     );

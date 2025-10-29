@@ -6,6 +6,9 @@ import { useWorkspace } from '@/components/WorkspaceContext';
 import WorkspaceGuard from '@/components/WorkspaceGuard';
 import Link from 'next/link';
 import { createClient } from '@/utils/supabase/client';
+import { OrderClustersChart } from '@/components/shopify/OrderClustersChart';
+import { ProductAffinityGrid } from '@/components/shopify/ProductAffinityGrid';
+import { AOVOpportunitiesList } from '@/components/shopify/AOVOpportunitiesList';
 
 interface ShopifyConnection {
   id: string;
@@ -30,6 +33,15 @@ function ShopifyOrdersContent() {
   const [showConnectModal, setShowConnectModal] = useState(false);
   const [shopDomain, setShopDomain] = useState('');
   const [connectError, setConnectError] = useState('');
+
+  // Analysis state
+  const [analyzing, setAnalyzing] = useState(false);
+  const [analysisResults, setAnalysisResults] = useState<any>(null);
+  const [analysisError, setAnalysisError] = useState('');
+  const [selectedConnectionId, setSelectedConnectionId] = useState<string>('');
+
+  // Test connection state
+  const [testing, setTesting] = useState(false);
 
   // Check for connection success
   useEffect(() => {
@@ -115,15 +127,43 @@ function ShopifyOrdersContent() {
 
       const data = await res.json();
 
-      if (data.success) {
-        alert(`Successfully synced ${data.result.ordersSynced} orders!`);
+      // Handle 207 (partial success) and 200 (full success)
+      if (res.status === 207 || res.status === 200) {
+        const ordersSynced = data.result?.ordersSynced || data.partialResult?.ordersSynced || 0;
+        const ordersFetched = data.result?.ordersFetched || data.partialResult?.ordersFetched || 0;
+
+        if (res.status === 207) {
+          // Partial success with errors
+          const errorList = data.details && Array.isArray(data.details)
+            ? data.details.slice(0, 3).join('\n')
+            : data.error || 'Some orders failed to sync';
+
+          const moreErrors = data.details && data.details.length > 3
+            ? `\n...and ${data.details.length - 3} more errors`
+            : '';
+
+          alert(
+            `Synced ${ordersSynced} of ${ordersFetched} orders.\n\n` +
+            `Errors encountered:\n${errorList}${moreErrors}\n\n` +
+            `Check console for full details.`
+          );
+
+          if (data.details) {
+            console.error('Sync errors:', data.details);
+          }
+        } else {
+          // Full success
+          alert(`Successfully synced ${ordersSynced} orders!`);
+        }
+
         fetchOrderStats();
       } else {
-        alert(`Sync completed with errors: ${data.error}`);
+        // Complete failure
+        alert(`Sync failed: ${data.error || 'Unknown error'}`);
       }
     } catch (error) {
       console.error('Sync error:', error);
-      alert('Failed to sync orders');
+      alert('Failed to sync orders: Network or server error');
     } finally {
       setSyncing(false);
     }
@@ -150,6 +190,78 @@ function ShopifyOrdersContent() {
     } catch (error) {
       console.error('Disconnect error:', error);
       alert('Failed to disconnect store');
+    }
+  };
+
+  const handleTestConnection = async (connectionId: string) => {
+    if (!selectedWorkspaceId) return;
+
+    setTesting(true);
+    try {
+      const res = await fetch(
+        `/api/shopify/test-connection?connectionId=${connectionId}&workspaceId=${selectedWorkspaceId}`
+      );
+      const data = await res.json();
+
+      if (data.success) {
+        alert(
+          `✅ Connection Test Passed!\n\n` +
+          `Shop: ${data.connection.shop_name}\n` +
+          `All API endpoints are accessible.\n\n` +
+          data.recommendation
+        );
+      } else {
+        const failedTests = Object.entries(data.tests || {})
+          .filter(([_, test]: any) => !test.success)
+          .map(([name, test]: any) => `  • ${name}: ${test.error || 'Failed'}`)
+          .join('\n');
+
+        alert(
+          `❌ Connection Test Failed\n\n` +
+          `Failed Tests:\n${failedTests}\n\n` +
+          `${data.recommendation || 'Please reconnect your Shopify store.'}\n\n` +
+          `Tip: Check console for full details.`
+        );
+        console.error('Connection test details:', data);
+      }
+    } catch (error) {
+      console.error('Test connection error:', error);
+      alert('Failed to test connection: Network or server error');
+    } finally {
+      setTesting(false);
+    }
+  };
+
+  const handleRunAnalysis = async (connectionId: string) => {
+    if (!selectedWorkspaceId) return;
+
+    setAnalyzing(true);
+    setAnalysisError('');
+    setSelectedConnectionId(connectionId);
+
+    try {
+      const res = await fetch('/api/shopify/analyze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          workspaceId: selectedWorkspaceId,
+          connectionId,
+          minConfidence: 0.3,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        setAnalysisResults(data.results);
+      } else {
+        setAnalysisError(data.error || 'Analysis failed');
+      }
+    } catch (error: any) {
+      console.error('Analysis error:', error);
+      setAnalysisError(error.message || 'Failed to run analysis');
+    } finally {
+      setAnalyzing(false);
     }
   };
 
@@ -318,6 +430,15 @@ function ShopifyOrdersContent() {
                       </span>
 
                       <button
+                        onClick={() => handleTestConnection(connection.id)}
+                        disabled={testing}
+                        className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+                        title="Test if the connection has proper API access"
+                      >
+                        {testing ? 'Testing...' : 'Test Connection'}
+                      </button>
+
+                      <button
                         onClick={() => handleSyncOrders(connection.id)}
                         disabled={syncing}
                         className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
@@ -341,43 +462,172 @@ function ShopifyOrdersContent() {
 
         {/* Analysis Section - Show when orders exist */}
         {orderStats && orderStats.orderCount > 0 && (
-          <div className="mt-8 bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Run Analysis</h2>
-            <p className="text-gray-600 mb-6">
-              Analyze your order data to discover:
-            </p>
-            <ul className="space-y-2 mb-6 text-gray-600">
-              <li className="flex items-start gap-2">
-                <svg className="w-5 h-5 text-green-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-                Order value clustering (e.g., $0-$50, $50-$100 segments)
-              </li>
-              <li className="flex items-start gap-2">
-                <svg className="w-5 h-5 text-green-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-                Products frequently bought together
-              </li>
-              <li className="flex items-start gap-2">
-                <svg className="w-5 h-5 text-green-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-                Free shipping threshold opportunities
-              </li>
-              <li className="flex items-start gap-2">
-                <svg className="w-5 h-5 text-green-600 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-                AOV optimization test ideas (prioritized by revenue impact)
-              </li>
-            </ul>
-            <button
-              className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-medium"
-              onClick={() => alert('Analysis engine coming soon!')}
-            >
-              Run AOV Analysis
-            </button>
+          <div className="mt-8 space-y-8">
+            {/* Analysis Controls */}
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">Run AOV Analysis</h2>
+              <p className="text-gray-600 mb-6">
+                Select a store to analyze order patterns and discover optimization opportunities:
+              </p>
+
+              {/* Store Selector */}
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Select Store
+                </label>
+                <select
+                  value={selectedConnectionId}
+                  onChange={(e) => setSelectedConnectionId(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  disabled={analyzing}
+                >
+                  <option value="">Choose a connected store...</option>
+                  {connections.map((conn) => (
+                    <option key={conn.id} value={conn.id}>
+                      {conn.shop_name} ({conn.shop_domain})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* What you'll discover */}
+              <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div className="text-sm font-bold text-blue-900 mb-2">
+                  📊 What you&apos;ll discover:
+                </div>
+                <ul className="space-y-1 text-sm text-blue-800">
+                  <li className="flex items-start gap-2">
+                    <span className="text-blue-600">•</span>
+                    Order value clusters and revenue distribution
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-blue-600">•</span>
+                    Products frequently bought together (cross-sell opportunities)
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-blue-600">•</span>
+                    Free shipping threshold recommendations
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-blue-600">•</span>
+                    Prioritized test ideas to increase average order value
+                  </li>
+                </ul>
+              </div>
+
+              {/* Error Display */}
+              {analysisError && (
+                <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+                  <div className="flex items-center gap-2 text-red-800">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span className="font-medium">{analysisError}</span>
+                  </div>
+                </div>
+              )}
+
+              {/* Run Analysis Button */}
+              <button
+                className="px-6 py-3 bg-brand-gold text-brand-black rounded-lg hover:bg-brand-gold/90 transition-colors font-bold disabled:opacity-50 disabled:cursor-not-allowed"
+                onClick={() => selectedConnectionId && handleRunAnalysis(selectedConnectionId)}
+                disabled={!selectedConnectionId || analyzing}
+              >
+                {analyzing ? (
+                  <span className="flex items-center gap-2">
+                    <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Analyzing orders...
+                  </span>
+                ) : (
+                  'Run AOV Analysis'
+                )}
+              </button>
+            </div>
+
+            {/* Analysis Results */}
+            {analysisResults && (
+              <div className="space-y-8">
+                {/* Summary Stats */}
+                <div className="bg-white rounded-lg shadow-sm border-2 border-brand-gold p-6">
+                  <h3 className="text-lg font-black text-brand-black mb-4 uppercase tracking-wide">
+                    Analysis Summary
+                  </h3>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                    <div>
+                      <div className="text-sm text-gray-500 font-medium uppercase tracking-wide mb-1">
+                        Total Orders
+                      </div>
+                      <div className="text-2xl font-black text-brand-black">
+                        {analysisResults.summary.totalOrders.toLocaleString()}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-sm text-gray-500 font-medium uppercase tracking-wide mb-1">
+                        Avg Order Value
+                      </div>
+                      <div className="text-2xl font-black text-brand-black">
+                        ${analysisResults.summary.averageOrderValue.toFixed(2)}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-sm text-gray-500 font-medium uppercase tracking-wide mb-1">
+                        Total Revenue
+                      </div>
+                      <div className="text-2xl font-black text-brand-black">
+                        ${analysisResults.summary.totalRevenue.toLocaleString(undefined, {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-sm text-gray-500 font-medium uppercase tracking-wide mb-1">
+                        Median AOV
+                      </div>
+                      <div className="text-2xl font-black text-brand-black">
+                        ${analysisResults.summary.medianOrderValue.toFixed(2)}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Order Clusters */}
+                {analysisResults.clusters && analysisResults.clusters.length > 0 && (
+                  <div>
+                    <h3 className="text-2xl font-black text-brand-black mb-4">
+                      Order Value Distribution
+                    </h3>
+                    <OrderClustersChart
+                      clusters={analysisResults.clusters}
+                      currency={analysisResults.summary.currency}
+                    />
+                  </div>
+                )}
+
+                {/* Product Affinities */}
+                {analysisResults.productAffinities && analysisResults.productAffinities.length > 0 && (
+                  <div>
+                    <h3 className="text-2xl font-black text-brand-black mb-4">
+                      Cross-Sell Opportunities
+                    </h3>
+                    <ProductAffinityGrid affinities={analysisResults.productAffinities} />
+                  </div>
+                )}
+
+                {/* Opportunities */}
+                {analysisResults.opportunities && analysisResults.opportunities.length > 0 && (
+                  <div>
+                    <h3 className="text-2xl font-black text-brand-black mb-4">
+                      Test Ideas & Recommendations
+                    </h3>
+                    <AOVOpportunitiesList opportunities={analysisResults.opportunities} />
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         )}
       </div>

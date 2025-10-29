@@ -144,6 +144,20 @@ export default function MobileHeader({ onMenuToggle }: MobileHeaderProps) {
                     </div>
                   </Link>
 
+                  <Link href="/analyze/shopify-orders" className={linkClass(isActive('/analyze/shopify-orders'))}>
+                    <div className="flex items-center gap-3">
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                      </svg>
+                      <span className="flex-1">Shopify AOV</span>
+                      {!isPro && (
+                        <span className="px-2 py-0.5 bg-gradient-to-r from-brand-gold to-yellow-400 text-black border border-brand-gold text-[10px] font-black rounded uppercase tracking-wide shadow-sm">
+                          Pro
+                        </span>
+                      )}
+                    </div>
+                  </Link>
+
                   <Link href="/analyze/survey" className={linkClass(isActive('/analyze/survey'))}>
                     <div className="flex items-center gap-3">
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

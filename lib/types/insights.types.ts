@@ -7,15 +7,16 @@
 // ============================================================================
 
 export type ResearchType =
-  | 'page_analysis'        // Screenshot-based CRO analysis (current)
-  | 'ga_analysis'          // Google Analytics data analysis
-  | 'survey_analysis'      // Post-purchase surveys, user surveys
-  | 'heatmap_analysis'     // Heatmap & session recording analysis
-  | 'user_testing'         // Moderated/unmoderated user testing
-  | 'competitor_analysis'  // Competitive research
-  | 'review_mining'        // Customer review analysis
-  | 'onsite_poll'          // On-site poll analysis
-  | 'other';               // Other research methodologies
+  | 'page_analysis'         // Screenshot-based CRO analysis (current)
+  | 'ga_analysis'           // Google Analytics data analysis
+  | 'survey_analysis'       // Post-purchase surveys, user surveys
+  | 'heatmap_analysis'      // Heatmap & session recording analysis
+  | 'user_testing'          // Moderated/unmoderated user testing
+  | 'competitor_analysis'   // Competitive research
+  | 'review_mining'         // Customer review analysis
+  | 'onsite_poll'           // On-site poll analysis
+  | 'shopify_order_analysis' // Shopify order/AOV analysis
+  | 'other';                // Other research methodologies
 
 export const RESEARCH_TYPE_LABELS: Record<ResearchType, string> = {
   page_analysis: 'Page Analysis',
@@ -26,6 +27,7 @@ export const RESEARCH_TYPE_LABELS: Record<ResearchType, string> = {
   competitor_analysis: 'Competitor Analysis',
   review_mining: 'Review Mining',
   onsite_poll: 'On-Site Poll',
+  shopify_order_analysis: 'Shopify AOV Analysis',
   other: 'Other Research',
 };
 
@@ -38,6 +40,7 @@ export const RESEARCH_TYPE_ICONS: Record<ResearchType, string> = {
   competitor_analysis: 'CA',
   review_mining: 'RM',
   onsite_poll: 'OP',
+  shopify_order_analysis: 'SA',
   other: 'OR',
 };
 

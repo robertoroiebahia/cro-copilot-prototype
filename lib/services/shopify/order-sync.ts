@@ -102,7 +102,23 @@ export async function syncShopifyOrders(
     );
 
     if (!ordersResponse.ok) {
-      throw new Error(`Shopify API error: ${ordersResponse.statusText}`);
+      // Try to get error details from Shopify
+      let errorDetails = ordersResponse.statusText;
+      try {
+        const errorBody = await ordersResponse.json();
+        errorDetails = JSON.stringify(errorBody);
+        console.error('Shopify API error response:', errorBody);
+      } catch (e) {
+        // If JSON parsing fails, try text
+        try {
+          const errorText = await ordersResponse.text();
+          errorDetails = errorText;
+          console.error('Shopify API error text:', errorText);
+        } catch (e2) {
+          // Use status text as fallback
+        }
+      }
+      throw new Error(`Shopify API error (${ordersResponse.status}): ${errorDetails}`);
     }
 
     const ordersData = await ordersResponse.json();
