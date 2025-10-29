@@ -5,31 +5,19 @@ import WorkspaceGuard from '@/components/WorkspaceGuard';
 
 function CompetitorAnalysisContent() {
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-gray-50">
       {/* Page Header */}
-      <div className="bg-gradient-to-b from-gray-50 to-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <nav className="flex items-center gap-2 text-sm mb-4">
-            <Link href="/dashboard" className="text-brand-text-tertiary hover:text-brand-gold transition-all duration-200 font-bold">
-              Dashboard
-            </Link>
-            <svg className="w-4 h-4 text-brand-text-tertiary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
-            <span className="text-brand-black font-black">Competitor Analysis</span>
-          </nav>
-
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-brand-gold rounded-lg flex items-center justify-center">
-              <svg className="w-5 h-5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <div className="bg-white border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-6 py-6">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="w-8 h-8 bg-teal-100 rounded-lg flex items-center justify-center">
+              <svg className="w-5 h-5 text-teal-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
             </div>
-            <div>
-              <h1 className="text-2xl font-black text-brand-black">Competitor Analysis</h1>
-              <p className="text-sm text-brand-text-secondary font-medium">Learn from best practices in your industry</p>
-            </div>
+            <h1 className="heading-page">Competitor Analysis</h1>
           </div>
+          <p className="text-body-secondary">Learn from best practices in your industry</p>
         </div>
       </div>
 

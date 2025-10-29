@@ -298,6 +298,15 @@
     }
   }
 
+  @keyframes shimmer {
+    0% {
+      background-position: -200% 0;
+    }
+    100% {
+      background-position: 200% 0;
+    }
+  }
+
   /* Text gradients */
   .text-gradient-gold {
     background: linear-gradient(to right, #F5C542, #fde047);

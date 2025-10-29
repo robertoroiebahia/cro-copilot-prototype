@@ -109,147 +109,72 @@ function parseCSVLine(line: string): string[] {
 
 /**
  * Validate CSV structure for specific research type
+ *
+ * NEW APPROACH: AI-powered flexible validation
+ * We no longer require specific column names - the AI will figure it out
  */
 export function validateCSVForResearchType(
   headers: string[],
   researchType: 'survey_analysis' | 'onsite_poll' | 'review_mining'
 ): { valid: boolean; error?: string; suggestions?: string[] } {
-  const lowerHeaders = headers.map(h => h.toLowerCase());
-
-  switch (researchType) {
-    case 'survey_analysis':
-      // Survey should have at least a response/answer column
-      const hasResponse = lowerHeaders.some(h =>
-        h.includes('response') ||
-        h.includes('answer') ||
-        h.includes('feedback') ||
-        h.includes('comment')
-      );
-
-      if (!hasResponse) {
-        return {
-          valid: false,
-          error: 'Survey CSV should contain a column with responses/answers/feedback',
-          suggestions: [
-            'Add a column named "response", "answer", "feedback", or "comment"',
-            'Ensure the CSV contains the actual survey responses from users',
-          ],
-        };
-      }
-      break;
-
-    case 'onsite_poll':
-      // Poll should have question and answer
-      const hasQuestion = lowerHeaders.some(h => h.includes('question'));
-      const hasAnswer = lowerHeaders.some(h =>
-        h.includes('answer') || h.includes('response') || h.includes('choice')
-      );
-
-      if (!hasQuestion || !hasAnswer) {
-        return {
-          valid: false,
-          error: 'Poll CSV should contain question and answer columns',
-          suggestions: [
-            'Add columns named "question" and "answer"',
-            'Include the poll question text and user responses',
-          ],
-        };
-      }
-      break;
-
-    case 'review_mining':
-      // Reviews should have review text/content
-      const hasReview = lowerHeaders.some(h =>
-        h.includes('review') ||
-        h.includes('comment') ||
-        h.includes('feedback') ||
-        h.includes('text') ||
-        h.includes('content')
-      );
-
-      if (!hasReview) {
-        return {
-          valid: false,
-          error: 'Review CSV should contain a column with review text/content',
-          suggestions: [
-            'Add a column named "review", "comment", "feedback", or "text"',
-            'Ensure the CSV contains the actual customer review text',
-          ],
-        };
-      }
-      break;
+  // Basic validation - just ensure we have headers and at least some text columns
+  if (headers.length === 0) {
+    return {
+      valid: false,
+      error: 'CSV must have column headers',
+      suggestions: ['Ensure the first row contains column names'],
+    };
   }
 
+  // Check if there's at least one column that likely contains text (not just IDs or numbers)
+  const hasTextColumn = headers.some(h => {
+    const lower = h.toLowerCase();
+    // Allow anything except obvious ID/numeric columns
+    return !lower.match(/^(id|#|index|num|count|total)$/);
+  });
+
+  if (!hasTextColumn) {
+    return {
+      valid: false,
+      error: 'CSV appears to contain only ID or numeric columns',
+      suggestions: [
+        'Ensure your CSV contains text data (responses, feedback, reviews, etc.)',
+        'The AI needs text content to analyze',
+      ],
+    };
+  }
+
+  // That's it! Let the AI figure out the rest
   return { valid: true };
 }
 
 /**
  * Extract text content from CSV for AI analysis
- * Intelligently combines relevant columns based on research type
+ *
+ * NEW APPROACH: AI-powered intelligent extraction
+ * Instead of filtering specific columns, we send the FULL row structure
+ * to the AI, which will intelligently determine what's important
  */
 export function extractTextForAnalysis(
   data: CSVRow[],
   headers: string[],
   researchType: 'survey_analysis' | 'onsite_poll' | 'review_mining'
 ): string[] {
-  const lowerHeaders = headers.map(h => h.toLowerCase());
+  // Sample up to first 100 rows for analysis (prevent token overflow)
+  const sampleData = data.slice(0, 100);
 
-  // Find most relevant columns based on research type
-  let relevantColumns: string[] = [];
+  // Format each row as "Column: Value" pairs
+  return sampleData.map(row => {
+    const parts = headers
+      .map(header => {
+        const value = row[header];
+        // Skip empty values
+        if (!value || value.trim().length === 0) return null;
 
-  switch (researchType) {
-    case 'survey_analysis':
-      relevantColumns = headers.filter((h, i) => {
-        const lower = lowerHeaders[i];
-        return (
-          lower?.includes('response') ||
-          lower?.includes('answer') ||
-          lower?.includes('feedback') ||
-          lower?.includes('comment')
-        );
-      });
-      break;
-
-    case 'onsite_poll':
-      relevantColumns = headers.filter((h, i) => {
-        const lower = lowerHeaders[i];
-        return (
-          lower?.includes('question') ||
-          lower?.includes('answer') ||
-          lower?.includes('response') ||
-          lower?.includes('choice')
-        );
-      });
-      break;
-
-    case 'review_mining':
-      relevantColumns = headers.filter((h, i) => {
-        const lower = lowerHeaders[i];
-        return (
-          lower?.includes('review') ||
-          lower?.includes('comment') ||
-          lower?.includes('feedback') ||
-          lower?.includes('text') ||
-          lower?.includes('content') ||
-          lower?.includes('rating')
-        );
-      });
-      break;
-  }
-
-  // If no specific columns found, use all non-ID columns
-  if (relevantColumns.length === 0) {
-    relevantColumns = headers.filter(h => {
-      const lower = h.toLowerCase();
-      return !lower.includes('id') && !lower.includes('timestamp');
-    });
-  }
-
-  // Extract text entries
-  return data.map(row => {
-    const parts = relevantColumns
-      .map(col => row[col])
-      .filter(val => val && val.trim().length > 0);
+        // Format as "Column: Value" for AI context
+        return `${header}: ${value}`;
+      })
+      .filter(Boolean);
 
     return parts.join(' | ');
   }).filter(text => text.length > 0);

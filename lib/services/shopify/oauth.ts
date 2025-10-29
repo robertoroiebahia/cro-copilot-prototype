@@ -105,11 +105,11 @@ export async function completeOAuth(
  * @param query - Query parameters from Shopify callback
  * @returns True if signature is valid
  */
-export function verifyHmac(query: Record<string, string>): boolean {
+export async function verifyHmac(query: Record<string, string>): Promise<boolean> {
   const shopify = getShopifyApi();
 
   try {
-    return shopify.utils.validateHmac(query);
+    return await shopify.utils.validateHmac(query);
   } catch (error) {
     console.error('HMAC validation error:', error);
     return false;

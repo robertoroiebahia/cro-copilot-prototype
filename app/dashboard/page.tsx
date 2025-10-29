@@ -320,9 +320,9 @@ function DashboardContent() {
                 `}
               >
                 {isLocked && (
-                  <div className="absolute top-2 right-2 z-10">
-                    <div className="bg-brand-gold/90 backdrop-blur-sm rounded-full p-2 shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                      <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="absolute inset-0 bg-black/5 z-10 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                    <div className="bg-white rounded-full p-4 shadow-lg">
+                      <svg className="w-8 h-8 text-brand-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                       </svg>
                     </div>
@@ -340,7 +340,7 @@ function DashboardContent() {
                       </div>
                     </div>
                     <div className="flex flex-col items-end gap-2">
-                      {method.isPro && <ProBadge size="sm" tooltip />}
+                      {method.isPro && <ProBadge size="sm" />}
                     </div>
                   </div>
 

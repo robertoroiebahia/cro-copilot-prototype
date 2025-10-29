@@ -57,7 +57,7 @@ export function decrypt(encryptedText: string): string {
 
   // Parse the encrypted text
   const parts = encryptedText.split(':');
-  if (parts.length !== 3) {
+  if (parts.length !== 3 || !parts[0] || !parts[1] || !parts[2]) {
     throw new Error('Invalid encrypted text format');
   }
 

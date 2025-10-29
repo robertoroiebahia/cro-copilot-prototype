@@ -21,6 +21,7 @@ function InsightsContent() {
   const [error, setError] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [expandedInsight, setExpandedInsight] = useState<string | null>(null);
+  const [isGeneratingThemes, setIsGeneratingThemes] = useState(false);
 
   // Filters
   const [searchQuery, setSearchQuery] = useState('');
@@ -60,6 +61,53 @@ function InsightsContent() {
     }
 
     setLoading(false);
+  };
+
+  const handleGenerateThemes = async () => {
+    if (!selectedWorkspaceId) {
+      alert('No workspace selected');
+      return;
+    }
+
+    if (insights.length === 0) {
+      alert('No insights available. Please create some insights first.');
+      return;
+    }
+
+    setIsGeneratingThemes(true);
+
+    try {
+      const response = await fetch('/api/themes/generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          workspaceId: selectedWorkspaceId,
+          // Optional: you can pass specific insight IDs or let it use all
+          // insightIds: insights.map(i => i.insight_id),
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to generate themes');
+      }
+
+      alert(`Successfully generated ${data.count} themes! Redirecting to themes page...`);
+
+      // Redirect to themes page after a brief delay
+      setTimeout(() => {
+        router.push('/themes');
+      }, 1000);
+
+    } catch (err) {
+      console.error('Error generating themes:', err);
+      alert(err instanceof Error ? err.message : 'Failed to generate themes. Please try again.');
+    } finally {
+      setIsGeneratingThemes(false);
+    }
   };
 
   // Filter and sort insights
@@ -157,11 +205,11 @@ function InsightsContent() {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-6 py-6">
-        {/* Stats & Add Button - 2 Column Layout */}
+        {/* Stats & Buttons */}
         <div className="mb-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Left Column - Stats */}
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
+            <div className="lg:col-span-2 bg-white rounded-lg border border-gray-200 p-6">
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                 <div>
                   <div className="text-2xl sm:text-3xl font-black text-gray-900 mb-1">{stats.total}</div>
@@ -182,11 +230,30 @@ function InsightsContent() {
               </div>
             </div>
 
-            {/* Right Column - Add Insight Button */}
-            <div className="bg-white rounded-lg border border-gray-200 p-6 flex items-center justify-center">
+            {/* Right Column - Action Buttons */}
+            <div className="bg-white rounded-lg border border-gray-200 p-6 flex flex-col gap-3">
+              <button
+                onClick={handleGenerateThemes}
+                disabled={isGeneratingThemes || insights.length === 0}
+                className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white font-bold rounded-xl shadow-lg shadow-emerald-900/20 hover:shadow-xl hover:shadow-emerald-900/30 transition-all duration-200 hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0"
+              >
+                {isGeneratingThemes ? (
+                  <>
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+                    </svg>
+                    Generate Themes
+                  </>
+                )}
+              </button>
               <button
                 onClick={() => setIsModalOpen(true)}
-                className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-gradient-to-r from-gray-900 to-gray-800 hover:from-gray-800 hover:to-gray-700 text-white font-bold rounded-xl shadow-lg shadow-gray-900/20 hover:shadow-xl hover:shadow-gray-900/30 transition-all duration-200 hover:-translate-y-0.5"
+                className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-gray-900 to-gray-800 hover:from-gray-800 hover:to-gray-700 text-white font-bold rounded-xl shadow-lg shadow-gray-900/20 hover:shadow-xl hover:shadow-gray-900/30 transition-all duration-200 hover:-translate-y-0.5"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />

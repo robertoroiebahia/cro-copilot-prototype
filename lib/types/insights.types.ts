@@ -253,12 +253,43 @@ export interface Hypothesis {
   id: string;
   hypothesis_id: string; // e.g., "HYP-001"
   theme_id?: string;
+  workspace_id?: string;
   statement: string; // "If we [change], then [outcome] because [reasoning]"
   based_on_insights: BasedOnInsight[];
   expected_impact: ExpectedImpact;
   test_design?: TestDesign;
   status: HypothesisStatus;
   priority?: HypothesisPriority;
+
+  // PXL Framework fields
+  research_backed?: boolean;
+  research_notes?: string;
+  effort_design?: number; // 1-10 scale
+  effort_dev?: number; // 1-10 scale
+  effort_copy?: number; // 1-10 scale
+  effort_total?: number; // Calculated sum
+  above_fold?: boolean;
+  page_location?: string;
+  element_location?: string;
+  psychology_principle?: string;
+  psychology_notes?: string;
+
+  // Target details
+  target_url?: string;
+  target_pages?: string[];
+  target_audiences?: string[];
+
+  // KPIs
+  primary_kpi?: string;
+  secondary_kpis?: string[];
+  success_criteria?: any;
+
+  // Scores
+  confidence_score?: number; // 1-10
+  potential_value?: string; // "High", "Medium", "Low"
+  ease_score?: number; // 1-10
+  pxl_score?: number; // Calculated: (Potential × Confidence × Ease) normalized
+
   created_at: string;
   updated_at: string;
 }

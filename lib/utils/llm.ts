@@ -192,16 +192,33 @@ export function parseJSONResponse<T>(
   fallback?: T
 ): T | undefined {
   try {
-    // Try to extract JSON from markdown code blocks
-    const jsonMatch = response.match(/```json\n([\s\S]*?)\n```/);
-    if (jsonMatch && jsonMatch[1]) {
-      return JSON.parse(jsonMatch[1]);
+    // Remove any leading/trailing whitespace
+    let cleaned = response.trim();
+
+    // Try to extract JSON from markdown code blocks (multiple patterns)
+    const patterns = [
+      /```json\s*([\s\S]*?)\s*```/,  // ```json ... ```
+      /```\s*([\s\S]*?)\s*```/,       // ``` ... ```
+      /`([\s\S]*?)`/,                  // ` ... `
+    ];
+
+    for (const pattern of patterns) {
+      const match = cleaned.match(pattern);
+      if (match && match[1]) {
+        try {
+          return JSON.parse(match[1].trim());
+        } catch (e) {
+          // Continue to next pattern
+          continue;
+        }
+      }
     }
 
-    // Try to parse the entire response
-    return JSON.parse(response);
+    // Try to parse the entire response as-is
+    return JSON.parse(cleaned);
   } catch (error) {
     console.warn('Failed to parse JSON response:', error);
+    console.warn('Response preview:', response.substring(0, 200));
     return fallback;
   }
 }

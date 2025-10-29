@@ -261,113 +261,97 @@ function GA4AnalysisContent() {
         </div>
       </div>
 
-      {/* Main Content */}
+      {/* Main Content - New Layout */}
       <main className="max-w-7xl mx-auto px-6 py-6">
-        {/* Sync Data Button */}
-        <div className="mb-6 flex justify-end">
-          <button
-            onClick={handleSync}
-            disabled={syncing}
-            className="btn-primary flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {syncing ? (
-              <>
-                <div className="animate-spin rounded-full h-4 w-4 border-2 border-current border-t-transparent"></div>
-                Syncing...
-              </>
-            ) : (
-              <>
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                </svg>
-                Sync Data
-              </>
-            )}
-          </button>
-        </div>
+        <div className="grid lg:grid-cols-3 gap-8">
+          {/* Left Sidebar - Settings & Analysis */}
+          <div className="lg:col-span-1">
+            <div
+              className="bg-white rounded-lg border border-gray-200 p-6 sticky top-24"
+              style={{
+                boxShadow: '0 4px 16px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04)',
+              }}
+            >
+              <h2 className="text-lg font-black text-brand-black mb-6">Analysis Settings</h2>
 
-        {/* Improved Filters Section */}
-        <div className="space-y-4">
-            {/* GA4 Property Selector */}
-            {availableProperties.length > 0 && (
-              <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                <label className="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-2">
-                  GA4 Property
-                </label>
-                <select
-                  value={currentPropertyId || ''}
-                  onChange={(e) => handlePropertyChange(e.target.value)}
-                  disabled={loadingProperties}
-                  className="w-full px-4 py-2 text-sm font-bold border border-gray-300 rounded-lg focus:outline-none focus:border-brand-gold transition-all bg-white disabled:opacity-50"
-                >
-                  {availableProperties.map((property) => (
-                    <option key={property.name} value={property.name?.split('/')[1]}>
-                      {property.displayName} ({property.name?.split('/')[1]})
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
+              {/* GA4 Property Selector */}
+              {availableProperties.length > 0 && (
+                <div className="mb-4">
+                  <label className="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-2">
+                    GA4 Property
+                  </label>
+                  <select
+                    value={currentPropertyId || ''}
+                    onChange={(e) => handlePropertyChange(e.target.value)}
+                    disabled={loadingProperties}
+                    className="w-full px-4 py-2 text-sm font-bold border border-gray-300 rounded-lg focus:outline-none focus:border-brand-gold transition-all bg-white disabled:opacity-50"
+                  >
+                    {availableProperties.map((property) => (
+                      <option key={property.name} value={property.name?.split('/')[1]}>
+                        {property.displayName}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-xs text-gray-500 mt-2">
+                    {currentPropertyId && `ID: ${currentPropertyId}`}
+                  </p>
+                </div>
+              )}
 
-            {/* Date Range and Segment Filters */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {/* Date Range Selector */}
-              <div>
+              <div className="mb-4">
                 <label className="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-2">
                   Date Range
                 </label>
-                <div className="space-y-2">
-                  <select
-                    value={useCustomDates ? 'custom' : dateRange}
-                    onChange={(e) => {
-                      if (e.target.value === 'custom') {
-                        setUseCustomDates(true);
-                        // Set default custom dates to last 30 days
-                        const end = new Date().toISOString().split('T')[0]!;
-                        const start = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]!;
-                        setCustomEndDate(end);
-                        setCustomStartDate(start);
-                      } else {
-                        setUseCustomDates(false);
-                        setDateRange(e.target.value);
-                      }
-                    }}
-                    className="w-full px-4 py-2 text-sm font-bold border border-gray-300 rounded-lg focus:outline-none focus:border-brand-gold transition-all bg-white"
-                  >
-                    <option value="7">Last 7 Days</option>
-                    <option value="30">Last 30 Days</option>
-                    <option value="90">Last 90 Days</option>
-                    <option value="custom">Custom Range</option>
-                  </select>
+                <select
+                  value={useCustomDates ? 'custom' : dateRange}
+                  onChange={(e) => {
+                    if (e.target.value === 'custom') {
+                      setUseCustomDates(true);
+                      const end = new Date().toISOString().split('T')[0]!;
+                      const start = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]!;
+                      setCustomEndDate(end);
+                      setCustomStartDate(start);
+                    } else {
+                      setUseCustomDates(false);
+                      setDateRange(e.target.value);
+                    }
+                  }}
+                  className="w-full px-4 py-2 text-sm font-bold border border-gray-300 rounded-lg focus:outline-none focus:border-brand-gold transition-all bg-white"
+                >
+                  <option value="7">Last 7 Days</option>
+                  <option value="30">Last 30 Days</option>
+                  <option value="90">Last 90 Days</option>
+                  <option value="custom">Custom Range</option>
+                </select>
 
-                  {/* Custom Date Inputs */}
-                  {useCustomDates && (
-                    <div className="grid grid-cols-2 gap-2">
-                      <div>
-                        <label className="block text-xs text-gray-500 mb-1">Start Date</label>
-                        <input
-                          type="date"
-                          value={customStartDate}
-                          onChange={(e) => setCustomStartDate(e.target.value)}
-                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-brand-gold transition-all"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs text-gray-500 mb-1">End Date</label>
-                        <input
-                          type="date"
-                          value={customEndDate}
-                          onChange={(e) => setCustomEndDate(e.target.value)}
-                          className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-brand-gold transition-all"
-                        />
-                      </div>
+                {/* Custom Date Inputs */}
+                {useCustomDates && (
+                  <div className="grid grid-cols-2 gap-2 mt-3">
+                    <div>
+                      <label className="block text-xs text-gray-500 mb-1">Start</label>
+                      <input
+                        type="date"
+                        value={customStartDate}
+                        onChange={(e) => setCustomStartDate(e.target.value)}
+                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-brand-gold transition-all"
+                      />
                     </div>
-                  )}
-                </div>
+                    <div>
+                      <label className="block text-xs text-gray-500 mb-1">End</label>
+                      <input
+                        type="date"
+                        value={customEndDate}
+                        onChange={(e) => setCustomEndDate(e.target.value)}
+                        className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:border-brand-gold transition-all"
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Segment Selector */}
-              <div>
+              <div className="mb-6">
                 <label className="block text-xs font-bold text-gray-600 uppercase tracking-wide mb-2">
                   Segment
                 </label>
@@ -407,8 +391,87 @@ function GA4AnalysisContent() {
                   </optgroup>
                 </select>
               </div>
+
+              {/* Sync/Analyze Button */}
+              {!syncing && !generatingInsights && (
+                <button
+                  onClick={handleSync}
+                  disabled={syncing || generatingInsights}
+                  className="w-full bg-black hover:bg-brand-gold disabled:bg-gray-200 disabled:cursor-not-allowed text-white hover:text-black font-black py-3 px-6 rounded-lg transition-all duration-300 flex items-center justify-center gap-2"
+                  style={{
+                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.2), 0 2px 6px rgba(0, 0, 0, 0.15)',
+                  }}
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                  Sync & Analyze Data
+                </button>
+              )}
+
+              {/* Progress Bar - Fun & Engaging */}
+              {(syncing || generatingInsights) && (
+                <div className="space-y-3">
+                  <div className="bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-lg p-4">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="relative">
+                        <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-blue-500 rounded-full flex items-center justify-center">
+                          <div className="animate-spin rounded-full h-6 w-6 border-2 border-white border-t-transparent"></div>
+                        </div>
+                        <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full animate-pulse"></div>
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-black text-purple-900">
+                          {syncing ? 'Syncing GA4 data...' : 'Generating insights...'}
+                        </p>
+                        <p className="text-xs text-purple-700">
+                          {syncing ? 'Fetching funnel data from Google Analytics' : 'AI is analyzing conversion patterns'}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Animated Progress Bar */}
+                    <div className="relative h-2 bg-purple-200 rounded-full overflow-hidden">
+                      <div className="absolute inset-0 bg-gradient-to-r from-purple-500 via-blue-500 to-purple-500 animate-[shimmer_2s_ease-in-out_infinite] bg-[length:200%_100%]"></div>
+                    </div>
+
+                    {/* Fun Messages */}
+                    <div className="mt-3 space-y-1">
+                      {syncing && (
+                        <>
+                          <div className="flex items-center gap-2 text-xs text-purple-800">
+                            <div className="w-4 h-4 flex items-center justify-center">
+                              <div className="w-2 h-2 bg-blue-500 rounded-full animate-ping"></div>
+                            </div>
+                            <span className="font-bold">Fetching conversion funnel data</span>
+                          </div>
+                          <div className="flex items-center gap-2 text-xs text-purple-800">
+                            <div className="w-4 h-4 flex items-center justify-center">
+                              <div className="w-2 h-2 bg-purple-500 rounded-full animate-pulse"></div>
+                            </div>
+                            <span className="font-bold">Analyzing segment performance</span>
+                          </div>
+                        </>
+                      )}
+                      {generatingInsights && (
+                        <div className="flex items-center gap-2 text-xs text-purple-800">
+                          <div className="w-4 h-4 flex items-center justify-center">
+                            <div className="w-2 h-2 bg-green-500 rounded-full animate-bounce"></div>
+                          </div>
+                          <span className="font-bold">Extracting optimization opportunities</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
-        </div>
+            {/* End sticky white box */}
+          </div>
+          {/* End Left Sidebar col-span-1 */}
+
+          {/* Right Side - Data & Results */}
+          <div className="lg:col-span-2">
 
         {/* Error Display */}
         {error && (
@@ -510,7 +573,12 @@ function GA4AnalysisContent() {
             </div>
           </div>
         )}
+          </div>
+          {/* End Right Side col-span-2 */}
         </div>
+        {/* End Grid */}
+      </div>
+      {/* End max-w-7xl container (if needed) */}
       </main>
     </div>
   );
