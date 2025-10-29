@@ -1,8 +1,8 @@
 # CRO Copilot - Database Schema Reference
 
-**Last Updated:** October 27, 2025
+**Last Updated:** October 29, 2025
 **Database:** PostgreSQL (Supabase)
-**Version:** Migration 021
+**Version:** Migration 023
 
 ---
 
@@ -78,19 +78,25 @@ WHERE user_id = auth.uid()
 ```sql
 CREATE TABLE analyses (
   id UUID PRIMARY KEY,
-  user_id UUID REFERENCES profiles(id),          -- LEGACY: For backwards compat
-  workspace_id UUID REFERENCES workspaces(id),   -- NEW: Workspace isolation
+  user_id UUID NOT NULL REFERENCES profiles(id),
+  workspace_id UUID REFERENCES workspaces(id),   -- Workspace isolation
 
   -- Analysis type
   research_type TEXT NOT NULL,  -- 'page_analysis', 'survey_analysis', 'ga4_analysis', etc.
 
-  -- Input data
-  url TEXT,
+  -- Page-analysis specific fields (NULLABLE - only used for page_analysis type)
+  url TEXT,                      -- Only for page_analysis
+  metrics JSONB,                 -- Only for page_analysis
+  context JSONB,                 -- Only for page_analysis
+
+  -- Generic flexible fields (for all research types)
+  input_data JSONB,              -- Flexible input data (e.g., connectionId for Shopify, propertyId for GA4)
+  insights JSONB,                -- Analysis-specific insights (flexible structure per research type)
+
+  -- Common fields
   domain TEXT,
   name TEXT,
-
-  -- Results
-  summary JSONB,
+  summary JSONB NOT NULL,        -- Required for all research types
   insights_count INTEGER DEFAULT 0,
 
   -- Metadata
@@ -602,15 +608,45 @@ CREATE POLICY "Users can access data in their workspaces"
 ## Common Patterns
 
 ### Creating a New Analysis
+
+**For Page Analysis:**
 ```typescript
 const { data } = await supabase
   .from('analyses')
   .insert({
+    user_id: userId,
     workspace_id: workspaceId,
     research_type: 'page_analysis',
-    url: 'https://example.com',
-    status: 'completed',
-    summary: {...}
+    url: 'https://example.com',       // Page-specific
+    metrics: {...},                   // Page-specific
+    context: {...},                   // Page-specific
+    summary: {...},
+    status: 'completed'
+  })
+  .select()
+  .single();
+```
+
+**For Shopify Analysis:**
+```typescript
+const { data } = await supabase
+  .from('analyses')
+  .insert({
+    user_id: userId,
+    workspace_id: workspaceId,
+    research_type: 'shopify_order_analysis',
+    input_data: {                     // Flexible input
+      connectionId: 'xxx',
+      dateRange: {...},
+      shopDomain: 'store.myshopify.com'
+    },
+    summary: {...},
+    insights: {                       // Flexible insights
+      clusters: [...],
+      productAffinities: [...],
+      opportunities: [...]
+    },
+    status: 'completed'
   })
   .select()
   .single();
@@ -648,6 +684,8 @@ All schema migrations are in: `/supabase/migrations/`
 - `010_pxl_framework.sql` - PXL hypothesis framework
 - `013_billing_and_usage_system.sql` - Pricing, subscriptions, usage tracking
 - `021_shopify_order_analysis.sql` - Shopify integration & AOV analysis
+- `022_add_flexible_analysis_fields.sql` - Add input_data and insights JSONB columns
+- `023_make_analyses_flexible.sql` - Make page-analysis columns nullable
 
 ---
 

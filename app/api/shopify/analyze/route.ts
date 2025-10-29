@@ -1,22 +1,35 @@
 /**
  * Shopify AOV Analysis API
  *
- * POST /api/shopify/analyze - Run AOV analysis on Shopify orders
+ * POST /api/shopify/analyze - Run AOV analysis + generate AI insights
  * GET /api/shopify/analyze - Get existing analysis results
+ *
+ * Follows the universal analysis pattern:
+ * Data → Statistical Analysis → AI Insights → Storage
  */
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
 import { runAOVAnalysis, saveAnalysisResults } from '@/lib/services/shopify/aov-analysis';
+import { generateShopifyInsights } from '@/lib/services/shopify/shopify-insights';
+
+export const dynamic = 'force-dynamic';
+export const maxDuration = 60;
 
 /**
- * POST - Run new AOV analysis
+ * POST - Run new AOV analysis with AI insights
+ *
+ * This endpoint follows the standard analysis pattern:
+ * 1. Run statistical analysis (AOV, clustering, affinity)
+ * 2. Generate AI insights from the data
+ * 3. Store everything in the database
+ * 4. Return results
  */
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient();
 
-    // Check authentication
+    // 1. Authenticate
     const {
       data: { user },
       error: authError,
@@ -26,7 +39,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Parse request body
+    // 2. Parse and validate input
     const body = await request.json();
     const { workspaceId, connectionId, dateRange, minConfidence } = body;
 
@@ -37,7 +50,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Verify user has access to workspace
+    // 3. Verify workspace access
     const { data: workspace, error: workspaceError } = await supabase
       .from('workspaces')
       .select('id')
@@ -46,14 +59,14 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (workspaceError || !workspace) {
-      console.error('Workspace access denied:', workspaceError);
+      console.error('[Shopify Analyze] Workspace access denied:', workspaceError);
       return NextResponse.json(
         { error: 'Workspace not found or access denied' },
         { status: 403 }
       );
     }
 
-    // Verify connection exists
+    // 4. Verify Shopify connection exists
     const { data: connection, error: connectionError } = await supabase
       .from('shopify_connections')
       .select('*')
@@ -68,60 +81,54 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Run the analysis
-    console.log('Starting AOV analysis for workspace:', workspaceId);
-    const results = await runAOVAnalysis(workspaceId, connectionId, {
+    console.log('[Shopify Analyze] Starting analysis for workspace:', workspaceId);
+
+    // 5. Run statistical analysis (AOV, clustering, affinity)
+    const analysisData = await runAOVAnalysis(workspaceId, connectionId, {
       dateRange,
       minConfidence: minConfidence || 0.3,
     });
 
-    // Create analysis record
-    const { data: analysisRecord, error: analysisError } = await supabase
-      .from('analyses')
-      .insert({
-        workspace_id: workspaceId,
-        research_type: 'shopify_order_analysis',
-        input_data: {
-          connectionId,
-          dateRange,
-          shopDomain: connection.shop_domain,
-        },
-        summary: results.summary,
-        insights: {
-          clusters: results.clusters,
-          productAffinities: results.productAffinities,
-          opportunities: results.opportunities,
-        },
-        status: 'completed',
-      })
-      .select()
-      .single();
+    // Add shop domain to summary for AI context
+    (analysisData.summary as any).shopDomain = connection.shop_domain;
 
-    if (analysisError) {
-      console.error('Error creating analysis record:', analysisError);
-      return NextResponse.json(
-        { error: 'Failed to save analysis' },
-        { status: 500 }
-      );
-    }
+    // 6. Generate AI insights from analysis data
+    console.log('[Shopify Analyze] Generating AI insights...');
+    const insightResult = await generateShopifyInsights(
+      user.id,
+      workspaceId,
+      connectionId,
+      analysisData
+    );
 
-    // Save detailed results to specialized tables
+    // 7. Save detailed analysis results to specialized tables
+    // (Optional: for querying specific clusters/affinities later)
     await saveAnalysisResults(
       workspaceId,
       connectionId,
-      analysisRecord.id,
-      results
+      insightResult.analysisId,
+      analysisData
     );
 
-    console.log('AOV analysis completed successfully');
+    console.log('[Shopify Analyze] Analysis completed successfully');
+    console.log(`[Shopify Analyze] Generated ${insightResult.insightCount} insights`);
 
+    // 8. Return results
     return NextResponse.json({
       success: true,
-      analysisId: analysisRecord.id,
-      results,
+      analysisId: insightResult.analysisId,
+      insights: insightResult.insights,
+      insightCount: insightResult.insightCount,
+      summary: insightResult.summary,
+      // Also include raw analysis data for immediate display
+      analysisData: {
+        clusters: analysisData.clusters,
+        productAffinities: analysisData.productAffinities,
+        opportunities: analysisData.opportunities,
+      },
     });
   } catch (error: any) {
-    console.error('AOV analysis error:', error);
+    console.error('[Shopify Analyze] Error:', error);
     return NextResponse.json(
       { error: error.message || 'Analysis failed' },
       { status: 500 }
@@ -191,7 +198,15 @@ export async function GET(request: NextRequest) {
         );
       }
 
-      // Fetch detailed results from specialized tables
+      // Fetch AI-generated insights
+      const { data: insights, error: insightsError } = await supabase
+        .from('insights')
+        .select('*')
+        .eq('analysis_id', analysisId)
+        .eq('workspace_id', workspaceId)
+        .order('priority', { ascending: true }); // Show critical/high first
+
+      // Fetch detailed results from specialized tables (optional)
       const [clustersResult, affinitiesResult, opportunitiesResult] = await Promise.all([
         supabase
           .from('order_clusters')
@@ -209,6 +224,9 @@ export async function GET(request: NextRequest) {
 
       return NextResponse.json({
         analysis,
+        insights: insights || [],
+        insightCount: insights?.length || 0,
+        // Raw analysis data (optional, for additional context)
         clusters: clustersResult.data || [],
         productAffinities: affinitiesResult.data || [],
         opportunities: opportunitiesResult.data || [],

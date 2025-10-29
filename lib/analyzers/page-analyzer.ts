@@ -14,7 +14,7 @@ import { InsightExtractorV2 } from './insight-extractor-v2';
 export class PageAnalyzer extends BaseModule<PageAnalyzerInput, PageAnalyzerOutput> {
   private insightExtractor: InsightExtractorV2;
 
-  constructor(llmProvider: 'gpt' | 'claude' = 'gpt') {
+  constructor(llmProvider: 'gpt' | 'claude' = 'claude') {
     const config: ModuleConfig = {
       name: 'page-analyzer',
       version: '1.0.0',

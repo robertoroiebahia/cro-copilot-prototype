@@ -370,8 +370,14 @@ export async function saveAnalysisResults(
   const clusterInserts = results.clusters.map(cluster => ({
     analysis_id: analysisId,
     workspace_id: workspaceId,
-    connection_id: connectionId,
-    ...cluster,
+    cluster_name: cluster.cluster_name,
+    min_value: cluster.min_value,
+    max_value: cluster.max_value,
+    order_count: cluster.order_count,
+    percentage_of_orders: cluster.percentage,
+    total_revenue: cluster.total_revenue,
+    percentage_of_revenue: 0, // Calculate if needed
+    average_order_value: cluster.avg_order_value,
   }));
 
   const { error: clusterError } = await supabase
@@ -386,8 +392,17 @@ export async function saveAnalysisResults(
   const affinityInserts = results.productAffinities.map(affinity => ({
     analysis_id: analysisId,
     workspace_id: workspaceId,
-    connection_id: connectionId,
-    ...affinity,
+    product_a_id: affinity.product_a_id,
+    product_a_title: affinity.product_a_title,
+    product_b_id: affinity.product_b_id,
+    product_b_title: affinity.product_b_title,
+    support: 0, // Calculate if needed
+    confidence: affinity.confidence,
+    lift: affinity.lift,
+    pair_count: affinity.co_occurrence_count,
+    product_a_count: 0, // Would need order data
+    product_b_count: 0, // Would need order data
+    total_orders: 0, // Would need order data
   }));
 
   if (affinityInserts.length > 0) {
@@ -404,8 +419,16 @@ export async function saveAnalysisResults(
   const opportunityInserts = results.opportunities.map(opp => ({
     analysis_id: analysisId,
     workspace_id: workspaceId,
-    connection_id: connectionId,
-    ...opp,
+    title: opp.title,
+    description: opp.description,
+    category: opp.opportunity_type,
+    priority: opp.priority >= 8 ? 'high' : opp.priority >= 5 ? 'medium' : 'low',
+    test_idea: opp.data_support || {},
+    expected_impact: { impact: opp.potential_impact },
+    confidence_score: opp.confidence_score,
+    effort_score: 5, // Default effort
+    revenue_impact_score: opp.priority,
+    status: 'pending',
   }));
 
   const { error: oppError } = await supabase

@@ -104,7 +104,7 @@ export async function POST(request: NextRequest) {
 
     // Step 2: Analyze page and extract insights
     logger.info('Extracting insights', { url });
-    const analyzer = createPageAnalyzer(options.llmProvider || 'gpt');
+    const analyzer = createPageAnalyzer(options.llmProvider || 'claude');
     const analysisResult = await analyzer.execute({
       analysisId,
       userId,
@@ -140,7 +140,7 @@ export async function POST(request: NextRequest) {
         research_type: 'page_analysis', // Research methodology
         metrics: {}, // Empty for page analysis (no data metrics)
         context: {
-          llm_provider: options.llmProvider || 'gpt',
+          llm_provider: options.llmProvider || 'claude',
           temp_analysis_id: analysisId, // Temporary ID for this session
           has_screenshot: !!scrapeResult.screenshot,
         },
@@ -365,7 +365,7 @@ export async function POST(request: NextRequest) {
         insightCount: insights.length,
         themeCount: themes.length,
         hypothesisCount: hypotheses.length,
-        llmProvider: options.llmProvider || 'gpt',
+        llmProvider: options.llmProvider || 'claude',
         research_type: 'page_analysis',
       },
     };
@@ -424,7 +424,7 @@ export async function GET() {
           url: 'string (required)',
           userId: 'string (required)',
           options: {
-            llmProvider: '"gpt" | "claude" (default: "gpt")',
+            llmProvider: '"gpt" | "claude" (default: "claude")',
             generateThemes: 'boolean (default: false)',
             generateHypotheses: 'boolean (default: false)',
           },
@@ -445,7 +445,7 @@ export async function GET() {
         url: 'https://example.com',
         userId: 'user123',
         options: {
-          llmProvider: 'gpt',
+          llmProvider: 'claude',
           generateThemes: true,
           generateHypotheses: true,
         },
